@@ -188,26 +188,15 @@ details[open] summary{margin-bottom:8px}
       <input type="password" id="tl-client-secret" placeholder="1ecb60d2...">
     </div>
   </div>
-  <button onclick="tlStartAuth()" style="width:100%;margin-bottom:10px">Stap 1 — Open Teamleader autorisatie</button>
-  <div id="tl-step2" class="hidden">
-    <div class="info-box" style="margin-bottom:8px;font-size:12px">
-      <strong>Stap 2:</strong> Na het klikken op "Toestaan" in Teamleader probeert de browser naar localhost te gaan (dat geeft een foutpagina — dat is normaal).<br><br>
-      Kopieer de <strong>volledige URL</strong> uit de adresbalk en plak hem hieronder:
-    </div>
-    <div class="field" style="margin-bottom:8px">
-      <label>Callback URL (uit adresbalk)</label>
-      <input type="text" id="tl-callback-url" placeholder="http://localhost/callback?code=abc123...">
-    </div>
-    <button onclick="tlSaveManualToken()" style="width:100%;background:#1a6b3c">Verbinding bevestigen</button>
-  </div>
-  <details style="margin-top:8px">
+  <details style="margin-top:0;margin-bottom:10px">
     <summary>Eenmalige instelling in Teamleader Marketplace</summary>
     <div style="font-size:12px;color:#64748b;padding:8px 0;line-height:1.7">
       Zet de <strong>Redirect URI</strong> op:<br>
-      <code style="background:#f1f5f9;padding:2px 6px;border-radius:3px;font-size:11px;display:block;margin:4px 0">http://localhost/callback</code>
+      <code id="tl-redirect-hint" style="background:#f1f5f9;padding:2px 6px;border-radius:3px;font-size:11px;display:block;margin:4px 0;word-break:break-all"></code>
       Scopes: <strong>Quotations</strong> + <strong>Deals</strong>
     </div>
   </details>
+  <button onclick="tlStartAuth()" style="width:100%;margin-bottom:10px">Verbinden met Teamleader</button>
 </div>
 
 <div id="tl-connected" class="hidden">
@@ -1370,8 +1359,6 @@ async function tlRefreshToken(){
   if(data.expires_in) localStorage.setItem('tl_token_expiry', String(Date.now()+data.expires_in*1000));
 }
 
-const TL_REDIRECT_URI = 'http://localhost:8080/callback';
-
 async function tlStartAuth(){
   const clientId = $('tl-client-id')?.value.trim();
   const clientSecret = $('tl-client-secret')?.value.trim();
@@ -1379,11 +1366,8 @@ async function tlStartAuth(){
   localStorage.setItem('tl_client_id', clientId);
   localStorage.setItem('tl_client_secret', clientSecret);
   localStorage.setItem('tl_saved_offer', JSON.stringify(state.offer));
-  // Stuur credentials naar de lokale server (die doet de token-uitwisseling)
-  try{
-    await fetch(`/save_config?client_id=${encodeURIComponent(clientId)}&client_secret=${encodeURIComponent(clientSecret)}`);
-  }catch(e){ alert('Lokale server niet bereikbaar. Start serve.py opnieuw.'); return; }
-  const authUrl = `${TL_AUTH_URL}?${new URLSearchParams({client_id:clientId,response_type:'code',redirect_uri:TL_REDIRECT_URI})}`;
+  const redirectUri = tlGetRedirectUri();
+  const authUrl = `${TL_AUTH_URL}?${new URLSearchParams({client_id:clientId,response_type:'code',redirect_uri:redirectUri})}`;
   window.location.href = authUrl;
 }
 
@@ -1396,7 +1380,7 @@ async function tlExchangeCode(code){
       headers:{'Content-Type':'application/x-www-form-urlencoded'},
       body:new URLSearchParams({
         grant_type:'authorization_code', code,
-        redirect_uri:TL_REDIRECT_URI,
+        redirect_uri:tlGetRedirectUri(),
         client_id:clientId, client_secret:clientSecret
       })
     });
@@ -1443,7 +1427,6 @@ function tlDisconnect(){
   ['tl_access_token','tl_refresh_token','tl_token_expiry'].forEach(k=>localStorage.removeItem(k));
   state.tlSelectedDeal = null;
   tlUpdateUI();
-  fetch('/shutdown').catch(()=>{});
 }
 
 function tlUpdateUI(){
@@ -1577,19 +1560,8 @@ async function tlExportQuotation(e){
 
 async function tlInit(){
   const params = new URLSearchParams(window.location.search);
-  if(params.get('tl_auth')==='success'){
-    window.history.replaceState({}, document.title, window.location.pathname);
-    try{
-      const res = await fetch('/tl_token.json');
-      const data = await res.json();
-      if(!data.access_token) throw new Error('Geen access_token in antwoord');
-      localStorage.setItem('tl_access_token', data.access_token);
-      if(data.refresh_token) localStorage.setItem('tl_refresh_token', data.refresh_token);
-      if(data.expires_in) localStorage.setItem('tl_token_expiry', String(Date.now()+data.expires_in*1000));
-      const saved = localStorage.getItem('tl_saved_offer');
-      if(saved){ try{ state.offer=JSON.parse(saved); localStorage.removeItem('tl_saved_offer'); renderOffer(); }catch(e){} }
-      await tlOnConnected();
-    }catch(e){ alert(`Verbinding mislukt: ${e.message}`); }
+  if(params.get('code')){
+    await tlHandleCallback();
   } else {
     tlUpdateUI();
     if(tlIsConnected()) await tlFetchTaxRates();
