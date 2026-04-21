@@ -1,6 +1,6 @@
 {
-  "name": "Allround Zonwering · Offertetool",
-  "short_name": "Allround",
+  "name": "BKfix Offertetool",
+  "short_name": "BKfix",
   "description": "Real-time berekening voor rolluiken, screens, knikarmscherm en veranda/pergola",
   "start_url": "./index.html",
   "display": "standalone",
