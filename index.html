@@ -407,6 +407,19 @@ function renderRolluik(){
   calcRolluik();
 }
 
+function getKasthoogte(type, hoogte) {
+  if (type === 'Ecoroll_L' || type === 'Rollex_L') {
+    if (hoogte <= 1340) return 150;
+    if (hoogte <= 1900) return 165;
+    if (hoogte <= 2360) return 180;
+    return 205;
+  }
+  // Ecoroll_M, Rollex_M
+  if (hoogte <= 1800) return 150;
+  if (hoogte <= 2350) return 165;
+  return 180;
+}
+
 function calcRolluik(){
   const errors=[];
   const warnings=[];
@@ -446,8 +459,9 @@ function calcRolluik(){
   if(breedte < 1000) warnings.push(`Breedte ${breedte}mm < 1m: prijs van 1000mm gebruikt`);
   if(hoogte < 1000) warnings.push(`Hoogte ${hoogte}mm < 1m: prijs van 1000mm gebruikt`);
 
+  const kasthoogte = getKasthoogte(type, effectiefH);
   const bestB = plaatsing==='odd' ? effectiefB+110 : effectiefB-6;
-  const bestH = plaatsing==='odd' ? effectiefH+110 : effectiefH-4;
+  const bestH = plaatsing==='odd' ? effectiefH+kasthoogte : effectiefH-4;
   const bCeil = Math.max(1000, ceil(bestB,100));
   const hCeil = Math.max(1000, ceil(bestH,100));
 
