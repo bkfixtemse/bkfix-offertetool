@@ -412,7 +412,7 @@ function calcRolluik(){
   const warnings=[];
   const type = $('r-type').value;
   const isSolar = $('r-motor').value && $('r-motor').value.toLowerCase().includes('solar');
-  const effectiveType = (type === 'Ecoroll_L' && isSolar) ? 'Ecoroll_L_Solar' : type;
+  const effectiveType = type;
   const aantal = parseInt($('r-aantal').value)||1;
   const breedte = parseFloat($('r-breedte').value);
   const hoogte = parseFloat($('r-hoogte').value);
@@ -470,7 +470,7 @@ function calcRolluik(){
   // Geleider (uit 2-rolluik lijst A4:B22, type geleider)
   const geleider = $('r-geleider').value;
   const geleiderExtra = geleider ? (DATA.opties.rolluik_extras.geleiders[geleider] || 0) : 0;
-  const geleiderPrice = geleiderExtra > 0 ? (bestH/1000)*2*geleiderExtra : 0;
+  const geleiderPrice = (!isSolar && geleiderExtra > 0) ? (bestH/1000)*2*geleiderExtra : 0;
 
   // Motor
   const motor = $('r-motor').value;
