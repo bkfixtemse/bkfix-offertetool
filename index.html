@@ -436,17 +436,19 @@ function calcRolluik(){
     if(breedte > maxDim.b) errors.push(`Breedte ${breedte}mm overschrijdt maximum voor ${type} (${maxDim.b}mm)`);
     if(hoogte > maxDim.h) errors.push(`Hoogte ${hoogte}mm overschrijdt maximum voor ${type} (${maxDim.h}mm)`);
   }
-  if(breedte < 1000) warnings.push(`Breedte ${breedte}mm is kleiner dan 1000mm - prijs niet bekend in tabel`);
-  if(hoogte < 1000) warnings.push(`Hoogte ${hoogte}mm is kleiner dan 1000mm - prijs niet bekend in tabel`);
+  // Bestelmaat — minimum 1000mm voor breedte en hoogte (prijstabel start op 1m)
+  const effectiefB = Math.max(1000, breedte);
+  const effectiefH = Math.max(1000, hoogte);
+  if(breedte < 1000) warnings.push(`Breedte ${breedte}mm < 1m: prijs van 1000mm gebruikt`);
+  if(hoogte < 1000) warnings.push(`Hoogte ${hoogte}mm < 1m: prijs van 1000mm gebruikt`);
 
-  // Bestelmaat
-  const bestB = plaatsing==='odd' ? breedte+110 : breedte-6;
-  const bestH = plaatsing==='odd' ? hoogte+110 : hoogte-4;
-  const bCeil = ceil(bestB,100);
-  const hCeil = ceil(bestH,100);
+  const bestB = plaatsing==='odd' ? effectiefB+110 : effectiefB-6;
+  const bestH = plaatsing==='odd' ? effectiefH+110 : effectiefH-4;
+  const bCeil = Math.max(1000, ceil(bestB,100));
+  const hCeil = Math.max(1000, ceil(bestH,100));
 
   // Lookup price
-  const prefix = {'Ecoroll_L':'EL_','Rollex_L':'RL_','Ecoroll_M':'EM_','Rollex_M':'RM_','Ecoroll_L_Solar':'ELS_'}[type];
+  const prefix = {'Ecoroll_L':'EL_','Rollex_L':'RL_','Ecoroll_M':'EM_','Rollex_M':'RM_','Ecoroll_L_Solar':'EL_'}[type];
   const heightKey = `${prefix}H_${hCeil}`;
   const widthKey = `${prefix}B_${bCeil}`;
   let basePrice = null;
@@ -652,11 +654,15 @@ function calcScreen(){
   // Bestelmaat
   // ODD: voeg toe volgens plaatsing_types[type] (hoogte_add_odd, breedte_add_odd)
   // IDD: -4
+  const effectiefB = Math.max(1000, breedte);
+  const effectiefH = Math.max(1000, hoogte);
+  if(breedte < 1000) warnings.push(`Breedte ${breedte}mm < 1m: prijs van 1000mm gebruikt`);
+  if(hoogte < 1000) warnings.push(`Hoogte ${hoogte}mm < 1m: prijs van 1000mm gebruikt`);
   const sizeAdd = DATA.opties.screen_extras.plaatsing_types[type] || {hoogte_add_odd:100,breedte_add_odd:80};
-  const bestB = plaatsing==='odd' ? breedte+sizeAdd.breedte_add_odd : breedte-4;
-  const bestH = plaatsing==='odd' ? hoogte+sizeAdd.hoogte_add_odd : hoogte-4;
-  const bCeil = ceil(bestB,100);
-  const hCeil = ceil(bestH,100);
+  const bestB = plaatsing==='odd' ? effectiefB+sizeAdd.breedte_add_odd : effectiefB-4;
+  const bestH = plaatsing==='odd' ? effectiefH+sizeAdd.hoogte_add_odd : effectiefH-4;
+  const bCeil = Math.max(1000, ceil(bestB,100));
+  const hCeil = Math.max(1000, ceil(bestH,100));
 
   const prefix = DATA.screens.prefixes[type];
   const heightKey = `${prefix}_H_${hCeil}`;
@@ -822,8 +828,9 @@ function calcKnikarm(){
 
   if(breedte > typeData.max_width) errors.push(`Breedte ${breedte}mm overschrijdt maximum voor ${type} (${typeData.max_width}mm)`);
   if(uitval > typeData.max_uitval) errors.push(`Uitval ${uitval}mm overschrijdt maximum voor ${type} (${typeData.max_uitval}mm - niet produceerbaar)`);
+  if(breedte < 1000) warnings.push(`Breedte ${breedte}mm < 1m: prijs van 1000mm gebruikt`);
 
-  const bCeil = ceil(breedte, 250);
+  const bCeil = Math.max(1000, ceil(breedte, 250));
   const uCeil = ceil(uitval, 500);
 
   const uitvalKey = `${typeData.prefix_U}${uCeil}`;
@@ -1041,8 +1048,9 @@ function calcVeranda(){
     if(uitval > meta.max_uitval) errors.push(`Uitval ${uitval}mm overschrijdt maximum voor ${type} (${meta.max_uitval}mm)`);
   }
 
-  // Bestelmaat afgerond 250mm
-  const bCeil = ceil(breedte, 250);
+  // Bestelmaat afgerond 250mm — minimum 1000mm
+  if(breedte < 1000) warnings.push(`Breedte ${breedte}mm < 1m: prijs van 1000mm gebruikt`);
+  const bCeil = Math.max(1000, ceil(breedte, 250));
   const uCeil = ceil(uitval, 250);
 
   const uitvalKey = `${typeData.prefix_U}${uCeil}`;
