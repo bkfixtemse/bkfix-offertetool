@@ -459,7 +459,7 @@ function calcRolluik(){
   if(breedte < 1000) warnings.push(`Breedte ${breedte}mm < 1m: prijs van 1000mm gebruikt`);
   if(hoogte < 1000) warnings.push(`Hoogte ${hoogte}mm < 1m: prijs van 1000mm gebruikt`);
 
-  const kasthoogte = getKasthoogte(type, effectiefH);
+  const kasthoogte = isSolar ? 180 : getKasthoogte(type, effectiefH);
   const bestB = plaatsing==='odd' ? effectiefB+110 : effectiefB-6;
   const bestH = plaatsing==='odd' ? effectiefH+kasthoogte : effectiefH-4;
   const bCeil = Math.max(1000, ceil(bestB,100));
