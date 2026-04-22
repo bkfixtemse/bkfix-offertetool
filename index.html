@@ -465,7 +465,7 @@ function calcRolluik(){
   }
 
   // Kast
-  const kastPrice = DATA.rolluik.kast[effectiveType]?.[heightKey] || 0;
+  const kastPrice = isSolar ? 0 : (DATA.rolluik.kast[effectiveType]?.[heightKey] || 0);
 
   // Geleider (uit 2-rolluik lijst A4:B22, type geleider)
   const geleider = $('r-geleider').value;
