@@ -1802,7 +1802,6 @@ document.querySelectorAll('.tab').forEach(tab=>{
 renderRolluik();
 renderOffer();
 tlInit();
-renderCustomProductTabs();
 
 // ======= Login =======
 (function(){
@@ -1865,6 +1864,7 @@ const ADMIN = {
   set settings(v){ localStorage.setItem('bkfix_settings',JSON.stringify(v)); },
 };
 function genId(){ return Math.random().toString(36).slice(2,9); }
+renderCustomProductTabs();
 
 // ----- Available fields per product type -----
 const PRODUCT_FIELDS = {
