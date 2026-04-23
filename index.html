@@ -555,6 +555,7 @@ function calcRolluik(){
   const item = {
     product:'Rolluik',
     type,aantal,breedte,hoogte,plaatsing,
+    geleider,motor,lamel,kleur,kleurCustom,kasttype,
     bestelmaat:`${bCeil}×${hCeil}`,
     options:[
       geleider && `Geleider: ${geleider}`,
@@ -1332,6 +1333,52 @@ function clearOffer(){
   }
 }
 
+// ======= Teamleader beschrijving rolluik =======
+function tlRolluikDescription(item) {
+  const isSolar = item.motor && item.motor.toLowerCase().includes('solar');
+  const lines = [];
+
+  lines.push('Afmetingen dagmaat:');
+  lines.push(`Breedte: ${item.breedte}mm`);
+  lines.push(`Hoogte: ${item.hoogte}mm`);
+  lines.push(`Plaatsing: ${item.plaatsing === 'odd' ? 'ODD (Op de dag)' : 'IDD (In de dag)'}`);
+  lines.push('');
+
+  lines.push('Kleur:');
+  if (item.kleurCustom) {
+    lines.push(`RAL-kleur: ${item.kleurCustom}`);
+  } else {
+    lines.push(`Keuze uit 206 standaardkleuren: ${item.kleur || ''}`);
+  }
+  lines.push('');
+
+  lines.push(`Geleiders: ${item.geleider || 'Standaard: HTF 53x22mm'}`);
+  lines.push('');
+
+  lines.push(`Lamel: ${item.lamel === 'hardschuim' ? 'Hardschuim' : 'L-lamel: 42x9.3mm'}`);
+  lines.push(`Kleur: ${item.kleurCustom || item.kleur || 'wit'}`);
+  lines.push('');
+
+  lines.push(`Motor: ${item.motor || 'Standaard: SOMFY S&SO RS100 IO'}`);
+  if (isSolar) {
+    lines.push('meerprijs: SOMFY RS100 IO Solar max afmetingen: 3500x2800mm');
+    lines.push('minimum kastmaat: 180mm');
+  }
+  lines.push('');
+
+  lines.push(`Kast: ${item.kasttype || 'Standaard: afgeschuind 45°'}`);
+  lines.push('');
+
+  lines.push('Onderlat: Design onderlat / Vlakke onderlat');
+
+  if (item.opmerkingen) {
+    lines.push('');
+    lines.push(`Opmerkingen: ${item.opmerkingen}`);
+  }
+
+  return lines.join('\n');
+}
+
 // ======= Teamleader API Integration =======
 const TL_BASE = 'https://api.focus.teamleader.eu';
 const TL_AUTH_URL = 'https://focus.teamleader.eu/oauth2/authorize';
@@ -1544,17 +1591,22 @@ async function tlExportQuotation(e){
   const uren   = parseFloat($('w-uren')?.value)||0;
   const personen = parseInt($('w-personen')?.value)||2;
 
-  const lineItems = state.offer.map(item=>({
-    quantity: item.aantal,
-    description: `${item.product} - ${item.type}`,
-    extended_description: [
-      item.bestelmaat ? `Bestelmaat: ${item.bestelmaat}mm` : '',
-      ...(item.options||[]),
-      item.opmerkingen||''
-    ].filter(Boolean).join('\n'),
-    unit_price:{ amount: parseFloat((item.uwVerkoop/item.aantal).toFixed(2)), tax:'excluding' },
-    tax_rate_id: taxRateId
-  }));
+  const lineItems = state.offer.map(item=>{
+    const extDesc = item.product === 'Rolluik'
+      ? tlRolluikDescription(item)
+      : [
+          item.bestelmaat ? `Bestelmaat: ${item.bestelmaat}mm` : '',
+          ...(item.options||[]),
+          item.opmerkingen||''
+        ].filter(Boolean).join('\n');
+    return {
+      quantity: item.aantal,
+      description: `${item.product} - ${item.type}`,
+      extended_description: extDesc,
+      unit_price:{ amount: parseFloat((item.uwVerkoop/item.aantal).toFixed(2)), tax:'excluding' },
+      tax_rate_id: taxRateId
+    };
+  });
 
   if(uren>0){
     lineItems.push({
