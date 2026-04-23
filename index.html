@@ -78,6 +78,39 @@ details[open] summary{margin-bottom:8px}
 .tl-deal-option:hover{background:#f0f9ff}
 .tl-deal-option:last-child{border-bottom:none}
 
+/* ======= BEHEER PANEL ======= */
+.beheer-panel{padding:0}
+.beheer-nav{display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:20px;flex-wrap:wrap}
+.beheer-nav-btn{background:none;border:none;border-bottom:3px solid transparent;padding:10px 16px;cursor:pointer;font-size:13px;font-weight:500;color:#64748b;margin-bottom:-2px;transition:all .15s;white-space:nowrap}
+.beheer-nav-btn.active{color:#2c3e50;border-bottom-color:#2c3e50;font-weight:700}
+.beheer-nav-btn:hover:not(.active){color:#2c3e50;background:#f8fafc}
+.beheer-section{animation:fadeIn .2s}
+.admin-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+.admin-table th{background:#f8fafc;padding:8px 12px;text-align:left;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:600;border-bottom:2px solid #e2e8f0}
+.admin-table td{padding:8px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+.admin-table tr:hover td{background:#fafafe}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .15s}
+.chip-blue{background:#dbeafe;color:#1d4ed8;border-color:#bfdbfe}.chip-blue:hover{background:#bfdbfe}
+.chip-green{background:#d1fae5;color:#065f46;border-color:#a7f3d0}.chip-green:hover{background:#a7f3d0}
+.chip-gray{background:#f1f5f9;color:#475569;border-color:#e2e8f0}.chip-gray:hover{background:#e2e8f0}
+.tmpl-builder{display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start}
+.tmpl-fields-panel{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px}
+.tmpl-fields-panel h4{font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:.5px;margin-bottom:8px;font-weight:600}
+.tmpl-area{border:1px solid #e2e8f0;border-radius:8px;min-height:160px;padding:8px;background:#fff}
+.tmpl-row{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;margin-bottom:5px}
+.tmpl-row:hover{border-color:#93c5fd;background:#f0f9ff}
+.tmpl-row .tmpl-type{font-size:11px;font-weight:600;min-width:52px}
+.tmpl-preview{background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px;font-size:12px;font-family:monospace;white-space:pre-wrap;color:#0c4a6e;margin-top:10px;max-height:180px;overflow-y:auto}
+.field-def-row{display:grid;grid-template-columns:1fr 90px 90px 90px 36px;gap:8px;align-items:center;margin-bottom:8px}
+.pricing-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:8px}
+.bfull{background:#2c3e50;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer}
+.bfull:hover{background:#1a2b3d}
+.bsec{background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer}
+.bsec:hover{background:#e2e8f0}
+.bdang{background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer}
+.bdang:hover{background:#fecaca}
+.sect-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.sect-title{font-size:15px;font-weight:700;color:#2c3e50}
 /* Login overlay */
 #login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#1a2332 0%,#2c3e50 60%,#4a6278 100%);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
 #login-box{background:#fff;border-radius:16px;padding:40px 36px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
@@ -128,6 +161,7 @@ details[open] summary{margin-bottom:8px}
 <button class="tab" data-prod="screen">Screen</button>
 <button class="tab" data-prod="knikarm">Knikarmscherm</button>
 <button class="tab" data-prod="veranda">Veranda/Pergola</button>
+<button class="tab" data-prod="beheer" style="margin-left:auto;color:#64748b">⚙ Beheer</button>
 </div>
 
 <div id="form-container"></div>
@@ -1345,6 +1379,27 @@ function clearOffer(){
   }
 }
 
+// ======= TL beschrijving helper =======
+function getTlDescription(item){
+  const customTmpl = ADMIN.tlTemplates[item.product];
+  if(customTmpl && customTmpl.length>0){
+    return buildTlDescriptionFromTemplate(customTmpl, item);
+  }
+  if(item.product==='Rolluik') return tlRolluikDescription(item);
+  if(item.product==='Artikel'){
+    return [(item.options||[]).join('\n'), item.opmerkingen||''].filter(Boolean).join('\n');
+  }
+  // Custom products
+  if(item.options && item.options.length>0){
+    return item.options.join('\n') + (item.opmerkingen?'\n'+item.opmerkingen:'');
+  }
+  const dagmaat = item.hoogte
+    ? `Dagmaat: ${item.breedte}×${item.hoogte}mm`
+    : item.uitval ? `Dagmaat: ${item.breedte}×${item.uitval}mm` : '';
+  const filteredOpts = (item.options||[]).filter(o=>!o.startsWith('Bereikbaarheid:'));
+  return [dagmaat, ...filteredOpts, item.opmerkingen||''].filter(Boolean).join('\n');
+}
+
 // ======= Teamleader beschrijving rolluik =======
 function tlRolluikDescription(item) {
   const isSolar = item.motor && item.motor.toLowerCase().includes('solar');
@@ -1633,16 +1688,7 @@ async function tlExportQuotation(e){
     const mainPrice = item.uwVerkoop - amyPrice;
 
     // Extended description
-    let extDesc;
-    if(item.product === 'Rolluik'){
-      extDesc = tlRolluikDescription(item);
-    } else {
-      const dagmaat = item.hoogte
-        ? `Dagmaat: ${item.breedte}×${item.hoogte}mm`
-        : `Dagmaat: ${item.breedte}×${item.uitval}mm`;
-      const filteredOpts = (item.options||[]).filter(o=>!o.startsWith('Bereikbaarheid:'));
-      extDesc = [dagmaat, ...filteredOpts, item.opmerkingen||''].filter(Boolean).join('\n');
-    }
+    let extDesc = getTlDescription(item);
 
     // Aankoopprijs in description (zichtbaar in TL)
     const aankoopLabel = `Aankoopprijs: €${fmt(item.aankoop)} (excl. BTW)`;
@@ -1727,25 +1773,36 @@ async function tlInit(){
 }
 
 // ======= Tabs =======
+function activateTab(prodKey){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  const btn = document.querySelector(`.tab[data-prod="${prodKey}"]`);
+  if(btn) btn.classList.add('active');
+  state.currentProduct = prodKey;
+  verandaExtraCount = 0;
+  if(prodKey === 'beheer'){ renderBeheer(); return; }
+  if(prodKey.startsWith('custom_')){
+    const cpId = prodKey.replace('custom_','');
+    const cp = ADMIN.products.find(p=>p.id===cpId);
+    if(cp) renderCustomProductForm(cp);
+    return;
+  }
+  switch(prodKey){
+    case 'rolluik': renderRolluik(); break;
+    case 'screen': renderScreen(); break;
+    case 'knikarm': renderKnikarm(); break;
+    case 'veranda': renderVeranda(); break;
+  }
+}
+
 document.querySelectorAll('.tab').forEach(tab=>{
-  tab.addEventListener('click',()=>{
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    tab.classList.add('active');
-    state.currentProduct = tab.dataset.prod;
-    verandaExtraCount = 0;
-    switch(state.currentProduct){
-      case 'rolluik': renderRolluik(); break;
-      case 'screen': renderScreen(); break;
-      case 'knikarm': renderKnikarm(); break;
-      case 'veranda': renderVeranda(); break;
-    }
-  });
+  tab.addEventListener('click',()=>activateTab(tab.dataset.prod));
 });
 
 // Init
 renderRolluik();
 renderOffer();
 tlInit();
+renderCustomProductTabs();
 
 // ======= Login =======
 (function(){
@@ -1793,6 +1850,566 @@ tlInit();
 
   checkSession();
 })();
+
+// ======= ADMIN / BEHEER MODULE =======
+
+// ----- Config storage -----
+const ADMIN = {
+  get articles(){ return JSON.parse(localStorage.getItem('bkfix_articles')||'[]'); },
+  set articles(v){ localStorage.setItem('bkfix_articles',JSON.stringify(v)); },
+  get products(){ return JSON.parse(localStorage.getItem('bkfix_cust_prods')||'[]'); },
+  set products(v){ localStorage.setItem('bkfix_cust_prods',JSON.stringify(v)); },
+  get tlTemplates(){ return JSON.parse(localStorage.getItem('bkfix_tl_tmpl')||'{}'); },
+  set tlTemplates(v){ localStorage.setItem('bkfix_tl_tmpl',JSON.stringify(v)); },
+  get settings(){ return JSON.parse(localStorage.getItem('bkfix_settings')||'{}'); },
+  set settings(v){ localStorage.setItem('bkfix_settings',JSON.stringify(v)); },
+};
+function genId(){ return Math.random().toString(36).slice(2,9); }
+
+// ----- Available fields per product type -----
+const PRODUCT_FIELDS = {
+  Rolluik:[
+    {id:'breedte',label:'Breedte',suffix:'mm'},{id:'hoogte',label:'Hoogte',suffix:'mm'},
+    {id:'plaatsing',label:'Plaatsing'},{id:'type',label:'Type rolluik'},
+    {id:'bestelmaat',label:'Bestelmaat',suffix:'mm'},
+    {id:'geleider',label:'Geleiders'},{id:'kasttype',label:'Kast type'},
+    {id:'kleurOmkasting',label:'Kleur omkasting'},{id:'motor',label:'Motor'},
+    {id:'lamel',label:'Lamel'},{id:'kleur',label:'Kleur lamel'},{id:'kleurCustom',label:'RAL kleur'},
+    {id:'koppel',label:'Koppelen'},{id:'bed1',label:'Bediening 1'},{id:'bed2',label:'Bediening 2'},
+    {id:'opmerkingen',label:'Opmerkingen'},
+  ],
+  Screen:[
+    {id:'breedte',label:'Breedte',suffix:'mm'},{id:'hoogte',label:'Hoogte',suffix:'mm'},
+    {id:'plaatsing',label:'Plaatsing'},{id:'type',label:'Type screen'},
+    {id:'bestelmaat',label:'Bestelmaat',suffix:'mm'},
+    {id:'bed1',label:'Bediening 1'},{id:'bed2',label:'Bediening 2'},{id:'opmerkingen',label:'Opmerkingen'},
+  ],
+  Knikarmscherm:[
+    {id:'breedte',label:'Breedte',suffix:'mm'},{id:'uitval',label:'Uitval',suffix:'mm'},
+    {id:'type',label:'Type'},{id:'bestelmaat',label:'Bestelmaat',suffix:'mm'},
+    {id:'bed1',label:'Bediening 1'},{id:'bed2',label:'Bediening 2'},{id:'opmerkingen',label:'Opmerkingen'},
+  ],
+  Veranda:[
+    {id:'breedte',label:'Breedte',suffix:'mm'},{id:'uitval',label:'Uitval',suffix:'mm'},
+    {id:'type',label:'Type'},{id:'bestelmaat',label:'Bestelmaat',suffix:'mm'},
+    {id:'bed1',label:'Bediening 1'},{id:'bed2',label:'Bediening 2'},{id:'opmerkingen',label:'Opmerkingen'},
+  ],
+};
+
+// ----- Build description from TL template -----
+function buildTlDescriptionFromTemplate(blocks, item){
+  const lines = [];
+  for(const b of blocks){
+    if(b.type==='separator'){ lines.push(''); continue; }
+    if(b.type==='static'){ lines.push(b.text||''); continue; }
+    if(b.type==='field'){
+      let val = item[b.fieldId];
+      if(b.fieldId==='plaatsing' && val){
+        val = val.toUpperCase()==='ODD'?'ODD (Op de dag)':val.toUpperCase()==='IDD'?'IDD (In de dag)':val.toUpperCase();
+      }
+      if(val===undefined||val===null||val===''){
+        if(b.showEmpty) lines.push(`${b.label}:`);
+        continue;
+      }
+      lines.push(`${b.label}: ${val}${b.suffix||''}`);
+    }
+  }
+  return lines.join('\n');
+}
+
+// ----- Articles -----
+function addArticleToOffer(article, qty=1){
+  const item = {
+    product:'Artikel', type:article.name, aantal:qty,
+    uwVerkoop: article.price * qty,
+    aankoop: (article.purchasePrice||0) * qty,
+    marge:0, bkfixMarge:0,
+    options: article.description ? [article.description] : [],
+    opmerkingen:'', errors:[], warnings:[], _articleId:article.id,
+  };
+  state.offer.push(item);
+  renderOffer();
+  alert(`"${article.name}" toegevoegd aan offerte.`);
+}
+
+// ----- Custom product tabs -----
+function renderCustomProductTabs(){
+  const tabs = $('tabs');
+  tabs.querySelectorAll('[data-custom-prod]').forEach(t=>t.remove());
+  const beheerTab = tabs.querySelector('[data-prod="beheer"]');
+  ADMIN.products.forEach(p=>{
+    const btn = document.createElement('button');
+    btn.className='tab'; btn.dataset.prod='custom_'+p.id; btn.dataset.customProd=p.id;
+    btn.textContent=(p.icon?p.icon+' ':'')+p.name;
+    btn.addEventListener('click',()=>activateTab('custom_'+p.id));
+    tabs.insertBefore(btn, beheerTab);
+  });
+}
+
+// ----- Render custom product form -----
+function renderCustomProductForm(prod){
+  const container=$('form-container');
+  const s=ADMIN.settings;
+  let html=`<form onsubmit="return false" style="padding:4px 0"><h3>${prod.icon||''} ${prod.name}</h3>`;
+  prod.fields.forEach(f=>{
+    html+=`<div class="field" style="margin-bottom:10px"><label>${f.label}${f.required?' *':''}</label>`;
+    if(f.type==='number') html+=`<input type="number" id="cp_${prod.id}_${f.id}" placeholder="${f.placeholder||''}" oninput="calcCustomProduct('${prod.id}')">`;
+    else if(f.type==='select') html+=`<select id="cp_${prod.id}_${f.id}" onchange="calcCustomProduct('${prod.id}')"><option value="">(kies)</option>${(f.options||[]).map(o=>`<option value="${o}">${o}</option>`).join('')}</select>`;
+    else if(f.type==='textarea') html+=`<textarea id="cp_${prod.id}_${f.id}" rows="2" oninput="calcCustomProduct('${prod.id}')"></textarea>`;
+    else html+=`<input type="text" id="cp_${prod.id}_${f.id}" placeholder="${f.placeholder||''}" oninput="calcCustomProduct('${prod.id}')">`;
+    html+=`</div>`;
+  });
+  html+=`<div class="row">
+    <div class="field"><label>Aantal</label><input type="number" id="cp_${prod.id}_aantal" value="1" min="1" oninput="calcCustomProduct('${prod.id}')"></div>
+    <div class="field"><label>Allround korting %</label><input type="number" id="cp_${prod.id}_marge" value="${prod.marge||s.defaultMarge||50}" oninput="calcCustomProduct('${prod.id}')"></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>BKfix marge %</label><input type="number" id="cp_${prod.id}_bkfix" value="${prod.bkfixMarge||s.defaultBkfix||20}" oninput="calcCustomProduct('${prod.id}')"></div>
+    <div class="field"><label>Opmerkingen</label><input type="text" id="cp_${prod.id}_opm"></div>
+  </div>
+  <div class="btn-group"><button onclick="addCustomProductToOffer('${prod.id}')">+ Toevoegen aan offerte</button></div></form>`;
+  container.innerHTML=html;
+  calcCustomProduct(prod.id);
+}
+
+function calcCustomProduct(prodId){
+  const prod=ADMIN.products.find(p=>p.id===prodId); if(!prod) return;
+  const values={};
+  prod.fields.forEach(f=>{ const el=$(`cp_${prodId}_${f.id}`); if(el) values[f.id]=el.value; });
+  const aantal=parseInt($(`cp_${prodId}_aantal`)?.value)||1;
+  const marge=parseFloat($(`cp_${prodId}_marge`)?.value)/100||0.5;
+  const bkfixMarge=parseFloat($(`cp_${prodId}_bkfix`)?.value)/100||0.2;
+  let basePrice=prod.pricing?.basePrice||0;
+  if(prod.pricing?.type==='per_m2'){
+    const w=parseFloat(values[prod.pricing?.widthField])||0;
+    const h=parseFloat(values[prod.pricing?.heightField])||0;
+    if(w&&h) basePrice=(w/1000)*(h/1000)*(prod.pricing?.pricePerM2||0);
+  } else if(prod.pricing?.type==='per_m'){
+    const w=parseFloat(values[prod.pricing?.widthField])||0;
+    if(w) basePrice=(w/1000)*(prod.pricing?.pricePerM||0);
+  }
+  const productSubtotal=basePrice*aantal;
+  const aankoop=productSubtotal*(1-marge);
+  const verkoop=aankoop/(1-bkfixMarge);
+  const item={product:prod.name,type:prod.name,_customProdId:prodId,aantal,values,
+    basePrice,productSubtotal,aankoop,verkoop,uwVerkoop:verkoop,marge,bkfixMarge,errors:[],warnings:[]};
+  state.currentItem=item; showResult(item);
+}
+
+function addCustomProductToOffer(prodId){
+  const prod=ADMIN.products.find(p=>p.id===prodId); if(!prod) return;
+  if(!state.currentItem||state.currentItem._customProdId!==prodId) return;
+  const item={...state.currentItem};
+  item.options=[];
+  prod.fields.forEach(f=>{ const val=item.values?.[f.id]; if(val) item.options.push(`${f.label}: ${val}${f.suffix||''}`); });
+  item.opmerkingen=$(`cp_${prodId}_opm`)?.value||'';
+  state.offer.push(item); renderOffer();
+}
+
+// ===== BEHEER MAIN =====
+let currentBeheerTab='artikelen';
+let editingProduct=null;
+let tmplProduct=null, tmplBlocks=[];
+
+function renderBeheer(){
+  const container=$('form-container');
+  container.innerHTML=`<div class="beheer-panel">
+    <div class="beheer-nav">
+      <button class="beheer-nav-btn" data-tab="artikelen" onclick="switchBeheerTab('artikelen',this)">📦 Artikelen</button>
+      <button class="beheer-nav-btn" data-tab="producten" onclick="switchBeheerTab('producten',this)">🆕 Producten</button>
+      <button class="beheer-nav-btn" data-tab="templates" onclick="switchBeheerTab('templates',this)">📋 TL templates</button>
+      <button class="beheer-nav-btn" data-tab="instellingen" onclick="switchBeheerTab('instellingen',this)">⚙ Instellingen</button>
+    </div>
+    <div id="beheer-content"></div>
+  </div>`;
+  switchBeheerTab(currentBeheerTab);
+}
+
+function switchBeheerTab(name, btn){
+  currentBeheerTab=name;
+  document.querySelectorAll('.beheer-nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+  const el=$('beheer-content'); if(!el) return;
+  switch(name){
+    case 'artikelen': renderArtikelen(el); break;
+    case 'producten': renderProducten(el); break;
+    case 'templates': renderTemplates(el); break;
+    case 'instellingen': renderInstellingen(el); break;
+  }
+}
+
+// ===== ARTIKELEN =====
+function renderArtikelen(el){
+  const articles=ADMIN.articles;
+  let html=`<div class="beheer-section">
+    <div class="sect-hdr"><span class="sect-title">Artikel bibliotheek</span>
+      <button class="bfull" onclick="showArticleForm()">+ Nieuw artikel</button></div>`;
+  if(!articles.length){
+    html+=`<div style="color:#94a3b8;font-size:13px;padding:20px 0">Nog geen artikelen. Maak een artikel aan om het snel aan een offerte toe te voegen.</div>`;
+  } else {
+    html+=`<table class="admin-table"><tr><th>Naam</th><th>Categorie</th><th>Aankoop</th><th>Verkoop</th><th>Eenheid</th><th></th></tr>`;
+    articles.forEach(a=>{
+      const esc=s=>String(s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+      html+=`<tr>
+        <td><strong>${a.name}</strong>${a.description?`<br><span style="color:#94a3b8;font-size:11px">${a.description}</span>`:''}</td>
+        <td>${a.category||'—'}</td><td>€${fmt(a.purchasePrice||0)}</td>
+        <td><strong>€${fmt(a.price)}</strong></td><td>${a.unit||'stuk'}</td>
+        <td style="white-space:nowrap">
+          <button class="bsec" onclick='addArticleToOffer(${JSON.stringify(a)},1)' style="margin-right:4px">+ Offerte</button>
+          <button class="bsec" onclick="showArticleForm('${a.id}')" style="margin-right:4px">✏</button>
+          <button class="bdang" onclick="deleteArticle('${a.id}')">×</button>
+        </td></tr>`;
+    });
+    html+=`</table>`;
+  }
+  html+=`<div id="article-form-area"></div></div>`;
+  el.innerHTML=html;
+}
+
+function showArticleForm(id){
+  const articles=ADMIN.articles;
+  const a=id?articles.find(x=>x.id===id)||null:{id:genId(),name:'',category:'',description:'',price:0,purchasePrice:0,unit:'stuk'};
+  if(!a) return;
+  $('article-form-area').innerHTML=`
+    <div style="border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin-top:16px;background:#f8fafc">
+      <h4 style="margin-bottom:12px;font-size:14px;font-weight:700">${id?'Artikel bewerken':'Nieuw artikel'}</h4>
+      <div class="row">
+        <div class="field"><label>Naam *</label><input type="text" id="af-name" value="${a.name}" placeholder="bv. Amy io afstandsbediening"></div>
+        <div class="field"><label>Categorie</label><input type="text" id="af-cat" value="${a.category||''}" placeholder="bv. Accessoires"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Verkoopprijs (€) *</label><input type="number" id="af-price" value="${a.price}" step="0.01" min="0"></div>
+        <div class="field"><label>Aankoopprijs (€)</label><input type="number" id="af-cprice" value="${a.purchasePrice||0}" step="0.01" min="0"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Eenheid</label><input type="text" id="af-unit" value="${a.unit||'stuk'}"></div>
+        <div class="field"><label>Beschrijving (TL)</label><input type="text" id="af-desc" value="${a.description||''}" placeholder="optioneel"></div>
+      </div>
+      <div class="btn-group" style="margin-top:12px">
+        <button class="bfull" onclick="saveArticle('${a.id}')">Opslaan</button>
+        <button class="bsec" onclick="$('article-form-area').innerHTML=''">Annuleren</button>
+      </div>
+    </div>`;
+}
+
+function saveArticle(id){
+  const articles=ADMIN.articles;
+  const idx=articles.findIndex(a=>a.id===id);
+  const a={id,name:$('af-name').value.trim(),category:$('af-cat').value.trim(),
+    price:parseFloat($('af-price').value)||0,purchasePrice:parseFloat($('af-cprice').value)||0,
+    unit:$('af-unit').value.trim()||'stuk',description:$('af-desc').value.trim()};
+  if(!a.name){alert('Naam is verplicht');return;}
+  if(idx>=0) articles[idx]=a; else articles.push(a);
+  ADMIN.articles=articles;
+  switchBeheerTab('artikelen');
+}
+function deleteArticle(id){
+  if(!confirm('Artikel verwijderen?')) return;
+  ADMIN.articles=ADMIN.articles.filter(a=>a.id!==id);
+  switchBeheerTab('artikelen');
+}
+
+// ===== PRODUCTEN =====
+function renderProducten(el){
+  const prods=ADMIN.products;
+  let html=`<div class="beheer-section">
+    <div class="sect-hdr"><span class="sect-title">Eigen producten</span>
+      <button class="bfull" onclick="showProductForm()">+ Nieuw product</button></div>`;
+  if(!prods.length){
+    html+=`<div style="color:#94a3b8;font-size:13px;padding:20px 0">Nog geen eigen producten. Eigen producten verschijnen als extra tabblad in de app.</div>`;
+  } else {
+    html+=`<table class="admin-table"><tr><th>Naam</th><th>Berekening</th><th>Velden</th><th></th></tr>`;
+    prods.forEach(p=>{
+      html+=`<tr><td><strong>${p.icon||''} ${p.name}</strong></td>
+        <td>${{flat:'Vaste prijs',per_m2:'Per m²',per_m:'Per meter'}[p.pricing?.type]||'Vaste prijs'}</td>
+        <td>${(p.fields||[]).length} veld(en)</td>
+        <td style="white-space:nowrap">
+          <button class="bsec" onclick="showProductForm('${p.id}')" style="margin-right:4px">✏ Bewerken</button>
+          <button class="bdang" onclick="deleteCustomProduct('${p.id}')">× Verwijderen</button>
+        </td></tr>`;
+    });
+    html+=`</table>`;
+  }
+  html+=`<div id="product-form-area"></div></div>`;
+  el.innerHTML=html;
+}
+
+function showProductForm(id){
+  const prods=ADMIN.products;
+  const found=id?prods.find(x=>x.id===id):null;
+  editingProduct=found?JSON.parse(JSON.stringify(found)):{id:genId(),name:'',icon:'📦',fields:[],pricing:{type:'flat',basePrice:0},marge:50,bkfixMarge:20};
+  renderProductFormUI();
+}
+
+function renderProductFormUI(){
+  const p=editingProduct; if(!p) return;
+  const area=$('product-form-area'); if(!area) return;
+  let fieldsHtml='';
+  (p.fields||[]).forEach(f=>{
+    fieldsHtml+=`<div class="field-def-row" id="fdr_${f.id}">
+      <input type="text" value="${f.label}" placeholder="Label" onchange="updateCustomField('${f.id}','label',this.value)">
+      <select onchange="updateCustomField('${f.id}','type',this.value)">${['text','number','select','textarea'].map(t=>`<option value="${t}"${f.type===t?' selected':''}>${t}</option>`).join('')}</select>
+      <input type="text" value="${f.suffix||''}" placeholder="suffix bv. mm" onchange="updateCustomField('${f.id}','suffix',this.value)">
+      <select onchange="updateCustomField('${f.id}','required',this.value==='ja')">
+        <option value="nee"${!f.required?' selected':''}>optioneel</option>
+        <option value="ja"${f.required?' selected':''}>verplicht</option>
+      </select>
+      <button class="bdang" onclick="removeCustomField('${f.id}')">×</button>
+    </div>
+    ${f.type==='select'?`<div style="margin-bottom:8px;padding-left:4px"><small style="color:#94a3b8">Opties (komma-gescheiden):</small>
+      <input type="text" style="width:100%;margin-top:2px" value="${(f.options||[]).join(',')}" placeholder="Optie A,Optie B" onchange="updateCustomField('${f.id}','options',this.value.split(',').map(s=>s.trim()).filter(Boolean))"></div>`:''}`;
+  });
+  const pr=p.pricing||{};
+  area.innerHTML=`<div style="border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin-top:16px;background:#f8fafc">
+    <h4 style="margin-bottom:16px;font-size:14px;font-weight:700">${p.id&&ADMIN.products.find(x=>x.id===p.id)?'Product bewerken':'Nieuw product'}</h4>
+    <div class="row">
+      <div class="field"><label>Naam *</label><input type="text" id="pf-name" value="${p.name}" placeholder="bv. Garagepoort"></div>
+      <div class="field"><label>Icoon (emoji)</label><input type="text" id="pf-icon" value="${p.icon||''}" placeholder="🚗" style="max-width:80px"></div>
+    </div>
+    <h4 style="margin:14px 0 6px;font-size:13px;font-weight:700">Velden <span style="color:#94a3b8;font-size:11px">— Label | Type | Suffix | Verplicht | ×</span></h4>
+    <div id="fields-list">${fieldsHtml||'<div style="color:#94a3b8;font-size:12px;padding:6px 0">Nog geen velden.</div>'}</div>
+    <button class="bsec" onclick="addCustomField()" style="margin-top:6px">+ Veld toevoegen</button>
+    <h4 style="margin:16px 0 8px;font-size:13px;font-weight:700">Berekening</h4>
+    <div class="pricing-grid">
+      <div class="field"><label>Type</label>
+        <select id="pf-ptype" onchange="updatePricingType(this.value)">
+          <option value="flat"${pr.type==='flat'?' selected':''}>Vaste prijs</option>
+          <option value="per_m2"${pr.type==='per_m2'?' selected':''}>Per m²</option>
+          <option value="per_m"${pr.type==='per_m'?' selected':''}>Per meter</option>
+        </select></div>
+      <div class="field"><label>Basisprijs (€)</label><input type="number" id="pf-price" value="${pr.basePrice||0}" step="0.01" onchange="editingProduct.pricing.basePrice=parseFloat(this.value)||0"></div>
+      ${pr.type!=='flat'?`
+      <div class="field"><label>Breedte veld-id</label><input type="text" id="pf-wf" value="${pr.widthField||''}" placeholder="bv. breedte" onchange="editingProduct.pricing.widthField=this.value"></div>
+      <div class="field"><label>Hoogte veld-id</label><input type="text" id="pf-hf" value="${pr.heightField||''}" placeholder="bv. hoogte" onchange="editingProduct.pricing.heightField=this.value"></div>
+      <div class="field"><label>Prijs per ${pr.type==='per_m2'?'m²':'m'} (€)</label><input type="number" id="pf-pm" value="${pr.pricePerM2||pr.pricePerM||0}" step="0.01" onchange="editingProduct.pricing.pricePerM2=editingProduct.pricing.pricePerM=parseFloat(this.value)||0"></div>`:''}
+    </div>
+    <div class="row" style="margin-top:6px;max-width:400px">
+      <div class="field"><label>Allround korting %</label><input type="number" id="pf-marge" value="${p.marge||50}" onchange="editingProduct.marge=parseFloat(this.value)||50"></div>
+      <div class="field"><label>BKfix marge %</label><input type="number" id="pf-bkfix" value="${p.bkfixMarge||20}" onchange="editingProduct.bkfixMarge=parseFloat(this.value)||20"></div>
+    </div>
+    <div class="btn-group" style="margin-top:16px">
+      <button class="bfull" onclick="saveCustomProduct()">💾 Opslaan & activeren</button>
+      <button class="bsec" onclick="$('product-form-area').innerHTML='';editingProduct=null">Annuleren</button>
+    </div>
+  </div>`;
+}
+
+function updatePricingType(type){
+  if(!editingProduct) return;
+  editingProduct.pricing=editingProduct.pricing||{};
+  editingProduct.pricing.type=type;
+  renderProductFormUI();
+}
+function addCustomField(){
+  if(!editingProduct) return;
+  editingProduct.fields=editingProduct.fields||[];
+  editingProduct.fields.push({id:genId(),label:'Nieuw veld',type:'text',required:false});
+  renderProductFormUI();
+}
+function updateCustomField(id,key,val){
+  if(!editingProduct) return;
+  const f=editingProduct.fields.find(x=>x.id===id);
+  if(f) f[key]=val;
+}
+function removeCustomField(id){
+  if(!editingProduct) return;
+  editingProduct.fields=editingProduct.fields.filter(f=>f.id!==id);
+  renderProductFormUI();
+}
+function saveCustomProduct(){
+  if(!editingProduct) return;
+  editingProduct.name=$('pf-name')?.value.trim()||editingProduct.name;
+  editingProduct.icon=$('pf-icon')?.value.trim()||'';
+  if(!editingProduct.name){alert('Naam is verplicht');return;}
+  const prods=ADMIN.products;
+  const idx=prods.findIndex(p=>p.id===editingProduct.id);
+  if(idx>=0) prods[idx]=editingProduct; else prods.push(editingProduct);
+  ADMIN.products=prods;
+  editingProduct=null;
+  renderCustomProductTabs();
+  switchBeheerTab('producten');
+}
+function deleteCustomProduct(id){
+  if(!confirm('Product verwijderen?')) return;
+  ADMIN.products=ADMIN.products.filter(p=>p.id!==id);
+  renderCustomProductTabs();
+  switchBeheerTab('producten');
+}
+
+// ===== TL TEMPLATES =====
+function renderTemplates(el){
+  const all=['Rolluik','Screen','Knikarmscherm','Veranda',...ADMIN.products.map(p=>p.name)];
+  const tmpl=ADMIN.tlTemplates;
+  let html=`<div class="beheer-section">
+    <div class="sect-hdr"><span class="sect-title">Teamleader beschrijving templates</span></div>
+    <div class="field" style="margin-bottom:16px;max-width:300px">
+      <label>Product</label>
+      <select id="tmpl-sel" onchange="loadTemplateEditor(this.value)">
+        <option value="">— kies product —</option>
+        ${all.map(p=>`<option value="${p}"${tmplProduct===p?' selected':''}>${p}${tmpl[p]?' ✓':''}</option>`).join('')}
+      </select>
+    </div>
+    <div id="tmpl-editor"></div>
+  </div>`;
+  el.innerHTML=html;
+  if(tmplProduct) loadTemplateEditor(tmplProduct,true);
+}
+
+function loadTemplateEditor(productName,keepBlocks=false){
+  tmplProduct=productName;
+  if(!keepBlocks){
+    const saved=ADMIN.tlTemplates[productName];
+    tmplBlocks=saved?JSON.parse(JSON.stringify(saved)):[];
+  }
+  renderTemplateEditor();
+}
+
+function renderTemplateEditor(){
+  const el=$('tmpl-editor'); if(!el||!tmplProduct) return;
+  const customProd=ADMIN.products.find(p=>p.name===tmplProduct);
+  const fields=PRODUCT_FIELDS[tmplProduct]||(customProd?.fields?.map(f=>({id:f.id,label:f.label,suffix:f.suffix||''})))||[];
+  let blocksHtml=!tmplBlocks.length?`<div style="color:#94a3b8;font-size:12px;padding:20px;text-align:center">Leeg — klik een veld aan om toe te voegen.</div>`:'';
+  tmplBlocks.forEach((b,i)=>{
+    const up=i>0?`<button class="bsec" onclick="moveTmplBlock(${i},-1)" style="padding:2px 5px;font-size:10px">↑</button>`:`<span style="width:26px;display:inline-block"></span>`;
+    const dn=i<tmplBlocks.length-1?`<button class="bsec" onclick="moveTmplBlock(${i},1)" style="padding:2px 5px;font-size:10px">↓</button>`:`<span style="width:26px;display:inline-block"></span>`;
+    const del=`<button class="bdang" onclick="removeTmplBlock(${i})" style="padding:2px 6px;font-size:11px">×</button>`;
+    if(b.type==='separator'){
+      blocksHtml+=`<div class="tmpl-row" style="background:#f8fafc">${up}${dn}<span class="tmpl-type">━━</span><span style="color:#94a3b8;font-size:11px;flex:1">lege lijn</span>${del}</div>`;
+    } else if(b.type==='static'){
+      blocksHtml+=`<div class="tmpl-row">${up}${dn}<span class="tmpl-type" style="color:#059669">TEKST</span>
+        <input type="text" value="${(b.text||'').replace(/"/g,'&quot;')}" onchange="tmplBlocks[${i}].text=this.value;renderTmplPreview()" placeholder="Vaste tekst..." style="flex:1;padding:3px 8px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px">
+        ${del}</div>`;
+    } else if(b.type==='field'){
+      blocksHtml+=`<div class="tmpl-row">${up}${dn}<span class="tmpl-type" style="color:#1d4ed8">VELD</span>
+        <span style="flex:1;font-size:12px"><strong>${b.label}</strong> <span style="color:#94a3b8;font-size:10px">[${b.fieldId}]</span></span>
+        <label style="font-size:11px;color:#64748b;display:flex;align-items:center;gap:3px;white-space:nowrap">
+          <input type="checkbox" ${b.showEmpty?'checked':''} onchange="tmplBlocks[${i}].showEmpty=this.checked;renderTmplPreview()"> altijd tonen
+        </label>
+        <input type="text" value="${b.suffix||''}" placeholder="suffix" style="width:55px;padding:3px 5px;border:1px solid #e2e8f0;border-radius:4px;font-size:11px;margin-left:4px" onchange="tmplBlocks[${i}].suffix=this.value;renderTmplPreview()">
+        ${del}</div>`;
+    }
+  });
+  el.innerHTML=`<div class="tmpl-builder">
+    <div class="tmpl-fields-panel">
+      <h4>Beschikbare velden</h4>
+      ${fields.map(f=>`<button class="chip chip-blue" style="margin-bottom:4px;display:block;width:100%;text-align:left;justify-content:flex-start" onclick="addTmplField('${f.id}','${f.label}','${f.suffix||''}')">${f.label}</button>`).join('')}
+      <div style="margin-top:10px;border-top:1px solid #e2e8f0;padding-top:10px">
+        <h4>Toevoegen</h4>
+        <button class="chip chip-green" onclick="addTmplStatic()" style="display:block;width:100%;margin-bottom:4px;justify-content:flex-start">+ Vaste tekst</button>
+        <button class="chip chip-gray" onclick="addTmplSeparator()" style="display:block;width:100%;justify-content:flex-start">+ Lege lijn</button>
+      </div>
+    </div>
+    <div>
+      <div class="tmpl-area">${blocksHtml}</div>
+      <div class="tmpl-preview" id="tmpl-preview"></div>
+      <div class="btn-group" style="margin-top:12px">
+        <button class="bfull" onclick="saveTlTemplate()">💾 Template opslaan</button>
+        <button class="bsec" onclick="resetTlTemplate()">↺ Reset naar standaard</button>
+      </div>
+    </div>
+  </div>`;
+  renderTmplPreview();
+}
+
+function renderTmplPreview(){
+  const el=$('tmpl-preview'); if(!el) return;
+  const sample={breedte:1600,hoogte:1900,plaatsing:'odd',type:'Ecoroll_L',bestelmaat:'1710×2065',
+    geleider:'HTF 53x22mm',kasttype:'',kleurOmkasting:'RAL 9016 wit',motor:'RS100 io',
+    lamel:'standaard',kleur:'Wit RAL 9016',kleurCustom:'',bed1:'',bed2:'',opmerkingen:'',uitval:3000};
+  el.textContent=buildTlDescriptionFromTemplate(tmplBlocks,sample)||'(leeg)';
+}
+function addTmplField(fieldId,label,suffix){ tmplBlocks.push({id:genId(),type:'field',fieldId,label,suffix,showEmpty:false}); renderTemplateEditor(); }
+function addTmplStatic(){ tmplBlocks.push({id:genId(),type:'static',text:''}); renderTemplateEditor(); }
+function addTmplSeparator(){ tmplBlocks.push({id:genId(),type:'separator'}); renderTemplateEditor(); }
+function moveTmplBlock(i,dir){ const j=i+dir; if(j<0||j>=tmplBlocks.length) return; [tmplBlocks[i],tmplBlocks[j]]=[tmplBlocks[j],tmplBlocks[i]]; renderTemplateEditor(); }
+function removeTmplBlock(i){ tmplBlocks.splice(i,1); renderTemplateEditor(); }
+function saveTlTemplate(){
+  const t=ADMIN.tlTemplates; t[tmplProduct]=JSON.parse(JSON.stringify(tmplBlocks)); ADMIN.tlTemplates=t;
+  alert(`Template voor "${tmplProduct}" opgeslagen!`);
+  renderTemplates($('beheer-content'));
+}
+function resetTlTemplate(){
+  if(!confirm(`Standaard template herstellen voor "${tmplProduct}"?`)) return;
+  const t=ADMIN.tlTemplates; delete t[tmplProduct]; ADMIN.tlTemplates=t;
+  tmplBlocks=[]; renderTemplates($('beheer-content'));
+}
+
+// ===== INSTELLINGEN =====
+function renderInstellingen(el){
+  const s=ADMIN.settings;
+  const motors=DATA.opties?.rolluik_extras?.motoren||{};
+  const gels=DATA.opties?.rolluik_extras?.geleiders||{};
+  const beds=DATA.opties?.algemene?.bediening||{};
+  let html=`<div class="beheer-section">
+    <div class="sect-hdr"><span class="sect-title">Instellingen & prijzen</span></div>
+    <h4 style="font-size:13px;font-weight:700;margin-bottom:10px">Standaard marges</h4>
+    <div class="row" style="max-width:400px">
+      <div class="field"><label>Allround korting % (standaard)</label><input type="number" id="set-marge" value="${s.defaultMarge||50}" min="0" max="100"></div>
+      <div class="field"><label>BKfix marge % (standaard)</label><input type="number" id="set-bkfix" value="${s.defaultBkfix||20}" min="0" max="100"></div>
+    </div>
+    <h4 style="font-size:13px;font-weight:700;margin:16px 0 10px">Motorprijzen rolluik (€)</h4>
+    <table class="admin-table" style="max-width:500px"><tr><th>Motor</th><th>Prijs</th></tr>
+      ${Object.entries(motors).map(([k,v])=>`<tr><td>${k}</td><td><input type="number" id="mp_${k.replace(/\W/g,'_')}" value="${v}" step="0.01" style="width:100px"></td></tr>`).join('')}
+    </table>
+    <h4 style="font-size:13px;font-weight:700;margin:16px 0 10px">Geleiderprijzen rolluik (€/m)</h4>
+    <table class="admin-table" style="max-width:500px"><tr><th>Geleider</th><th>Prijs/m</th></tr>
+      ${Object.entries(gels).map(([k,v])=>`<tr><td>${k}</td><td><input type="number" id="gp_${k.replace(/\W/g,'_')}" value="${v}" step="0.01" style="width:100px"></td></tr>`).join('')}
+    </table>
+    <h4 style="font-size:13px;font-weight:700;margin:16px 0 10px">Bedieningsprijzen (€)</h4>
+    <table class="admin-table" style="max-width:500px"><tr><th>Bediening</th><th>Prijs</th></tr>
+      ${Object.entries(beds).map(([k,v])=>`<tr><td>${k}</td><td><input type="number" id="bp_${k.replace(/\W/g,'_')}" value="${v}" step="0.01" style="width:100px"></td></tr>`).join('')}
+    </table>
+    <div class="btn-group" style="margin-top:16px">
+      <button class="bfull" onclick="saveInstellingen()">💾 Opslaan</button>
+    </div>
+    <hr style="margin:20px 0;border:none;border-top:1px solid #e2e8f0">
+    <h4 style="font-size:13px;font-weight:700;margin-bottom:10px">Configuratie backup</h4>
+    <div class="btn-group">
+      <button class="bsec" onclick="exportAdminConfig()">⬇ Exporteer (JSON)</button>
+      <button class="bsec" onclick="$('import-cfg').click()">⬆ Importeer</button>
+      <input type="file" id="import-cfg" accept=".json" style="display:none" onchange="importAdminConfig(this)">
+    </div>
+  </div>`;
+  el.innerHTML=html;
+}
+
+function saveInstellingen(){
+  const s=ADMIN.settings;
+  s.defaultMarge=parseFloat($('set-marge')?.value)||50;
+  s.defaultBkfix=parseFloat($('set-bkfix')?.value)||20;
+  ADMIN.settings=s;
+  const motors=DATA.opties?.rolluik_extras?.motoren||{};
+  Object.keys(motors).forEach(k=>{const el=$('mp_'+k.replace(/\W/g,'_'));if(el) motors[k]=parseFloat(el.value)||motors[k];});
+  const gels=DATA.opties?.rolluik_extras?.geleiders||{};
+  Object.keys(gels).forEach(k=>{const el=$('gp_'+k.replace(/\W/g,'_'));if(el) gels[k]=parseFloat(el.value)||gels[k];});
+  const beds=DATA.opties?.algemene?.bediening||{};
+  Object.keys(beds).forEach(k=>{const el=$('bp_'+k.replace(/\W/g,'_'));if(el) beds[k]=parseFloat(el.value)||beds[k];});
+  alert('Instellingen opgeslagen!');
+}
+
+function exportAdminConfig(){
+  const cfg={articles:ADMIN.articles,products:ADMIN.products,tlTemplates:ADMIN.tlTemplates,settings:ADMIN.settings,exported:new Date().toISOString()};
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(cfg,null,2)],{type:'application/json'}));
+  a.download='bkfix-config-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+}
+function importAdminConfig(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const cfg=JSON.parse(e.target.result);
+      if(cfg.articles) ADMIN.articles=cfg.articles;
+      if(cfg.products) ADMIN.products=cfg.products;
+      if(cfg.tlTemplates) ADMIN.tlTemplates=cfg.tlTemplates;
+      if(cfg.settings) ADMIN.settings=cfg.settings;
+      renderCustomProductTabs();
+      if(state.currentProduct==='beheer') renderBeheer();
+      alert('Configuratie geïmporteerd!');
+    }catch(e){alert('Import mislukt: '+e.message);}
+  };
+  reader.readAsText(file);
+}
 
 // ======= Service Worker (PWA) =======
 if ('serviceWorker' in navigator) {
