@@ -63,6 +63,7 @@ details{margin-top:12px}
 details summary{cursor:pointer;padding:8px;background:#f1f5f9;border-radius:6px;font-size:13px;font-weight:500;color:#475569}
 details[open] summary{margin-bottom:8px}
 .hidden{display:none!important}
+[data-vis-grp].vis-hidden{display:none!important}
 @media(max-width:1100px){.layout{grid-template-columns:1fr}.summary{position:static}}
 .kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
 .kpi-card{background:#f8fafc;padding:12px;border-radius:6px;border-left:3px solid #2c3e50}
@@ -387,42 +388,48 @@ function renderRolluik(){
   </div>
   <div id="r-max-info"></div>
 
+  <div data-vis-grp="geleider_kast">
   <h3>Technische opties</h3>
   <div class="row">
     <div class="field"><label>Type geleider</label><select id="r-geleider"></select></div>
     <div class="field"><label>Type kast</label><select id="r-kasttype"></select></div>
   </div>
-  <div class="row">
+  </div>
+  <div data-vis-grp="kleurOmkasting" class="row">
     <div class="field"><label>Kleur omkasting</label><input type="text" id="r-kleur-omkasting" placeholder="bv. RAL 9016 wit"></div>
     <div class="field"></div>
   </div>
+  <div data-vis-grp="motor">
   <div class="row">
     <div class="field"><label>Motor</label><select id="r-motor"></select></div>
     <div class="field"><label>Afwijkende motorkabel</label><select id="r-mkabel"></select></div>
   </div>
+  </div>
+  <div data-vis-grp="lamel">
   <div class="row">
     <div class="field"><label>Soort lamel</label><select id="r-lamel"><option value="standaard">Standaard</option><option value="hardschuim">Hardschuim</option></select></div>
     <div class="field"><label>Kleur lamel</label><select id="r-kleur"></select></div>
   </div>
-  <div class="row">
+  </div>
+  <div data-vis-grp="kleurCustom" class="row">
     <div class="field"><label>Andere kleur</label><input type="text" id="r-kleur-custom" placeholder="Vrij invullen indien nodig"></div>
     <div class="field"><label>&nbsp;</label><div class="info-box">Kies uit de lijst of vul zelf een kleur in.</div></div>
   </div>
-  <div class="row">
+  <div data-vis-grp="koppelen_bereik" class="row">
     <div class="field"><label>Koppelen</label><select id="r-koppel"></select></div>
     <div class="field"><label>Bereikbaarheid</label><select id="r-bereik"></select></div>
   </div>
-  <div class="row">
+  <div data-vis-grp="bediening" class="row">
     <div class="field"><label>Bediening 1</label><select id="r-bed1"></select></div>
     <div class="field"><label>Bediening 2</label><select id="r-bed2"></select></div>
   </div>
-  <div class="row">
+  <div data-vis-grp="korting_marge" class="row">
     <div class="field"><label>Eenmalige korting (€)</label><input type="number" id="r-korting" value="0" step="0.01"></div>
     <div class="field"><label>Allround korting %</label><input type="number" id="r-marge" value="50" step="1"></div>
     <div class="field"><label>BKfix marge %</label><input type="number" id="r-bkfix-marge" value="20" step="1"></div>
   </div>
-  <div class="field"><label>Opmerkingen</label><input type="text" id="r-opm" placeholder="optioneel"></div>
-  ${renderCustomOptionsSection('r')}
+  <div data-vis-grp="opmerkingen" class="field"><label>Opmerkingen</label><input type="text" id="r-opm" placeholder="optioneel"></div>
+  <div data-vis-grp="vrijeOpties">${renderCustomOptionsSection('r')}</div>
 
   <div class="btn-group">
     <button onclick="addRolluikToOffer()">+ Toevoegen aan offerte</button>
@@ -446,20 +453,21 @@ function renderRolluik(){
   ['r-type','r-aantal','r-breedte','r-hoogte','r-plaatsing','r-geleider','r-kasttype','r-kleur-omkasting','r-motor','r-mkabel','r-lamel','r-kleur','r-kleur-custom','r-koppel','r-bereik','r-bed1','r-bed2','r-korting','r-marge','r-bkfix-marge'].forEach(id=>{
     const el=$(id);['change','input'].forEach(ev=>el.addEventListener(ev,calcRolluik));
   });
+  applyFieldVis('rolluik');
   calcRolluik();
 }
 
 function getKasthoogte(type, hoogte) {
+  const c = CONFIG.data;
   if (type === 'Ecoroll_L' || type === 'Rollex_L') {
-    if (hoogte <= 1340) return 150;
-    if (hoogte <= 1900) return 165;
-    if (hoogte <= 2360) return 180;
-    return 205;
+    if (hoogte <= c.rolluik_kasthoogte_L_break1) return c.rolluik_kasthoogte_L_t1;
+    if (hoogte <= c.rolluik_kasthoogte_L_break2) return c.rolluik_kasthoogte_L_t2;
+    if (hoogte <= c.rolluik_kasthoogte_L_break3) return c.rolluik_kasthoogte_L_t3;
+    return c.rolluik_kasthoogte_L_t4;
   }
-  // Ecoroll_M, Rollex_M
-  if (hoogte <= 1800) return 150;
-  if (hoogte <= 2350) return 165;
-  return 180;
+  if (hoogte <= c.rolluik_kasthoogte_M_break1) return c.rolluik_kasthoogte_M_t1;
+  if (hoogte <= c.rolluik_kasthoogte_M_break2) return c.rolluik_kasthoogte_M_t2;
+  return c.rolluik_kasthoogte_M_t3;
 }
 
 function calcRolluik(){
@@ -477,13 +485,7 @@ function calcRolluik(){
   const typeData = DATA.rolluik.prices[effectiveType];
   // Max dimensions from opties list F3:H (built-in in our data - use plaatsing_extra for max? Actually max in Excel is via 2-rolluik lijst F-H)
   // We hardcode max dims for each type
-  const ROLLUIK_MAX = {
-    'Ecoroll_L':{b:3500,h:2800},
-    'Rollex_L':{b:3500,h:2800},
-    'Ecoroll_M':{b:3200,h:2800},
-    'Rollex_M':{b:3200,h:2800},
-    'Ecoroll_L_Solar':{b:3500,h:2800}
-  };
+  const ROLLUIK_MAX = {...CONFIG.data.rolluik_max, 'Ecoroll_L_Solar':{b:3500,h:2800}};
   const maxDim = ROLLUIK_MAX[effectiveType];
   if(isSolar && type !== 'Ecoroll_L') errors.push('Solar motor is enkel beschikbaar voor EcoRoll-L');
 
@@ -495,16 +497,16 @@ function calcRolluik(){
     if(breedte > maxDim.b) errors.push(`Breedte ${breedte}mm overschrijdt maximum voor ${type} (${maxDim.b}mm)`);
     if(hoogte > maxDim.h) errors.push(`Hoogte ${hoogte}mm overschrijdt maximum voor ${type} (${maxDim.h}mm)`);
   }
-  // Bestelmaat — minimum 1000mm voor breedte en hoogte (prijstabel start op 1m)
-  const effectiefB = Math.max(1000, breedte);
-  const effectiefH = Math.max(1000, hoogte);
-  if(breedte < 1000) warnings.push(`Breedte ${breedte}mm < 1m: prijs van 1000mm gebruikt`);
-  if(hoogte < 1000) warnings.push(`Hoogte ${hoogte}mm < 1m: prijs van 1000mm gebruikt`);
+  const c = CONFIG.data;
+  const effectiefB = Math.max(c.rolluik_min_dim, breedte);
+  const effectiefH = Math.max(c.rolluik_min_dim, hoogte);
+  if(breedte < c.rolluik_min_dim) warnings.push(`Breedte ${breedte}mm < 1m: prijs van ${c.rolluik_min_dim}mm gebruikt`);
+  if(hoogte < c.rolluik_min_dim) warnings.push(`Hoogte ${hoogte}mm < 1m: prijs van ${c.rolluik_min_dim}mm gebruikt`);
 
-  const kasthoogte = isSolar ? 180 : getKasthoogte(type, effectiefH);
-  const bestB = plaatsing==='odd' ? effectiefB+110 : effectiefB-6;
-  const bestH = plaatsing==='odd' ? effectiefH+kasthoogte : effectiefH-4;
-  const bCeil = Math.max(1000, ceil(bestB,100));
+  const kasthoogte = isSolar ? c.rolluik_solar_kasthoogte : getKasthoogte(type, effectiefH);
+  const bestB = plaatsing==='odd' ? effectiefB+c.rolluik_odd_breedte_add : effectiefB+c.rolluik_idd_breedte_adj;
+  const bestH = plaatsing==='odd' ? effectiefH+kasthoogte : effectiefH+c.rolluik_idd_hoogte_adj;
+  const bCeil = Math.max(c.rolluik_min_dim, ceil(bestB,100));
   const hCeil = Math.max(1000, ceil(bestH,100));
 
   // Lookup price
@@ -555,7 +557,7 @@ function calcRolluik(){
   if(lamel === 'hardschuim'){
     const kleurData = kleur ? DATA.opties.rolluik_extras.lamel_colors[kleur] : null;
     if(kleurData && kleurData.hardschuim === 'ja'){
-      lamelPrice = (bestB * bestH / 1000000) * 119;
+      lamelPrice = (bestB * bestH / 1000000) * c.rolluik_hardschuim_per_m2;
     } else if(kleurData && kleurData.hardschuim === 'nee'){
       errors.push(`Hardschuim niet mogelijk met kleur "${kleur}"`);
     } else if(kleurCustom){
@@ -646,30 +648,32 @@ function renderScreen(){
     <div class="field"><label>Plaatsing *</label><select id="s-plaatsing"><option value="idd">In de dag (IDD)</option><option value="odd">Op de dag (ODD)</option></select></div>
   </div>
 
+  <div data-vis-grp="geleider_onderlat">
   <h3>Technische opties</h3>
   <div class="row">
     <div class="field"><label>Type geleider</label><select id="s-geleider"></select></div>
     <div class="field"><label>Hoge verzwaarde onderlat</label><select id="s-onderlat"><option value="nee">Nee</option><option value="ja">Ja (+15€)</option></select></div>
   </div>
-  <div class="row">
+  </div>
+  <div data-vis-grp="motor_bereik" class="row">
     <div class="field"><label>Motor</label><select id="s-motor"></select></div>
     <div class="field"><label>Bereikbaarheid</label><select id="s-bereik"></select></div>
   </div>
-  <div class="row">
+  <div data-vis-grp="doek_koppelen" class="row">
     <div class="field"><label>Doek groep</label><select id="s-doek"></select></div>
     <div class="field"><label>Koppelen</label><select id="s-koppel"></select></div>
   </div>
-  <div class="row">
+  <div data-vis-grp="bediening" class="row">
     <div class="field"><label>Bediening 1</label><select id="s-bed1"></select></div>
     <div class="field"><label>Bediening 2</label><select id="s-bed2"></select></div>
   </div>
-  <div class="row">
+  <div data-vis-grp="korting_marge" class="row">
     <div class="field"><label>Eenmalige korting (€)</label><input type="number" id="s-korting" value="0" step="0.01"></div>
     <div class="field"><label>Allround korting %</label><input type="number" id="s-marge" value="50" step="1"></div>
     <div class="field"><label>BKfix marge %</label><input type="number" id="s-bkfix-marge" value="20" step="1"></div>
   </div>
-  <div class="field"><label>Opmerkingen</label><input type="text" id="s-opm" placeholder="optioneel"></div>
-  ${renderCustomOptionsSection('s')}
+  <div data-vis-grp="opmerkingen" class="field"><label>Opmerkingen</label><input type="text" id="s-opm" placeholder="optioneel"></div>
+  <div data-vis-grp="vrijeOpties">${renderCustomOptionsSection('s')}</div>
 
   <div class="btn-group"><button onclick="addScreenToOffer()">+ Toevoegen aan offerte</button></div>
   `;
@@ -686,6 +690,7 @@ function renderScreen(){
   ['s-type','s-aantal','s-breedte','s-hoogte','s-plaatsing','s-geleider','s-onderlat','s-motor','s-bereik','s-doek','s-koppel','s-bed1','s-bed2','s-korting','s-marge','s-bkfix-marge'].forEach(id=>{
     const el=$(id);['change','input'].forEach(ev=>el.addEventListener(ev,calcScreen));
   });
+  applyFieldVis('screen');
   calcScreen();
 }
 
@@ -713,15 +718,16 @@ function calcScreen(){
   // Bestelmaat
   // ODD: voeg toe volgens plaatsing_types[type] (hoogte_add_odd, breedte_add_odd)
   // IDD: -4
-  const effectiefB = Math.max(1000, breedte);
-  const effectiefH = Math.max(1000, hoogte);
-  if(breedte < 1000) warnings.push(`Breedte ${breedte}mm < 1m: prijs van 1000mm gebruikt`);
-  if(hoogte < 1000) warnings.push(`Hoogte ${hoogte}mm < 1m: prijs van 1000mm gebruikt`);
+  const cs = CONFIG.data;
+  const effectiefB = Math.max(cs.screen_min_dim, breedte);
+  const effectiefH = Math.max(cs.screen_min_dim, hoogte);
+  if(breedte < cs.screen_min_dim) warnings.push(`Breedte ${breedte}mm < 1m: prijs van ${cs.screen_min_dim}mm gebruikt`);
+  if(hoogte < cs.screen_min_dim) warnings.push(`Hoogte ${hoogte}mm < 1m: prijs van ${cs.screen_min_dim}mm gebruikt`);
   const sizeAdd = DATA.opties.screen_extras.plaatsing_types[type] || {hoogte_add_odd:100,breedte_add_odd:80};
-  const bestB = plaatsing==='odd' ? effectiefB+sizeAdd.breedte_add_odd : effectiefB-4;
-  const bestH = plaatsing==='odd' ? effectiefH+sizeAdd.hoogte_add_odd : effectiefH-4;
-  const bCeil = Math.max(1000, ceil(bestB,100));
-  const hCeil = Math.max(1000, ceil(bestH,100));
+  const bestB = plaatsing==='odd' ? effectiefB+sizeAdd.breedte_add_odd : effectiefB+cs.screen_idd_adj;
+  const bestH = plaatsing==='odd' ? effectiefH+sizeAdd.hoogte_add_odd : effectiefH+cs.screen_idd_adj;
+  const bCeil = Math.max(cs.screen_min_dim, ceil(bestB,100));
+  const hCeil = Math.max(cs.screen_min_dim, ceil(bestH,100));
 
   const prefix = DATA.screens.prefixes[type];
   const heightKey = `${prefix}_H_${hCeil}`;
@@ -769,7 +775,7 @@ function calcScreen(){
 
   // Plaatsing (screens: 100 per aantal + 100 voor nova types, 50 voor solar)
   const novaExtra = {'Nova 83':100,'Nova 103':100,'Nova 123':100,'Nova solar 103':50}[type] || 100;
-  const plaatsingPerStuk = 100 + novaExtra;
+  const plaatsingPerStuk = cs.screen_plaatsing_base + novaExtra;
   const plaatsingTotaal = plaatsingPerStuk * aantal + bereikPrice;
 
   const productSubtotal = (basePrice + gelPrice + onderlatPrice + motorPrice + doekPrice + koppelPrice) * aantal + manualOptionsPrice;
@@ -833,30 +839,32 @@ function renderKnikarm(){
     <div class="field"><label>Uitval (mm) *</label><input type="number" id="k-uitval" placeholder="bv. 3000"></div>
   </div>
 
+  <div data-vis-grp="verdieping_bereik">
   <h3>Opties</h3>
   <div class="row">
     <div class="field"><label>Verdieping</label><select id="k-verdieping"></select></div>
     <div class="field"><label>Bereikbaarheid</label><select id="k-bereik"></select></div>
   </div>
-  <div class="row">
+  </div>
+  <div data-vis-grp="gevel_muur" class="row">
     <div class="field"><label>Type gevel</label><select id="k-gevel"></select></div>
     <div class="field"><label>Muursteun</label><select id="k-muur"></select></div>
   </div>
-  <div class="row">
+  <div data-vis-grp="doek_led" class="row">
     <div class="field"><label>Doek</label><select id="k-doek"></select></div>
     <div class="field"><label>LED verlichting</label><select id="k-led"></select></div>
   </div>
-  <div class="row">
+  <div data-vis-grp="bediening" class="row">
     <div class="field"><label>Bediening 1</label><select id="k-bed1"></select></div>
     <div class="field"><label>Bediening 2</label><select id="k-bed2"></select></div>
   </div>
-  <div class="row">
+  <div data-vis-grp="korting_marge" class="row">
     <div class="field"><label>Eenmalige korting (€)</label><input type="number" id="k-korting" value="0" step="0.01"></div>
     <div class="field"><label>Allround korting %</label><input type="number" id="k-marge" value="50" step="1"></div>
     <div class="field"><label>BKfix marge %</label><input type="number" id="k-bkfix-marge" value="20" step="1"></div>
   </div>
-  <div class="field"><label>Opmerkingen</label><input type="text" id="k-opm"></div>
-  ${renderCustomOptionsSection('k')}
+  <div data-vis-grp="opmerkingen" class="field"><label>Opmerkingen</label><input type="text" id="k-opm"></div>
+  <div data-vis-grp="vrijeOpties">${renderCustomOptionsSection('k')}</div>
 
   <div class="btn-group"><button onclick="addKnikarmToOffer()">+ Toevoegen aan offerte</button></div>
   `;
@@ -873,6 +881,7 @@ function renderKnikarm(){
   ['k-type','k-aantal','k-breedte','k-uitval','k-verdieping','k-bereik','k-gevel','k-muur','k-doek','k-led','k-bed1','k-bed2','k-korting','k-marge','k-bkfix-marge'].forEach(id=>{
     const el=$(id);['change','input'].forEach(ev=>el.addEventListener(ev,calcKnikarm));
   });
+  applyFieldVis('knikarm');
   calcKnikarm();
 }
 
@@ -890,10 +899,11 @@ function calcKnikarm(){
 
   if(breedte > typeData.max_width) errors.push(`Breedte ${breedte}mm overschrijdt maximum voor ${type} (${typeData.max_width}mm)`);
   if(uitval > typeData.max_uitval) errors.push(`Uitval ${uitval}mm overschrijdt maximum voor ${type} (${typeData.max_uitval}mm - niet produceerbaar)`);
-  if(breedte < 1000) warnings.push(`Breedte ${breedte}mm < 1m: prijs van 1000mm gebruikt`);
+  const ck = CONFIG.data;
+  if(breedte < ck.knikarm_min_breedte) warnings.push(`Breedte ${breedte}mm < 1m: prijs van ${ck.knikarm_min_breedte}mm gebruikt`);
 
-  const bCeil = Math.max(1000, ceil(breedte, 250));
-  const uCeil = ceil(uitval, 500);
+  const bCeil = Math.max(ck.knikarm_min_breedte, ceil(breedte, ck.knikarm_breedte_rounding));
+  const uCeil = ceil(uitval, ck.knikarm_uitval_rounding);
 
   const uitvalKey = `${typeData.prefix_U}${uCeil}`;
   const breedteKey = `${typeData.prefix_B}${bCeil}`;
@@ -1003,36 +1013,44 @@ function renderVeranda(){
 
   <div id="v-meta"></div>
 
+  <div data-vis-grp="mkabel">
   <h3>Opties</h3>
   <div class="row">
     <div class="field"><label>Afwijkende motorkabel</label><select id="v-mkabel"></select></div>
+    <div class="field"></div>
+  </div>
+  </div>
+  <div data-vis-grp="gevel_doek" class="row">
     <div class="field"><label>Type gevel</label><select id="v-gevel"></select></div>
-  </div>
-  <div class="row">
     <div class="field"><label>Doek groep</label><select id="v-doek"></select></div>
-    <div class="field"><label>Bereikbaarheid</label><select id="v-bereik"></select></div>
   </div>
-  <div class="row">
+  <div data-vis-grp="bereik_led" class="row">
+    <div class="field"><label>Bereikbaarheid</label><select id="v-bereik"></select></div>
     <div class="field"><label>LED / volant optie</label><select id="v-led"></select></div>
+  </div>
+  <div data-vis-grp="verdieping" class="row">
     <div class="field"><label>Verdieping</label><input type="number" id="v-verdieping" value="0" min="0"></div>
+    <div class="field"></div>
   </div>
 
+  <div data-vis-grp="extras">
   <h3>Extra opties</h3>
   <div id="v-extras"></div>
   <button class="secondary" onclick="addVerandaExtra()" style="margin-top:8px">+ Extra optie</button>
+  </div>
 
   <h3>Bediening & prijzen</h3>
-  <div class="row">
+  <div data-vis-grp="bediening" class="row">
     <div class="field"><label>Bediening 1</label><select id="v-bed1"></select></div>
     <div class="field"><label>Bediening 2</label><select id="v-bed2"></select></div>
   </div>
-  <div class="row">
+  <div data-vis-grp="korting_marge" class="row">
     <div class="field"><label>Eenmalige korting (€)</label><input type="number" id="v-korting" value="0" step="0.01"></div>
-    <div class="field"><label>Allround korting %</label><input type="number" id="v-marge" value="40" step="1"></div>
+    <div class="field"><label>Allround korting %</label><input type="number" id="v-marge" value="${CONFIG.data.veranda_default_marge}" step="1"></div>
     <div class="field"><label>BKfix marge %</label><input type="number" id="v-bkfix-marge" value="20" step="1"></div>
   </div>
-  <div class="field"><label>Opmerkingen</label><input type="text" id="v-opm"></div>
-  ${renderCustomOptionsSection('v')}
+  <div data-vis-grp="opmerkingen" class="field"><label>Opmerkingen</label><input type="text" id="v-opm"></div>
+  <div data-vis-grp="vrijeOpties">${renderCustomOptionsSection('v')}</div>
 
   <div class="btn-group"><button onclick="addVerandaToOffer()">+ Toevoegen aan offerte</button></div>
   `;
@@ -1049,6 +1067,7 @@ function renderVeranda(){
   });
   $('v-type').addEventListener('change',()=>{syncVerandaAccessoryChoices();calcVeranda();});
   syncVerandaAccessoryChoices();
+  applyFieldVis('veranda');
   calcVeranda();
 }
 
@@ -1113,10 +1132,10 @@ function calcVeranda(){
     if(uitval > meta.max_uitval) errors.push(`Uitval ${uitval}mm overschrijdt maximum voor ${type} (${meta.max_uitval}mm)`);
   }
 
-  // Bestelmaat afgerond 250mm — minimum 1000mm
-  if(breedte < 1000) warnings.push(`Breedte ${breedte}mm < 1m: prijs van 1000mm gebruikt`);
-  const bCeil = Math.max(1000, ceil(breedte, 250));
-  const uCeil = ceil(uitval, 250);
+  const cv = CONFIG.data;
+  if(breedte < cv.veranda_min_breedte) warnings.push(`Breedte ${breedte}mm < 1m: prijs van ${cv.veranda_min_breedte}mm gebruikt`);
+  const bCeil = Math.max(cv.veranda_min_breedte, ceil(breedte, cv.veranda_breedte_rounding));
+  const uCeil = ceil(uitval, cv.veranda_uitval_rounding);
 
   const uitvalKey = `${typeData.prefix_U}${uCeil}`;
   const breedteKey = `${typeData.prefix_B}${bCeil}`;
@@ -1128,8 +1147,8 @@ function calcVeranda(){
 
   // Small width surcharge (bij breedte < 1400mm op vinci 150 = +245)
   let smallSurcharge = 0;
-  if(type === 'Vinci 150 onderliggend' && breedte < 1400){
-    smallSurcharge = 245;
+  if(type === cv.veranda_small_surcharge_type && breedte < cv.veranda_small_surcharge_max_breedte){
+    smallSurcharge = cv.veranda_small_surcharge;
   }
 
   // LED
@@ -1189,8 +1208,7 @@ function calcVeranda(){
     }
   }
 
-  // Plaatsing: 350 flat rate (from excel G10: 350 when F10>0)
-  const plaatsingPerStuk = 350;
+  const plaatsingPerStuk = cv.veranda_plaatsing_flat;
   const plaatsingTotaal = plaatsingPerStuk * aantal + bereikPrice + gevelPrice;
 
   const productSubtotal = (basePrice + smallSurcharge + mkabelPrice + doekPrice + ledPrice) * aantal + extrasPrice + manualOptionsPrice;
@@ -1863,6 +1881,60 @@ const ADMIN = {
   get settings(){ return JSON.parse(localStorage.getItem('bkfix_settings')||'{}'); },
   set settings(v){ localStorage.setItem('bkfix_settings',JSON.stringify(v)); },
 };
+
+// ----- Calculation parameters (CONFIG) -----
+const DEFAULT_CONFIG = {
+  // Rolluik
+  rolluik_min_dim:1000, rolluik_odd_breedte_add:110, rolluik_idd_breedte_adj:-6, rolluik_idd_hoogte_adj:-4,
+  rolluik_solar_kasthoogte:180,
+  rolluik_kasthoogte_L_break1:1340, rolluik_kasthoogte_L_t1:150,
+  rolluik_kasthoogte_L_break2:1900, rolluik_kasthoogte_L_t2:165,
+  rolluik_kasthoogte_L_break3:2360, rolluik_kasthoogte_L_t3:180, rolluik_kasthoogte_L_t4:205,
+  rolluik_kasthoogte_M_break1:1800, rolluik_kasthoogte_M_t1:150,
+  rolluik_kasthoogte_M_break2:2350, rolluik_kasthoogte_M_t2:165, rolluik_kasthoogte_M_t3:180,
+  rolluik_hardschuim_per_m2:119,
+  rolluik_max:{Ecoroll_L:{b:3500,h:2800},Rollex_L:{b:3500,h:2800},Ecoroll_M:{b:3200,h:2800},Rollex_M:{b:3200,h:2800}},
+  // Screen
+  screen_min_dim:1000, screen_idd_adj:-4, screen_plaatsing_base:100,
+  // Knikarm
+  knikarm_min_breedte:1000, knikarm_breedte_rounding:250, knikarm_uitval_rounding:500,
+  // Veranda
+  veranda_min_breedte:1000, veranda_breedte_rounding:250, veranda_uitval_rounding:250,
+  veranda_plaatsing_flat:350, veranda_small_surcharge:245,
+  veranda_small_surcharge_max_breedte:1400, veranda_default_marge:40,
+};
+const CONFIG = {
+  get data(){ const s=localStorage.getItem('bkfix_config'); return s?{...DEFAULT_CONFIG,...JSON.parse(s)}:{...DEFAULT_CONFIG}; },
+  save(obj){ localStorage.setItem('bkfix_config',JSON.stringify({...this.data,...obj})); },
+  reset(){ localStorage.removeItem('bkfix_config'); },
+};
+
+// ----- Field visibility per product (FIELD_VIS) -----
+const DEFAULT_FIELD_VIS = {
+  rolluik:{geleider_kast:true,kleurOmkasting:true,motor:true,lamel:true,kleurCustom:true,koppelen_bereik:true,bediening:true,korting_marge:true,opmerkingen:true,vrijeOpties:true},
+  screen:{geleider_onderlat:true,motor_bereik:true,doek_koppelen:true,bediening:true,korting_marge:true,opmerkingen:true,vrijeOpties:true},
+  knikarm:{verdieping_bereik:true,gevel_muur:true,doek_led:true,bediening:true,korting_marge:true,opmerkingen:true,vrijeOpties:true},
+  veranda:{mkabel:true,gevel_doek:true,bereik_led:true,verdieping:true,extras:true,bediening:true,korting_marge:true,opmerkingen:true},
+};
+const FIELD_VIS = {
+  get data(){
+    const s=localStorage.getItem('bkfix_field_vis');
+    if(!s) return JSON.parse(JSON.stringify(DEFAULT_FIELD_VIS));
+    const d=JSON.parse(s);
+    return Object.fromEntries(Object.keys(DEFAULT_FIELD_VIS).map(p=>[p,{...DEFAULT_FIELD_VIS[p],...(d[p]||{})}]));
+  },
+  save(prod,key,val){ const d=this.data; d[prod][key]=val; localStorage.setItem('bkfix_field_vis',JSON.stringify(d)); },
+  reset(prod){ const d=this.data; d[prod]={...DEFAULT_FIELD_VIS[prod]}; localStorage.setItem('bkfix_field_vis',JSON.stringify(d)); },
+};
+
+function applyFieldVis(prod){
+  const vis=FIELD_VIS.data[prod]||{};
+  document.querySelectorAll('[data-vis-grp]').forEach(el=>{
+    const key=el.dataset.visGrp;
+    el.classList.toggle('vis-hidden', key in vis && vis[key]===false);
+  });
+}
+
 function genId(){ return Math.random().toString(36).slice(2,9); }
 renderCustomProductTabs();
 
@@ -2018,6 +2090,7 @@ function renderBeheer(){
       <button class="beheer-nav-btn" data-tab="artikelen" onclick="switchBeheerTab('artikelen',this)">📦 Artikelen</button>
       <button class="beheer-nav-btn" data-tab="producten" onclick="switchBeheerTab('producten',this)">🆕 Producten</button>
       <button class="beheer-nav-btn" data-tab="templates" onclick="switchBeheerTab('templates',this)">📋 TL templates</button>
+      <button class="beheer-nav-btn" data-tab="velden" onclick="switchBeheerTab('velden',this)">👁 Velden</button>
       <button class="beheer-nav-btn" data-tab="instellingen" onclick="switchBeheerTab('instellingen',this)">⚙ Instellingen</button>
     </div>
     <div id="beheer-content"></div>
@@ -2033,6 +2106,7 @@ function switchBeheerTab(name, btn){
     case 'artikelen': renderArtikelen(el); break;
     case 'producten': renderProducten(el); break;
     case 'templates': renderTemplates(el); break;
+    case 'velden': renderVelden(el); break;
     case 'instellingen': renderInstellingen(el); break;
   }
 }
@@ -2333,7 +2407,90 @@ function resetTlTemplate(){
   tmplBlocks=[]; renderTemplates($('beheer-content'));
 }
 
+// ===== VELDEN =====
+const VELD_LABELS = {
+  rolluik:{geleider_kast:'Geleider & kasttype',kleurOmkasting:'Kleur omkasting',motor:'Motor & motorkabel',lamel:'Lamel & kleur lamel',kleurCustom:'Vrije kleurinvoer',koppelen_bereik:'Koppelen & bereikbaarheid',bediening:'Bediening',korting_marge:'Korting & marge',opmerkingen:'Opmerkingen',vrijeOpties:'Vrije opties'},
+  screen:{geleider_onderlat:'Geleider & onderlat',motor_bereik:'Motor & bereikbaarheid',doek_koppelen:'Doek & koppelen',bediening:'Bediening',korting_marge:'Korting & marge',opmerkingen:'Opmerkingen',vrijeOpties:'Vrije opties'},
+  knikarm:{verdieping_bereik:'Verdieping & bereikbaarheid',gevel_muur:'Gevel & muursteun',doek_led:'Doek & LED',bediening:'Bediening',korting_marge:'Korting & marge',opmerkingen:'Opmerkingen',vrijeOpties:'Vrije opties'},
+  veranda:{mkabel:'Motorkabel',gevel_doek:'Gevel & doek',bereik_led:'Bereikbaarheid & LED',verdieping:'Verdieping',extras:'Extra opties',bediening:'Bediening',korting_marge:'Korting & marge',opmerkingen:'Opmerkingen'},
+};
+const PROD_LABELS = {rolluik:'Rolluik',screen:'Screen',knikarm:'Knikarmscherm',veranda:'Veranda / Pergola'};
+
+function renderVelden(el){
+  const vis=FIELD_VIS.data;
+  let html=`<div class="beheer-section">
+    <div class="sect-hdr"><span class="sect-title">Veldweergave per product</span></div>
+    <p style="font-size:13px;color:#64748b;margin-bottom:16px">Verberg veldgroepen die u niet gebruikt. Berekening blijft intact — verborgen velden houden hun standaardwaarde.</p>`;
+  for(const prod of ['rolluik','screen','knikarm','veranda']){
+    html+=`<h4 style="font-size:13px;font-weight:700;margin:16px 0 8px">${PROD_LABELS[prod]}</h4>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px">`;
+    for(const [key,label] of Object.entries(VELD_LABELS[prod])){
+      const on=vis[prod][key]!==false;
+      html+=`<label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;cursor:pointer;padding:5px 11px;border-radius:20px;border:1px solid ${on?'#a7f3d0':'#fecaca'};background:${on?'#d1fae5':'#fee2e2'};color:${on?'#065f46':'#991b1b'}">
+        <input type="checkbox" ${on?'checked':''} onchange="toggleFieldVis('${prod}','${key}',this.checked)" style="accent-color:#059669;margin:0"> ${label}
+      </label>`;
+    }
+    html+=`</div><button class="bsec" onclick="resetFieldVis('${prod}')" style="font-size:11px;padding:4px 10px">↺ Herstel ${PROD_LABELS[prod]}</button>`;
+  }
+  html+=`<div class="btn-group" style="margin-top:20px"><button class="bsec" onclick="resetAllFieldVis()">↺ Alles herstellen</button></div></div>`;
+  el.innerHTML=html;
+}
+
+function toggleFieldVis(prod,key,val){
+  FIELD_VIS.save(prod,key,val);
+  renderVelden($('beheer-content'));
+}
+function resetFieldVis(prod){
+  FIELD_VIS.reset(prod);
+  renderVelden($('beheer-content'));
+}
+function resetAllFieldVis(){
+  localStorage.removeItem('bkfix_field_vis');
+  renderVelden($('beheer-content'));
+}
+
 // ===== INSTELLINGEN =====
+function renderConfigParamsHtml(c){
+  const inp=(id,val,label)=>`<div class="field" style="margin-bottom:8px"><label style="font-size:11px">${label}</label><input type="number" id="cfg_${id}" value="${val}" step="any" style="max-width:110px;padding:5px 8px;font-size:13px"></div>`;
+  const grp=(title,rows)=>`<details style="margin-bottom:8px"><summary style="cursor:pointer;padding:6px 10px;background:#f1f5f9;border-radius:6px;font-size:12px;font-weight:600;color:#475569;list-style:none">▸ ${title}</summary><div style="padding:10px 4px;display:flex;flex-wrap:wrap;gap:6px 16px">${rows}</div></details>`;
+  return grp('Rolluik',
+    inp('rolluik_min_dim',c.rolluik_min_dim,'Min. afmeting (mm)')+
+    inp('rolluik_odd_breedte_add',c.rolluik_odd_breedte_add,'ODD breedte toevoeging (mm)')+
+    inp('rolluik_idd_breedte_adj',c.rolluik_idd_breedte_adj,'IDD breedte aanpassing (mm)')+
+    inp('rolluik_idd_hoogte_adj',c.rolluik_idd_hoogte_adj,'IDD hoogte aanpassing (mm)')+
+    inp('rolluik_solar_kasthoogte',c.rolluik_solar_kasthoogte,'Solar kasthoogte (mm)')+
+    inp('rolluik_hardschuim_per_m2',c.rolluik_hardschuim_per_m2,'Hardschuim prijs (€/m²)')+
+    inp('rolluik_kasthoogte_L_break1',c.rolluik_kasthoogte_L_break1,'L-type drempel 1 (mm)')+
+    inp('rolluik_kasthoogte_L_t1',c.rolluik_kasthoogte_L_t1,'L-type kasthoogte 1 (mm)')+
+    inp('rolluik_kasthoogte_L_break2',c.rolluik_kasthoogte_L_break2,'L-type drempel 2 (mm)')+
+    inp('rolluik_kasthoogte_L_t2',c.rolluik_kasthoogte_L_t2,'L-type kasthoogte 2 (mm)')+
+    inp('rolluik_kasthoogte_L_break3',c.rolluik_kasthoogte_L_break3,'L-type drempel 3 (mm)')+
+    inp('rolluik_kasthoogte_L_t3',c.rolluik_kasthoogte_L_t3,'L-type kasthoogte 3 (mm)')+
+    inp('rolluik_kasthoogte_L_t4',c.rolluik_kasthoogte_L_t4,'L-type kasthoogte 4 (mm)')+
+    inp('rolluik_kasthoogte_M_break1',c.rolluik_kasthoogte_M_break1,'M-type drempel 1 (mm)')+
+    inp('rolluik_kasthoogte_M_t1',c.rolluik_kasthoogte_M_t1,'M-type kasthoogte 1 (mm)')+
+    inp('rolluik_kasthoogte_M_break2',c.rolluik_kasthoogte_M_break2,'M-type drempel 2 (mm)')+
+    inp('rolluik_kasthoogte_M_t2',c.rolluik_kasthoogte_M_t2,'M-type kasthoogte 2 (mm)')+
+    inp('rolluik_kasthoogte_M_t3',c.rolluik_kasthoogte_M_t3,'M-type kasthoogte 3 (mm)')
+  )+grp('Screen',
+    inp('screen_min_dim',c.screen_min_dim,'Min. afmeting (mm)')+
+    inp('screen_idd_adj',c.screen_idd_adj,'IDD aanpassing (mm)')+
+    inp('screen_plaatsing_base',c.screen_plaatsing_base,'Plaatsing basis (€)')
+  )+grp('Knikarmscherm',
+    inp('knikarm_min_breedte',c.knikarm_min_breedte,'Min. breedte (mm)')+
+    inp('knikarm_breedte_rounding',c.knikarm_breedte_rounding,'Breedte afronding (mm)')+
+    inp('knikarm_uitval_rounding',c.knikarm_uitval_rounding,'Uitval afronding (mm)')
+  )+grp('Veranda / Pergola',
+    inp('veranda_min_breedte',c.veranda_min_breedte,'Min. breedte (mm)')+
+    inp('veranda_breedte_rounding',c.veranda_breedte_rounding,'Breedte afronding (mm)')+
+    inp('veranda_uitval_rounding',c.veranda_uitval_rounding,'Uitval afronding (mm)')+
+    inp('veranda_plaatsing_flat',c.veranda_plaatsing_flat,'Plaatsing prijs (€)')+
+    inp('veranda_small_surcharge',c.veranda_small_surcharge,'Kleine breedte toeslag (€)')+
+    inp('veranda_small_surcharge_max_breedte',c.veranda_small_surcharge_max_breedte,'Toeslag max. breedte (mm)')+
+    inp('veranda_default_marge',c.veranda_default_marge,'Standaard Allround korting %')
+  );
+}
+
 function renderInstellingen(el){
   const s=ADMIN.settings;
   const motors=DATA.opties?.rolluik_extras?.motoren||{};
@@ -2358,8 +2515,12 @@ function renderInstellingen(el){
     <table class="admin-table" style="max-width:500px"><tr><th>Bediening</th><th>Prijs</th></tr>
       ${Object.entries(beds).map(([k,v])=>`<tr><td>${k}</td><td><input type="number" id="bp_${k.replace(/\W/g,'_')}" value="${v}" step="0.01" style="width:100px"></td></tr>`).join('')}
     </table>
+    <h4 style="font-size:13px;font-weight:700;margin:20px 0 10px">Berekeningsparameters</h4>
+    <p style="font-size:12px;color:#64748b;margin-bottom:10px">Technische constanten gebruikt in de prijsberekening.</p>
+    ${renderConfigParamsHtml(CONFIG.data)}
     <div class="btn-group" style="margin-top:16px">
       <button class="bfull" onclick="saveInstellingen()">💾 Opslaan</button>
+      <button class="bsec" onclick="CONFIG.reset();renderInstellingen($('beheer-content'))">↺ Reset parameters</button>
     </div>
     <hr style="margin:20px 0;border:none;border-top:1px solid #e2e8f0">
     <h4 style="font-size:13px;font-weight:700;margin-bottom:10px">Configuratie backup</h4>
@@ -2383,11 +2544,17 @@ function saveInstellingen(){
   Object.keys(gels).forEach(k=>{const el=$('gp_'+k.replace(/\W/g,'_'));if(el) gels[k]=parseFloat(el.value)||gels[k];});
   const beds=DATA.opties?.algemene?.bediening||{};
   Object.keys(beds).forEach(k=>{const el=$('bp_'+k.replace(/\W/g,'_'));if(el) beds[k]=parseFloat(el.value)||beds[k];});
+  const cfgUpdates={};
+  Object.keys(DEFAULT_CONFIG).forEach(k=>{
+    if(typeof DEFAULT_CONFIG[k]==='object') return;
+    const el=$('cfg_'+k); if(el) cfgUpdates[k]=parseFloat(el.value);
+  });
+  if(Object.keys(cfgUpdates).length) CONFIG.save(cfgUpdates);
   alert('Instellingen opgeslagen!');
 }
 
 function exportAdminConfig(){
-  const cfg={articles:ADMIN.articles,products:ADMIN.products,tlTemplates:ADMIN.tlTemplates,settings:ADMIN.settings,exported:new Date().toISOString()};
+  const cfg={articles:ADMIN.articles,products:ADMIN.products,tlTemplates:ADMIN.tlTemplates,settings:ADMIN.settings,config:CONFIG.data,fieldVis:FIELD_VIS.data,exported:new Date().toISOString()};
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([JSON.stringify(cfg,null,2)],{type:'application/json'}));
   a.download='bkfix-config-'+new Date().toISOString().slice(0,10)+'.json';
@@ -2403,6 +2570,8 @@ function importAdminConfig(input){
       if(cfg.products) ADMIN.products=cfg.products;
       if(cfg.tlTemplates) ADMIN.tlTemplates=cfg.tlTemplates;
       if(cfg.settings) ADMIN.settings=cfg.settings;
+      if(cfg.config) CONFIG.save(cfg.config);
+      if(cfg.fieldVis) localStorage.setItem('bkfix_field_vis',JSON.stringify(cfg.fieldVis));
       renderCustomProductTabs();
       if(state.currentProduct==='beheer') renderBeheer();
       alert('Configuratie geïmporteerd!');
