@@ -1,4 +1,4 @@
-const CACHE = 'allround-v1';
+const CACHE = 'allround-v2';
 const ASSETS = [
   './',
   './index.html',
