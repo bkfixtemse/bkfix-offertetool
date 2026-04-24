@@ -504,8 +504,8 @@ function calcRolluik(){
   if(hoogte < c.rolluik_min_dim) warnings.push(`Hoogte ${hoogte}mm < 1m: prijs van ${c.rolluik_min_dim}mm gebruikt`);
 
   const kasthoogte = isSolar ? c.rolluik_solar_kasthoogte : getKasthoogte(type, effectiefH);
-  const bestB = isSolar ? effectiefB+c.rolluik_odd_breedte_add : (plaatsing==='odd' ? effectiefB+c.rolluik_odd_breedte_add : effectiefB+c.rolluik_idd_breedte_adj);
-  const bestH = isSolar ? effectiefH+kasthoogte : (plaatsing==='odd' ? effectiefH+kasthoogte : effectiefH+c.rolluik_idd_hoogte_adj);
+  const bestB = plaatsing==='odd' ? effectiefB+c.rolluik_odd_breedte_add : effectiefB+c.rolluik_idd_breedte_adj;
+  const bestH = plaatsing==='odd' ? effectiefH+kasthoogte : effectiefH+c.rolluik_idd_hoogte_adj;
   const bCeil = Math.max(c.rolluik_min_dim, ceil(bestB,100));
   const hCeil = Math.max(1000, ceil(bestH,100));
 
