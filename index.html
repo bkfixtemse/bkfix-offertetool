@@ -504,8 +504,8 @@ function calcRolluik(){
   if(hoogte < c.rolluik_min_dim) warnings.push(`Hoogte ${hoogte}mm < 1m: prijs van ${c.rolluik_min_dim}mm gebruikt`);
 
   const kasthoogte = isSolar ? c.rolluik_solar_kasthoogte : getKasthoogte(type, effectiefH);
-  const bestB = plaatsing==='odd' ? effectiefB+c.rolluik_odd_breedte_add : effectiefB+c.rolluik_idd_breedte_adj;
-  const bestH = plaatsing==='odd' ? effectiefH+kasthoogte : effectiefH+c.rolluik_idd_hoogte_adj;
+  const bestB = effectiefB + c.rolluik_odd_breedte_add;
+  const bestH = effectiefH + kasthoogte;
   const bCeil = Math.max(c.rolluik_min_dim, ceil(bestB,100));
   const hCeil = Math.max(1000, ceil(bestH,100));
 
@@ -523,7 +523,7 @@ function calcRolluik(){
   }
 
   // Kast
-  const kastPrice = isSolar ? 0 : (DATA.rolluik.kast[effectiveType]?.[heightKey] || 0);
+  const kastPrice = (isSolar || plaatsing==='idd') ? 0 : (DATA.rolluik.kast[effectiveType]?.[heightKey] || 0);
 
   // Geleider (uit 2-rolluik lijst A4:B22, type geleider)
   const geleider = $('r-geleider').value;
@@ -1816,11 +1816,6 @@ document.querySelectorAll('.tab').forEach(tab=>{
   tab.addEventListener('click',()=>activateTab(tab.dataset.prod));
 });
 
-// Init
-renderRolluik();
-renderOffer();
-tlInit();
-
 // ======= Login =======
 (function(){
   // SHA-256 hash van "bkfixtemse@gmail.com:BKFIX_Lubrizol1"
@@ -1926,6 +1921,11 @@ const FIELD_VIS = {
   save(prod,key,val){ const d=this.data; d[prod][key]=val; localStorage.setItem('bkfix_field_vis',JSON.stringify(d)); },
   reset(prod){ const d=this.data; d[prod]={...DEFAULT_FIELD_VIS[prod]}; localStorage.setItem('bkfix_field_vis',JSON.stringify(d)); },
 };
+
+// Init
+renderRolluik();
+renderOffer();
+tlInit();
 
 function applyFieldVis(prod){
   const vis=FIELD_VIS.data[prod]||{};
