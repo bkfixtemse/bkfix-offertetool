@@ -284,6 +284,15 @@ details[open] summary{margin-bottom:8px}
     <label>Layout offerte <button type="button" onclick="tlFetchLayouts()" style="font-size:11px;padding:2px 7px;margin-left:6px;background:#334155;border:none;border-radius:4px;color:#94a3b8;cursor:pointer" title="Herladen">↻</button></label>
     <select id="tl-layout"><option value="">— geen layout —</option></select>
     <div id="tl-layout-error" style="color:#f87171;font-size:11px;margin-top:4px;display:none"></div>
+    <div id="tl-layout-manual" style="display:none;margin-top:6px">
+      <div style="color:#94a3b8;font-size:11px;margin-bottom:6px">Layouts kunnen niet automatisch worden opgehaald.<br><span style="color:#64748b">Ga in TL naar <b>Instellingen → Lay-outs</b>, open een lay-out en kopieer de UUID uit de URL.</span></div>
+      <div id="tl-layout-saved-list"></div>
+      <div style="display:flex;gap:4px;margin-top:4px">
+        <input type="text" id="tl-layout-manual-id" placeholder="UUID (uit TL URL)" style="flex:1;font-size:12px;padding:4px 8px;background:#1e293b;border:1px solid #334155;border-radius:4px;color:#f1f5f9">
+        <input type="text" id="tl-layout-manual-name" placeholder="Naam" style="flex:1;font-size:12px;padding:4px 8px;background:#1e293b;border:1px solid #334155;border-radius:4px;color:#f1f5f9">
+        <button type="button" onclick="tlAddManualLayout()" style="font-size:12px;padding:4px 10px;background:#1e40af;border:none;border-radius:4px;color:#f1f5f9;cursor:pointer;white-space:nowrap">+ Opslaan</button>
+      </div>
+    </div>
   </div>
   <div class="btn-group">
     <button id="tl-export-btn" onclick="tlExportQuotation(event)" style="background:#1a6b3c;flex:1">⬆ Exporteer naar Teamleader</button>
@@ -1892,31 +1901,87 @@ async function tlOnConnected(){
 
 async function tlFetchLayouts(){
   const errEl = $('tl-layout-error');
+  const manualEl = $('tl-layout-manual');
   if(errEl){ errEl.style.display='none'; errEl.textContent=''; }
-  try{
-    const data = await tlCall('quotationLayouts.list',{page:{size:100,number:1}});
-    const layouts = data.data||[];
-    const sel = $('tl-layout');
-    if(!sel) return;
-    sel.innerHTML = '<option value="">— geen layout —</option>';
-    if(layouts.length === 0 && errEl){
-      errEl.textContent = 'Geen layouts gevonden in Teamleader.';
-      errEl.style.display = 'block';
-    }
+  // Try known endpoint names for quotation layouts
+  const endpoints = ['quotationLayouts.list','quotation_layouts.list','documentLayouts.list'];
+  let layouts = null;
+  for(const ep of endpoints){
+    try{
+      const data = await tlCall(ep,{page:{size:100,number:1}});
+      if(data && data.data){ layouts = data.data; break; }
+    }catch(e){ /* try next */ }
+  }
+  const sel = $('tl-layout');
+  if(!sel) return;
+  // Load saved manual layouts from localStorage
+  const savedManual = JSON.parse(localStorage.getItem('tl_manual_layouts')||'[]');
+  sel.innerHTML = '<option value="">— geen layout —</option>';
+  if(layouts && layouts.length > 0){
+    if(manualEl) manualEl.style.display='none';
     layouts.forEach(l=>{
       const o = document.createElement('option');
       o.value = l.id;
       o.textContent = l.name || l.id;
-      if((l.name||'').toLowerCase().includes('indicatief')) o.selected = true;
       sel.appendChild(o);
     });
-    const saved = localStorage.getItem('tl_layout_id');
-    if(saved && sel.querySelector(`option[value="${saved}"]`)) sel.value = saved;
-    sel.onchange = ()=>localStorage.setItem('tl_layout_id', sel.value);
-  }catch(e){
-    console.warn('Layouts fetch failed:', e.message);
-    if(errEl){ errEl.textContent = `Layouts laden mislukt: ${e.message}`; errEl.style.display='block'; }
+  } else {
+    // API layouts not available — show manual fallback
+    if(manualEl) manualEl.style.display='block';
+    tlRenderSavedLayouts();
+    if(errEl && (!layouts || layouts.length===0)){
+      errEl.textContent = 'Layouts kunnen niet automatisch worden opgehaald via de API. Voer een layout-ID handmatig in.';
+      errEl.style.display='block';
+    }
   }
+  // Add manually saved layouts
+  savedManual.forEach(l=>{
+    if(!sel.querySelector(`option[value="${l.id}"]`)){
+      const o = document.createElement('option');
+      o.value = l.id;
+      o.textContent = (l.name||l.id)+' ✎';
+      sel.appendChild(o);
+    }
+  });
+  const saved = localStorage.getItem('tl_layout_id');
+  if(saved && sel.querySelector(`option[value="${saved}"]`)) sel.value = saved;
+  sel.onchange = ()=>localStorage.setItem('tl_layout_id', sel.value);
+}
+
+function tlRenderSavedLayouts(){
+  const listEl = $('tl-layout-saved-list');
+  if(!listEl) return;
+  const saved = JSON.parse(localStorage.getItem('tl_manual_layouts')||'[]');
+  if(saved.length === 0){ listEl.innerHTML=''; return; }
+  listEl.innerHTML = '<div style="color:#64748b;font-size:11px;margin-bottom:4px">Opgeslagen layouts:</div>'
+    + saved.map(l=>`
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;background:#1e293b;border-radius:4px;padding:3px 6px">
+        <span style="flex:1;font-size:12px;color:#f1f5f9">${l.name||l.id}</span>
+        <span style="font-size:10px;color:#64748b;font-family:monospace">${l.id.slice(0,8)}…</span>
+        <button type="button" onclick="tlDeleteManualLayout('${l.id}')" style="font-size:11px;padding:1px 6px;background:#7f1d1d;border:none;border-radius:3px;color:#fca5a5;cursor:pointer">✕</button>
+      </div>`).join('');
+}
+
+function tlAddManualLayout(){
+  const idEl = $('tl-layout-manual-id');
+  const nameEl = $('tl-layout-manual-name');
+  const id = (idEl?.value||'').trim();
+  const name = (nameEl?.value||'').trim() || id;
+  if(!id){ alert('Voer een geldig layout-ID in.'); return; }
+  const saved = JSON.parse(localStorage.getItem('tl_manual_layouts')||'[]');
+  if(!saved.find(l=>l.id===id)) saved.push({id, name});
+  localStorage.setItem('tl_manual_layouts', JSON.stringify(saved));
+  localStorage.setItem('tl_layout_id', id);
+  if(idEl) idEl.value='';
+  if(nameEl) nameEl.value='';
+  tlFetchLayouts();
+}
+
+function tlDeleteManualLayout(id){
+  const saved = JSON.parse(localStorage.getItem('tl_manual_layouts')||'[]');
+  localStorage.setItem('tl_manual_layouts', JSON.stringify(saved.filter(l=>l.id!==id)));
+  if(localStorage.getItem('tl_layout_id')===id) localStorage.removeItem('tl_layout_id');
+  tlFetchLayouts();
 }
 
 function tlDisconnect(){
