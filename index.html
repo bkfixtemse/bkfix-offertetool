@@ -184,6 +184,21 @@ details[open] summary{margin-bottom:8px}
 
 <div id="totals-block"></div>
 
+<!-- Verborgen kost sectie -->
+<div style="border-top:2px solid #e2e8f0;margin-top:14px;padding-top:14px">
+<h2 style="margin-bottom:6px">🔒 Verborgen kost</h2>
+<p style="font-size:11px;color:#94a3b8;margin:0 0 8px">Wordt gelijkmatig verdeeld over alle artikelen (niet zichtbaar voor klant). Herverdeeld automatisch als een artikel wegvalt.</p>
+<div class="row" style="margin-bottom:0">
+  <div class="field" style="max-width:180px">
+    <label>Totale verborgen kost (€)</label>
+    <input type="number" id="hidden-cost" value="0" min="0" step="0.01" oninput="onHiddenCostChange()">
+  </div>
+  <div class="field" style="padding-top:20px">
+    <span id="hidden-cost-info" style="font-size:12px;color:#64748b"></span>
+  </div>
+</div>
+</div>
+
 <!-- Werkuren sectie -->
 <div style="border-top:2px solid #e2e8f0;margin-top:14px;padding-top:14px">
 <h2 style="margin-bottom:10px">Werkuren plaatsing</h2>
@@ -288,6 +303,7 @@ const DATA = {"screens":{"prices":{"Nova 83":{"N83_H_1000":{"N83_B_1000":828,"N8
 const state = {
   currentProduct: 'rolluik',
   verplaatsingCalc: null,
+  hiddenCost: 0,
   currentItem: null,
   offer: [],
   tlSelectedDeal: null,
@@ -1381,8 +1397,19 @@ function renderOffer(){
     $('totals-block').innerHTML = '';
     return;
   }
+  const hiddenCost = parseFloat($('hidden-cost')?.value) || 0;
+  const hiddenPerItem = state.offer.length > 0 ? hiddenCost / state.offer.length : 0;
+
+  // Update hidden cost info label
+  if($('hidden-cost-info')){
+    $('hidden-cost-info').textContent = hiddenCost > 0 && state.offer.length > 0
+      ? `€${fmt(hiddenPerItem)} per artikel (${state.offer.length} artikel${state.offer.length>1?'s':''})`
+      : '';
+  }
+
   let html = '';
   state.offer.forEach((item, idx)=>{
+    const effectivePrice = item.uwVerkoop + hiddenPerItem;
     const offerDesc = item.product === 'Rolluik'
       ? `<div style="font-size:11px;color:#475569;margin-top:4px">${buildRolluikDesc(item)}</div>`
       : `<div class="desc">${item.bestelmaat||''}mm${item.options?.length? ' · '+item.options.slice(0,2).join(' · '):''}</div>`;
@@ -1392,14 +1419,14 @@ function renderOffer(){
         <div style="font-size:11px;color:#64748b">${item.bestelmaat||''}mm</div>
         ${offerDesc}
       </div>
-      <div class="price">€${fmt(item.uwVerkoop)}</div>
+      <div class="price">€${fmt(effectivePrice)}</div>
       <button class="secondary" style="padding:4px 10px" onclick="removeOfferItem(${idx})">×</button>
     </div>`;
   });
   list.innerHTML = html;
 
   // Totals
-  const subtotal = state.offer.reduce((s,i)=>s+i.uwVerkoop, 0);
+  const subtotal = state.offer.reduce((s,i)=>s+i.uwVerkoop, 0) + hiddenCost;
   const aankoop = state.offer.reduce((s,i)=>s+i.aankoop, 0);
   const plaatsing = state.offer.reduce((s,i)=>s+i.plaatsingTotaal, 0);
 
@@ -1423,6 +1450,7 @@ function renderOffer(){
 
   $('totals-block').innerHTML = `
     <div class="price-line"><span>Producten (excl. BTW)</span><span>€${fmt(subtotal)}</span></div>
+    ${hiddenCost>0?`<div class="price-line" style="color:#64748b;font-style:italic"><span>↳ w.v. verborgen kost</span><span>€${fmt(hiddenCost)}</span></div>`:''}
     ${werkurenKost>0?`<div class="price-line"><span>Werkuren plaatsing</span><span>€${fmt(werkurenKost)}</span></div>`:''}
     <div class="price-line" style="font-weight:600"><span>Subtotaal (excl. BTW)</span><span>€${fmt(subtotalInclWerkuren)}</span></div>
     <div class="price-line"><span>BTW 6%</span><span>€${fmt(btw)}</span></div>
@@ -1502,6 +1530,95 @@ async function calculateVerplaatsing(){
   } catch(e) {
     resultEl.innerHTML = `<div style="color:#dc2626;font-size:12px;padding:6px 0">❌ ${e.message}</div>`;
   }
+}
+
+// ======= Verborgen kost =======
+function onHiddenCostChange(){
+  renderOffer();
+}
+
+// ======= Offertehistorie =======
+function saveOfferToHistory(tlQuotationId){
+  try {
+    const history = JSON.parse(localStorage.getItem('bkfix_offer_history') || '[]');
+    const entry = {
+      id: genId(),
+      date: new Date().toISOString(),
+      dealId: state.tlSelectedDeal?.id || null,
+      dealTitle: state.tlSelectedDeal?.title || '—',
+      clientName: $('klant-naam')?.value || '',
+      tlQuotationId: tlQuotationId || null,
+      items: JSON.parse(JSON.stringify(state.offer)),
+      hiddenCost: parseFloat($('hidden-cost')?.value) || 0,
+      werkuren: {
+        tarief: parseFloat($('w-tarief')?.value) || 230,
+        uren: parseFloat($('w-uren')?.value) || 0,
+        personen: parseInt($('w-personen')?.value) || 2
+      },
+      effectiveTotal: state.offer.reduce((s,i)=>s+i.uwVerkoop,0) + (parseFloat($('hidden-cost')?.value)||0)
+    };
+    history.unshift(entry);
+    if(history.length > 100) history.pop();
+    localStorage.setItem('bkfix_offer_history', JSON.stringify(history));
+  } catch(e) { console.error('Historie opslaan mislukt:', e); }
+}
+
+function renderHistorie(el){
+  const history = JSON.parse(localStorage.getItem('bkfix_offer_history') || '[]');
+  let html = `<div class="beheer-section">
+    <div class="sect-hdr">
+      <span class="sect-title">Offertehistorie</span>
+      <button class="bsec" onclick="saveOfferToHistory(null);renderHistorie($('beheer-content'))" style="font-size:12px">💾 Huidige offerte opslaan</button>
+    </div>`;
+  if(!history.length){
+    html += '<div style="color:#94a3b8;font-size:13px;padding:20px 0;text-align:center">Nog geen offertes opgeslagen. Exporteer naar Teamleader of klik "Huidige offerte opslaan".</div>';
+  } else {
+    html += '<table class="admin-table"><tr><th>Datum</th><th>Deal / Klant</th><th>Artikelen</th><th>Totaal</th><th></th></tr>';
+    history.forEach(e=>{
+      const d = new Date(e.date);
+      const dateStr = d.toLocaleDateString('nl-BE',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + d.toLocaleTimeString('nl-BE',{hour:'2-digit',minute:'2-digit'});
+      const previewItems = (e.items||[]).slice(0,3).map(i=>`${i.product} ${i.type}`).join(', ') + ((e.items||[]).length>3?'…':'');
+      html += `<tr>
+        <td style="white-space:nowrap;font-size:12px">${dateStr}</td>
+        <td><strong>${e.dealTitle||'—'}</strong>${e.clientName?`<br><span style="color:#64748b;font-size:11px">${e.clientName}</span>`:''} ${e.tlQuotationId?`<br><span style="color:#059669;font-size:10px">TL: ${e.tlQuotationId}</span>`:''}</td>
+        <td style="font-size:12px">${(e.items||[]).length} artikel(s)<br><span style="color:#64748b;font-size:11px;word-break:break-word">${previewItems}</span></td>
+        <td style="white-space:nowrap">€${fmt(e.effectiveTotal||0)}</td>
+        <td style="white-space:nowrap;min-width:120px">
+          <button class="bfull" onclick="loadHistoryEntry('${e.id}')" style="font-size:11px;padding:4px 8px;margin-bottom:4px;width:100%">✏ Laden & bewerken</button>
+          <button class="bsec" onclick="deleteHistoryEntry('${e.id}')" style="font-size:11px;padding:4px 8px;width:100%">🗑 Verwijderen</button>
+        </td>
+      </tr>`;
+    });
+    html += '</table>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function loadHistoryEntry(id){
+  const history = JSON.parse(localStorage.getItem('bkfix_offer_history') || '[]');
+  const entry = history.find(e=>e.id===id);
+  if(!entry){ alert('Offerte niet gevonden.'); return; }
+  if(state.offer.length > 0 && !confirm(`Huidige offerte vervangen door "${entry.dealTitle}"?`)) return;
+
+  state.offer = JSON.parse(JSON.stringify(entry.items || []));
+  if($('hidden-cost')) $('hidden-cost').value = entry.hiddenCost || 0;
+  if($('w-tarief'))   $('w-tarief').value   = entry.werkuren?.tarief   || 230;
+  if($('w-uren'))     $('w-uren').value     = entry.werkuren?.uren     || 0;
+  if($('w-personen')) $('w-personen').value = entry.werkuren?.personen || 2;
+  if($('klant-naam')) $('klant-naam').value = entry.clientName || '';
+  renderOffer();
+
+  // Go back to main offer view
+  document.querySelector('.tab[data-prod="rolluik"]')?.click();
+  setTimeout(()=> alert(`Offerte geladen: "${entry.dealTitle}"\n\nJe kan aanpassingen maken en daarna opnieuw exporteren naar TL als nieuwe offerte.`), 100);
+}
+
+function deleteHistoryEntry(id){
+  if(!confirm('Verwijder deze offerte uit de historie?')) return;
+  const history = JSON.parse(localStorage.getItem('bkfix_offer_history') || '[]');
+  localStorage.setItem('bkfix_offer_history', JSON.stringify(history.filter(e=>e.id!==id)));
+  renderHistorie($('beheer-content'));
 }
 
 function addVerplaatsingToOffer(){
@@ -1876,11 +1993,13 @@ async function tlExportQuotation(e){
 
   const lineItems = [];
   const amyItems = [];
+  const _hiddenCost = parseFloat($('hidden-cost')?.value) || 0;
+  const _hiddenPerItem = state.offer.length > 0 ? _hiddenCost / state.offer.length : 0;
 
   state.offer.forEach(item=>{
     // Amy io as separate line items – subtract from main price to avoid double-counting
     const amyPrice = ((item.bed1==='Amy io' ? item.bed1Price : 0) + (item.bed2==='Amy io' ? item.bed2Price : 0));
-    const mainPrice = item.uwVerkoop - amyPrice;
+    const mainPrice = item.uwVerkoop - amyPrice + _hiddenPerItem;
 
     // Extended description
     let extDesc = getTlDescription(item);
@@ -1946,6 +2065,7 @@ async function tlExportQuotation(e){
     btn.textContent='✓ Geëxporteerd!';
     btn.style.background='#059669';
     setTimeout(()=>{ btn.textContent='⬆ Exporteer naar Teamleader'; btn.style.background=''; btn.disabled=false; },3500);
+    saveOfferToHistory(qid);
     alert(`Offerte aangemaakt in Teamleader!\nDeal: ${state.tlSelectedDeal.title}${qid?'\nOfferte ID: '+qid:''}`);
   }catch(err){
     btn.textContent='⬆ Exporteer naar Teamleader'; btn.disabled=false;
@@ -2281,6 +2401,7 @@ function renderBeheer(){
       <button class="beheer-nav-btn" data-tab="templates" onclick="switchBeheerTab('templates',this)">📋 TL templates</button>
       <button class="beheer-nav-btn" data-tab="velden" onclick="switchBeheerTab('velden',this)">👁 Velden</button>
       <button class="beheer-nav-btn" data-tab="instellingen" onclick="switchBeheerTab('instellingen',this)">⚙ Instellingen</button>
+      <button class="beheer-nav-btn" data-tab="historie" onclick="switchBeheerTab('historie',this)">📜 Historie</button>
     </div>
     <div id="beheer-content"></div>
   </div>`;
@@ -2297,6 +2418,7 @@ function switchBeheerTab(name, btn){
     case 'templates': renderTemplates(el); break;
     case 'velden': renderVelden(el); break;
     case 'instellingen': renderInstellingen(el); break;
+    case 'historie': renderHistorie(el); break;
   }
 }
 
