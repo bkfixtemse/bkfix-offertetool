@@ -582,7 +582,7 @@ function calcRolluik(){
   // Plaatsing per stuk: 50 + plaatsing_per_type lookup (we use type-specific from list I3:J8)
   const plaatsingPerType = DATA.opties.rolluik_extras.plaatsing_extra_per_type[type] || 100;
   const plaatsingPerStuk = 50 + plaatsingPerType;
-  const plaatsingTotaal = plaatsingPerStuk * aantal + bereikPrice;
+  const plaatsingTotaal = (plaatsingPerStuk + bereikPrice) * aantal;
 
   // Subtotal rolluik (product)
   const productSubtotal = (basePrice + kastPrice + geleiderPrice + motorPrice + mkabelPrice + kastTypePrice + koppelPrice + lamelPrice) * aantal + manualOptionsPrice;
@@ -776,7 +776,7 @@ function calcScreen(){
   // Plaatsing (screens: 100 per aantal + 100 voor nova types, 50 voor solar)
   const novaExtra = {'Nova 83':100,'Nova 103':100,'Nova 123':100,'Nova solar 103':50}[type] || 100;
   const plaatsingPerStuk = cs.screen_plaatsing_base + novaExtra;
-  const plaatsingTotaal = plaatsingPerStuk * aantal + bereikPrice;
+  const plaatsingTotaal = (plaatsingPerStuk + bereikPrice) * aantal;
 
   const productSubtotal = (basePrice + gelPrice + onderlatPrice + motorPrice + doekPrice + koppelPrice) * aantal + manualOptionsPrice;
   const korting = parseFloat($('s-korting').value) || 0;
@@ -952,7 +952,7 @@ function calcKnikarm(){
 
   // Plaatsing: (breedte_ceil/1000)*100 + 250 (per stuk)
   const plaatsingPerStuk = (bCeil/1000)*100 + 250;
-  const plaatsingTotaal = plaatsingPerStuk * aantal + verdPrice + bereikPrice + gevelPrice;
+  const plaatsingTotaal = (plaatsingPerStuk + bereikPrice) * aantal + verdPrice + gevelPrice;
 
   const productSubtotal = (basePrice + muurPrice + doekPrice + ledPrice) * aantal + manualOptionsPrice;
   const korting = parseFloat($('k-korting').value) || 0;
@@ -1209,7 +1209,7 @@ function calcVeranda(){
   }
 
   const plaatsingPerStuk = cv.veranda_plaatsing_flat;
-  const plaatsingTotaal = plaatsingPerStuk * aantal + bereikPrice + gevelPrice;
+  const plaatsingTotaal = (plaatsingPerStuk + bereikPrice) * aantal + gevelPrice;
 
   const productSubtotal = (basePrice + smallSurcharge + mkabelPrice + doekPrice + ledPrice) * aantal + extrasPrice + manualOptionsPrice;
   const korting = parseFloat($('v-korting').value) || 0;
