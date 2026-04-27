@@ -546,9 +546,11 @@ function calcRolluik(){
   const kasthoogte = isSolar ? c.rolluik_solar_kasthoogte : getKasthoogte(type, effectiefH);
   const bestB = plaatsing==='odd' ? effectiefB+c.rolluik_odd_breedte_add : effectiefB+c.rolluik_idd_breedte_adj;
   const bestH = plaatsing==='odd' ? effectiefH+kasthoogte : effectiefH+c.rolluik_idd_hoogte_adj;
-  // Werkafmetingen: echte afmetingen voor beschrijving (ingegeven maten + 110mm / kasthoogte, niet afgerond)
-  const werkBreedte = breedte + c.rolluik_odd_breedte_add;
-  const werkHoogte  = hoogte  + kasthoogte;
+  // Bestelmaten (exact, niet afgerond) — intern voor fabrikant:
+  //   ODD → dagmaat + 110mm breedte + kasthoogte
+  //   IDD → dagmaat - 6mm breedte - 4mm hoogte
+  const bestelBreedte = plaatsing === 'odd' ? breedte + c.rolluik_odd_breedte_add : breedte + c.rolluik_idd_breedte_adj;
+  const bestelHoogte  = plaatsing === 'odd' ? hoogte + kasthoogte               : hoogte + c.rolluik_idd_hoogte_adj;
   const bCeil = Math.max(c.rolluik_min_dim, ceil(bestB,100));
   const hCeil = Math.max(1000, ceil(bestH,100));
 
@@ -645,7 +647,7 @@ function calcRolluik(){
     product:'Rolluik',
     type,aantal,breedte,hoogte,plaatsing,
     geleider,motor,lamel,kleur,kleurCustom,kasttype,kleurOmkasting,onderlat,bed1,bed2,
-    werkBreedte,werkHoogte,
+    bestelBreedte,bestelHoogte,
     bestelmaat:`${bCeil}×${hCeil}`,
     options:[
       geleider && `Geleider: ${geleider}`,
@@ -1326,8 +1328,9 @@ function showResult(item){
 
   html += `<details open><summary>Detail berekening</summary>`;
   html += `<div class="price-line"><span>Type</span><span>${item.type}${item.aantal>1?` × ${item.aantal}`:''}</span></div>`;
-  if(item.werkBreedte&&item.werkHoogte) html += `<div class="price-line"><span>Werkafmetingen</span><span>${item.werkBreedte}×${item.werkHoogte}mm</span></div>`;
-  if(item.bestelmaat) html += `<div class="price-line" style="color:#94a3b8"><span>Bestelmaat (prijsopzoeking)</span><span>${item.bestelmaat}mm</span></div>`;
+  if(item.breedte&&item.hoogte) html += `<div class="price-line"><span>Dagmaat</span><span>${item.breedte}×${item.hoogte}mm</span></div>`;
+  if(item.bestelBreedte!=null) html += `<div class="price-line"><span>Bestelmaat</span><span>${item.bestelBreedte}×${item.bestelHoogte}mm</span></div>`;
+  if(item.bestelmaat) html += `<div class="price-line" style="color:#94a3b8"><span>Calculatiemaat (prijsopzoeking)</span><span>${item.bestelmaat}mm</span></div>`;
   if(isNum(item.basePrice)) html += `<div class="price-line"><span>Basisprijs (adviesverkoop)</span><span>€${fmt(item.basePrice)}</span></div>`;
   if(isNum(item.kastPrice)&&item.kastPrice>0) html += `<div class="price-line"><span>Kast</span><span>€${fmt(item.kastPrice)}</span></div>`;
   if(isNum(item.geleiderPrice)&&item.geleiderPrice>0) html += `<div class="price-line"><span>Geleider</span><span>€${fmt(item.geleiderPrice)}</span></div>`;
@@ -1421,7 +1424,7 @@ function renderOffer(){
     html += `<div class="offer-item">
       <div class="info">
         <div class="title">${item.product}: ${item.type} ${item.aantal>1?`(×${item.aantal})`:''}</div>
-        <div style="font-size:11px;color:#64748b">${item.werkBreedte&&item.werkHoogte ? `${item.werkBreedte}×${item.werkHoogte}mm` : item.bestelmaat ? `${item.bestelmaat}mm` : ''}</div>
+        <div style="font-size:11px;color:#64748b">${item.breedte&&item.hoogte ? `${item.breedte}×${item.hoogte}mm` : item.bestelmaat ? `${item.bestelmaat}mm` : ''}</div>
         ${offerDesc}
       </div>
       <div class="price">€${fmt(effectivePrice)}</div>
@@ -1701,14 +1704,10 @@ function buildRolluikDesc(item) {
   const kleurLabel = item.kleurCustom || item.kleur || 'wit';
   const onderlat = item.onderlat || 'Design onderlat';
 
-  // Werkafmetingen: echte maten (ingegeven + 110mm / kasthoogte), niet afgerond
-  const wB = item.werkBreedte || (item.breedte + 110);
-  const wH = item.werkHoogte  || item.hoogte;
-
   let h = '<ul style="margin:4px 0;padding-left:18px">';
 
-  // Werkafmetingen
-  h += `<li><strong>Bestelmaat: ${wB}×${wH}mm</strong></li>`;
+  // Dagmaten staan op de offerte (= ingegeven maten)
+  h += `<li>Dagmaat: ${item.breedte}×${item.hoogte}mm</li>`;
 
   // Plaatsing
   h += `<li>Plaatsing: ${plaatsingLabel}</li>`;
