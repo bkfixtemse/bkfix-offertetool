@@ -2171,7 +2171,7 @@ async function tlExportQuotation(e){
       description,
       extended_description: extDesc,
       unit_price:{ amount: parseFloat((mainPrice/item.aantal).toFixed(2)), tax:'excluding' },
-      purchase_unit_price:{ amount: parseFloat((item.aankoop/item.aantal).toFixed(2)), currency:'EUR' },
+      purchase_unit_price:{ amount: parseFloat((item.aankoop/item.aantal).toFixed(2)), tax:'excluding' },
       tax_rate_id: taxRateId
     });
 
