@@ -2091,10 +2091,7 @@ async function tlExportQuotation(e){
     let extDesc = getTlDescription(item);
 
     // Title
-    const plaatsingLabel = item.plaatsing ? ` (${item.plaatsing.toUpperCase()})` : '';
-    const description = item.product === 'Rolluik'
-      ? `${item.product} - ${item.type}${plaatsingLabel}`
-      : `${item.product} - ${item.type}`;
+    const description = `${item.product} - ${item.type}`;
 
     lineItems.push({
       quantity: item.aantal,
