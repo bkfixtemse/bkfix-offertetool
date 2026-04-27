@@ -190,18 +190,21 @@ details[open] summary{margin-bottom:8px}
 <div class="row-3" style="margin-bottom:8px">
   <div class="field">
     <label>Uurtarief (€/uur)</label>
-    <input type="number" id="w-tarief" value="230" min="0" step="1" oninput="renderOffer()">
+    <input type="number" id="w-tarief" value="230" min="0" step="1" oninput="onWerkurenChange()">
   </div>
   <div class="field">
     <label>Uren</label>
-    <input type="number" id="w-uren" value="0" min="0" step="0.5" oninput="renderOffer()">
+    <input type="number" id="w-uren" value="0" min="0" step="0.5" oninput="onWerkurenChange()">
   </div>
   <div class="field">
     <label>Personen</label>
-    <input type="number" id="w-personen" value="2" min="1" step="1" oninput="renderOffer()">
+    <input type="number" id="w-personen" value="2" min="1" step="1" oninput="onWerkurenChange()">
   </div>
 </div>
 <div id="werkuren-block"></div>
+<div style="margin-top:8px">
+  <button class="secondary" onclick="addWerkurenToOffer()" style="width:100%">+ Werkuren toevoegen aan offerte</button>
+</div>
 </div>
 
 <div class="btn-group" style="margin-top:14px">
@@ -1316,6 +1319,25 @@ function showResult(item){
   html += `<div class="price-total"><span>Uw verkoop incl. plaatsing</span><span>€${fmt(item.uwVerkoop)}</span></div>`;
   html += `</details>`;
 
+  // ---- Winst analyse blok ----
+  const _tarief = parseFloat($('w-tarief')?.value) || 230;
+  const _uren   = parseFloat($('w-uren')?.value)   || 0;
+  const _pers   = parseInt($('w-personen')?.value)  || 2;
+  const arbeidskosten = _tarief * _uren * _pers;
+  const margeProduct  = item.uwVerkoop - item.aankoop - item.plaatsingTotaal;
+  const echteWinst    = margeProduct + item.plaatsingTotaal - arbeidskosten;
+  const arbeidslabel  = _uren > 0
+    ? `<div class="price-line" style="color:#dc2626"><span>Arbeidskosten (${_uren}u × ${_pers} pers. × €${fmt(_tarief,0)}/u)</span><span>-€${fmt(arbeidskosten)}</span></div>`
+    : `<div class="price-line" style="color:#94a3b8"><span>Arbeidskosten</span><span style="font-style:italic">vul werkuren in ↓</span></div>`;
+  html += `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;margin-top:10px">
+    <div style="font-weight:700;font-size:11px;color:#166534;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Winst analyse – dit product</div>
+    <div class="price-line"><span>Marge product (${Math.round((item.bkfixMarge||0.2)*100)}% op verkoop)</span><span>€${fmt(margeProduct)}</span></div>
+    <div class="price-line"><span>Plaatsing omzet</span><span>€${fmt(item.plaatsingTotaal)}</span></div>
+    ${arbeidslabel}
+    <div style="border-top:1px solid #bbf7d0;margin:6px 0"></div>
+    <div class="price-line" style="font-weight:700"><span>Echte winst</span><span style="color:${echteWinst>=0?'#059669':'#dc2626'}">€${fmt(echteWinst)}</span></div>
+  </div>`;
+
   box.innerHTML = html;
 }
 
@@ -1406,6 +1428,36 @@ function clearOffer(){
     state.offer = [];
     renderOffer();
   }
+}
+
+function onWerkurenChange(){
+  renderOffer();
+  if(state.currentItem) showResult(state.currentItem);
+}
+
+function addWerkurenToOffer(){
+  const tarief  = parseFloat($('w-tarief')?.value) || 230;
+  const uren    = parseFloat($('w-uren')?.value)   || 0;
+  const personen= parseInt($('w-personen')?.value)  || 2;
+  if(uren <= 0){ alert('Voer eerst het aantal uren in.'); return; }
+  const kost = tarief * uren * personen;
+  state.offer.push({
+    product:'Werkuren',
+    type:`Plaatsing (${personen} pers. × ${uren}u × €${tarief}/u)`,
+    aantal:1,
+    uwVerkoop:kost,
+    aankoop:kost,
+    plaatsingTotaal:0,
+    bereikPrice:0,
+    options:[`${personen} persoon/personen × ${uren} uren × €${tarief}/u`],
+    opmerkingen:'',
+    errors:[],
+    warnings:[]
+  });
+  // Reset uren zodat werkuren niet dubbel geteld worden in het totaal
+  $('w-uren').value = '0';
+  renderOffer();
+  if(state.currentItem) showResult(state.currentItem);
 }
 
 // ======= TL beschrijving helper =======
