@@ -207,6 +207,21 @@ details[open] summary{margin-bottom:8px}
 </div>
 </div>
 
+<!-- Verplaatsingskosten sectie -->
+<div style="border-top:2px solid #e2e8f0;margin-top:14px;padding-top:14px">
+<h2 style="margin-bottom:10px">Verplaatsingskosten</h2>
+<div style="display:flex;gap:6px;margin-bottom:8px">
+  <div class="field" style="flex:1;margin:0">
+    <label>Adres werf / klant</label>
+    <input type="text" id="verpl-adres" placeholder="bv. Kerkstraat 5, Gent" style="width:100%;box-sizing:border-box">
+  </div>
+</div>
+<div style="margin-bottom:8px">
+  <button class="secondary" onclick="calculateVerplaatsing()" style="width:100%">🗺 Bereken afstand</button>
+</div>
+<div id="verpl-result"></div>
+</div>
+
 <div class="btn-group" style="margin-top:14px">
 <button class="secondary" onclick="clearOffer()">Offerte wissen</button>
 </div>
@@ -272,6 +287,7 @@ const DATA = {"screens":{"prices":{"Nova 83":{"N83_H_1000":{"N83_B_1000":828,"N8
 // ======= State =======
 const state = {
   currentProduct: 'rolluik',
+  verplaatsingCalc: null,
   currentItem: null,
   offer: [],
   tlSelectedDeal: null,
@@ -1435,6 +1451,81 @@ function onWerkurenChange(){
   if(state.currentItem) showResult(state.currentItem);
 }
 
+// ======= Verplaatsingskosten =======
+async function geocodeAddress(address){
+  const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(address);
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('Geocoding mislukt');
+  const data = await res.json();
+  if(!data.length) throw new Error(`Adres niet gevonden: "${address}"`);
+  return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), display: data[0].display_name };
+}
+
+async function calculateVerplaatsing(){
+  const adres = $('verpl-adres')?.value?.trim();
+  if(!adres){ alert('Voer een adres in.'); return; }
+  const resultEl = $('verpl-result');
+  resultEl.innerHTML = '<div style="color:#64748b;font-size:12px;padding:6px 0">⏳ Afstand berekenen…</div>';
+  try {
+    const cs = CONFIG.data;
+    const s  = ADMIN.settings;
+    const magazijn = s.verplaatsing_magazijn || 'Hoogkamerstraat 272, Temse, België';
+    const eurPerKm = cs.verplaatsing_eur_per_km || 0.42;
+    const retour   = s.verplaatsing_retour !== false; // default true
+
+    const [mag, klant] = await Promise.all([
+      geocodeAddress(magazijn),
+      geocodeAddress(adres + (adres.toLowerCase().includes('belgi') ? '' : ', België'))
+    ]);
+
+    const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${mag.lon},${mag.lat};${klant.lon},${klant.lat}?overview=false`;
+    const routeRes = await fetch(osrmUrl);
+    if(!routeRes.ok) throw new Error('Routeberekening mislukt');
+    const routeData = await routeRes.json();
+    if(!routeData.routes?.length) throw new Error('Geen route gevonden');
+
+    const enkelKm  = Math.ceil(routeData.routes[0].distance / 1000);
+    const totalKm  = retour ? enkelKm * 2 : enkelKm;
+    const kost     = Math.round(totalKm * eurPerKm * 100) / 100;
+
+    state.verplaatsingCalc = { enkelKm, totalKm, kost, adres, eurPerKm, retour };
+
+    resultEl.innerHTML = `
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px;font-size:12px">
+        <div style="color:#64748b;margin-bottom:6px;font-size:11px">📍 ${klant.display.split(',').slice(0,3).join(', ')}</div>
+        <div class="price-line"><span>Enkele rit</span><span>${enkelKm} km</span></div>
+        ${retour ? `<div class="price-line"><span>Retour (× 2)</span><span>${totalKm} km</span></div>` : ''}
+        <div class="price-line"><span>Tarief</span><span>€${fmt(eurPerKm,2)}/km</span></div>
+        <div class="price-line" style="font-weight:600;border-top:1px solid #e2e8f0;margin-top:4px;padding-top:6px"><span>Verplaatsingskosten</span><span>€${fmt(kost)}</span></div>
+        <button onclick="addVerplaatsingToOffer()" style="margin-top:8px;width:100%;padding:8px;background:#2c3e50;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">+ Toevoegen aan offerte</button>
+      </div>`;
+  } catch(e) {
+    resultEl.innerHTML = `<div style="color:#dc2626;font-size:12px;padding:6px 0">❌ ${e.message}</div>`;
+  }
+}
+
+function addVerplaatsingToOffer(){
+  const v = state.verplaatsingCalc;
+  if(!v){ alert('Bereken eerst de afstand.'); return; }
+  state.offer.push({
+    product: 'Verplaatsing',
+    type: `${v.adres} (${v.totalKm} km${v.retour ? ' retour' : ''})`,
+    aantal: 1,
+    uwVerkoop: v.kost,
+    aankoop: v.kost,
+    plaatsingTotaal: 0,
+    bereikPrice: 0,
+    options: [`${v.enkelKm} km enkele rit${v.retour ? ` × 2 = ${v.totalKm} km` : ''} × €${fmt(v.eurPerKm,2)}/km`],
+    opmerkingen: '',
+    errors: [], warnings: []
+  });
+  // Reset result
+  $('verpl-result').innerHTML = '';
+  $('verpl-adres').value = '';
+  state.verplaatsingCalc = null;
+  renderOffer();
+}
+
 function addWerkurenToOffer(){
   const tarief  = parseFloat($('w-tarief')?.value) || 230;
   const uren    = parseFloat($('w-uren')?.value)   || 0;
@@ -1983,6 +2074,8 @@ const DEFAULT_CONFIG = {
   veranda_min_breedte:1000, veranda_breedte_rounding:250, veranda_uitval_rounding:250,
   veranda_plaatsing_flat:350, veranda_small_surcharge:245,
   veranda_small_surcharge_max_breedte:1400, veranda_default_marge:40,
+  // Verplaatsingskosten
+  verplaatsing_eur_per_km: 0.42,
 };
 const CONFIG = {
   get data(){ const s=localStorage.getItem('bkfix_config'); return s?{...DEFAULT_CONFIG,...JSON.parse(s)}:{...DEFAULT_CONFIG}; },
@@ -2611,6 +2704,12 @@ function renderInstellingen(el){
     <table class="admin-table" style="max-width:500px"><tr><th>Bediening</th><th>Prijs</th></tr>
       ${Object.entries(beds).map(([k,v])=>`<tr><td>${k}</td><td><input type="number" id="bp_${k.replace(/\W/g,'_')}" value="${v}" step="0.01" style="width:100px"></td></tr>`).join('')}
     </table>
+    <h4 style="font-size:13px;font-weight:700;margin:20px 0 10px">Verplaatsingskosten</h4>
+    <div class="row" style="max-width:500px;flex-wrap:wrap;gap:12px">
+      <div class="field" style="min-width:200px"><label>Magazijn adres (vertrekpunt)</label><input type="text" id="set-verpl-magazijn" value="${s.verplaatsing_magazijn||'Hoogkamerstraat 272, Temse'}" style="width:100%;box-sizing:border-box"></div>
+      <div class="field" style="max-width:130px"><label>Tarief (€/km)</label><input type="number" id="cfg_verplaatsing_eur_per_km" value="${CONFIG.data.verplaatsing_eur_per_km||0.42}" step="0.01" min="0" style="max-width:110px"></div>
+      <div class="field" style="display:flex;align-items:center;gap:8px;margin-top:18px"><input type="checkbox" id="set-verpl-retour" ${s.verplaatsing_retour!==false?'checked':''}><label style="font-weight:500">Retour berekenen (heen en terug)</label></div>
+    </div>
     <h4 style="font-size:13px;font-weight:700;margin:20px 0 10px">Berekeningsparameters</h4>
     <p style="font-size:12px;color:#64748b;margin-bottom:10px">Technische constanten gebruikt in de prijsberekening.</p>
     ${renderConfigParamsHtml(CONFIG.data)}
@@ -2633,6 +2732,8 @@ function saveInstellingen(){
   const s=ADMIN.settings;
   s.defaultMarge=parseFloat($('set-marge')?.value)||50;
   s.defaultBkfix=parseFloat($('set-bkfix')?.value)||20;
+  s.verplaatsing_magazijn=($('set-verpl-magazijn')?.value||'').trim()||'Hoogkamerstraat 272, Temse';
+  s.verplaatsing_retour=$('set-verpl-retour')?.checked!==false;
   ADMIN.settings=s;
   const motors=DATA.opties?.rolluik_extras?.motoren||{};
   Object.keys(motors).forEach(k=>{const el=$('mp_'+k.replace(/\W/g,'_'));if(el) motors[k]=parseFloat(el.value)||motors[k];});
