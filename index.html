@@ -411,6 +411,10 @@ function renderRolluik(){
     <div class="field"><label>Kleur lamel</label><select id="r-kleur"></select></div>
   </div>
   </div>
+  <div data-vis-grp="onderlat" class="row">
+    <div class="field"><label>Onderlat</label><select id="r-onderlat"></select></div>
+    <div class="field"></div>
+  </div>
   <div data-vis-grp="kleurCustom" class="row">
     <div class="field"><label>Andere kleur</label><input type="text" id="r-kleur-custom" placeholder="Vrij invullen indien nodig"></div>
     <div class="field"><label>&nbsp;</label><div class="info-box">Kies uit de lijst of vul zelf een kleur in.</div></div>
@@ -448,9 +452,10 @@ function renderRolluik(){
   BEREIKBAARHEID_ALL.forEach(b=>sel('r-bereik').appendChild(opt(b,b)));
   [''].concat(BEDIENINGEN).forEach(b=>sel('r-bed1').appendChild(opt(b,b||'(geen)')));
   [''].concat(BEDIENINGEN).forEach(b=>sel('r-bed2').appendChild(opt(b,b||'(geen)')));
+  ['Design onderlat','Vlakke onderlat'].forEach(o=>sel('r-onderlat').appendChild(opt(o,o)));
 
   // Attach listeners
-  ['r-type','r-aantal','r-breedte','r-hoogte','r-plaatsing','r-geleider','r-kasttype','r-kleur-omkasting','r-motor','r-mkabel','r-lamel','r-kleur','r-kleur-custom','r-koppel','r-bereik','r-bed1','r-bed2','r-korting','r-marge','r-bkfix-marge'].forEach(id=>{
+  ['r-type','r-aantal','r-breedte','r-hoogte','r-plaatsing','r-geleider','r-kasttype','r-kleur-omkasting','r-motor','r-mkabel','r-lamel','r-kleur','r-kleur-custom','r-koppel','r-bereik','r-onderlat','r-bed1','r-bed2','r-korting','r-marge','r-bkfix-marge'].forEach(id=>{
     const el=$(id);['change','input'].forEach(ev=>el.addEventListener(ev,calcRolluik));
   });
   applyFieldVis('rolluik');
@@ -597,10 +602,11 @@ function calcRolluik(){
   const verkoop = aankoop / (1 - bkfixMarge);
   const uwVerkoop = verkoop - korting + plaatsingTotaal + bedTotal;
 
+  const onderlat = $('r-onderlat').value || 'Design onderlat';
   const item = {
     product:'Rolluik',
     type,aantal,breedte,hoogte,plaatsing,
-    geleider,motor,lamel,kleur,kleurCustom,kasttype,kleurOmkasting,bed1,bed2,
+    geleider,motor,lamel,kleur,kleurCustom,kasttype,kleurOmkasting,onderlat,bed1,bed2,
     bestelmaat:`${bCeil}×${hCeil}`,
     options:[
       geleider && `Geleider: ${geleider}`,
@@ -609,6 +615,7 @@ function calcRolluik(){
       mkabel && `Afw. motorkabel: ${mkabel}`,
       lamel==='hardschuim' && `Lamel: hardschuim`,
       kleurLabel && `Kleur: ${kleurLabel}`,
+      onderlat && `Onderlat: ${onderlat}`,
       koppel && `Koppelen: ${koppel}`,
       bereik && `Bereikbaarheid: ${bereik}`,
       bed1 && `Bediening 1: ${bed1}`,
@@ -1338,10 +1345,14 @@ function renderOffer(){
   }
   let html = '';
   state.offer.forEach((item, idx)=>{
+    const offerDesc = item.product === 'Rolluik'
+      ? `<div style="font-size:11px;color:#475569;margin-top:4px">${buildRolluikDesc(item)}</div>`
+      : `<div class="desc">${item.bestelmaat||''}mm${item.options?.length? ' · '+item.options.slice(0,2).join(' · '):''}</div>`;
     html += `<div class="offer-item">
       <div class="info">
         <div class="title">${item.product}: ${item.type} ${item.aantal>1?`(×${item.aantal})`:''}</div>
-        <div class="desc">${item.bestelmaat||''}mm${item.options?.length? ' · '+item.options.slice(0,2).join(' · '):''}</div>
+        <div style="font-size:11px;color:#64748b">${item.bestelmaat||''}mm</div>
+        ${offerDesc}
       </div>
       <div class="price">€${fmt(item.uwVerkoop)}</div>
       <button class="secondary" style="padding:4px 10px" onclick="removeOfferItem(${idx})">×</button>
@@ -1418,51 +1429,74 @@ function getTlDescription(item){
   return [dagmaat, ...filteredOpts, item.opmerkingen||''].filter(Boolean).join('\n');
 }
 
-// ======= Teamleader beschrijving rolluik =======
-function tlRolluikDescription(item) {
+// ======= Rolluik beschrijving (HTML bullets — voor TL en offerte) =======
+function buildRolluikDesc(item) {
   const isSolar = item.motor && item.motor.toLowerCase().includes('solar');
-  const lines = [];
+  const plaatsingLabel = item.plaatsing === 'odd' ? 'ODD' : 'IDD';
+  const kleurLabel = item.kleurCustom || item.kleur || 'wit';
+  const onderlat = item.onderlat || 'Design onderlat';
 
-  lines.push('Afmetingen dagmaat:');
-  lines.push(`Breedte: ${item.breedte}mm`);
-  lines.push(`Hoogte: ${item.hoogte}mm`);
-  lines.push(`Plaatsing: ${item.plaatsing === 'odd' ? 'ODD (Op de dag)' : 'IDD (In de dag)'}`);
-  lines.push('');
+  let h = '<ul style="margin:4px 0;padding-left:18px">';
 
-  lines.push('Kleur:');
+  // Plaatsing
+  h += `<li>Plaatsing: ${plaatsingLabel}</li>`;
+
+  // Kleur
+  h += '<li>Kleur:<ul style="margin:2px 0;padding-left:16px">';
   if (item.kleurCustom) {
-    lines.push(`RAL-kleur: ${item.kleurCustom}`);
+    h += '<li>Keuze uit 206 standaardkleuren:</li>';
+    h += `<li>RAL-kleur: <strong>${item.kleurCustom}</strong></li>`;
   } else {
-    lines.push(`Keuze uit 206 standaardkleuren: ${item.kleur || ''}`);
+    h += `<li>Keuze uit 206 standaardkleuren: <strong>${item.kleur || ''}</strong></li>`;
   }
-  lines.push('');
+  h += '</ul></li>';
 
-  lines.push(`Geleiders: ${item.geleider || 'Standaard: HTF 53x22mm'}`);
-  lines.push('');
+  // Geleiders
+  h += '<li>Geleiders:<ul style="margin:2px 0;padding-left:16px">';
+  h += `<li>${item.geleider || 'Standaard: HTF 53×22mm'}</li>`;
+  h += '</ul></li>';
 
-  lines.push(`Lamel: ${item.lamel === 'hardschuim' ? 'Hardschuim' : 'L-lamel: 42x9.3mm'}`);
-  lines.push(`Kleur: ${item.kleurCustom || item.kleur || 'wit'}`);
-  lines.push('');
+  // Lamel
+  h += '<li>Lamel:<ul style="margin:2px 0;padding-left:16px">';
+  h += `<li>${item.lamel === 'hardschuim' ? 'Hardschuim lamel' : 'L-lamel: 42×9.3mm'}</li>`;
+  h += `<li>Kleur: <strong>${kleurLabel}</strong></li>`;
+  h += '</ul></li>';
 
-  lines.push(`Motor: ${item.motor || 'Standaard: SOMFY S&SO RS100 IO'}`);
+  // Motor
+  h += '<li>Motor:<ul style="margin:2px 0;padding-left:16px">';
+  const motorLabel = item.motor || 'Standaard: SOMFY S&SO RS100 IO';
   if (isSolar) {
-    lines.push('meerprijs: SOMFY RS100 IO Solar max afmetingen: 3500x2800mm');
-    lines.push('minimum kastmaat: 180mm');
+    h += `<li>${motorLabel}<ul style="margin:2px 0;padding-left:16px">`;
+    h += '<li>max afmetingen: 3500×2800mm</li>';
+    h += '<li>minimum kastmaat: 180mm</li>';
+    h += '</ul></li>';
+  } else {
+    h += `<li>${motorLabel}</li>`;
   }
-  lines.push('');
+  h += '</ul></li>';
 
-  lines.push(`Kast: ${item.kasttype || 'Standaard: afgeschuind 45°'}`);
-  if (item.kleurOmkasting) lines.push(`Kleur: ${item.kleurOmkasting}`);
-  lines.push('');
+  // Kast
+  h += '<li>Kast:<ul style="margin:2px 0;padding-left:16px">';
+  h += `<li>${item.kasttype || 'Standaard: afgeschuind 45°'}</li>`;
+  if (item.kleurOmkasting) h += `<li>Kleur omkasting: ${item.kleurOmkasting}</li>`;
+  h += '</ul></li>';
 
-  lines.push('Onderlat: Design onderlat / Vlakke onderlat');
+  // Onderlat
+  h += '<li>Onderlat:<ul style="margin:2px 0;padding-left:16px">';
+  h += `<li>${onderlat}</li>`;
+  h += '</ul></li>';
 
+  // Opmerkingen
   if (item.opmerkingen) {
-    lines.push('');
-    lines.push(`Opmerkingen: ${item.opmerkingen}`);
+    h += `<li>Opmerkingen: ${item.opmerkingen}</li>`;
   }
 
-  return lines.join('\n');
+  h += '</ul>';
+  return h;
+}
+
+function tlRolluikDescription(item) {
+  return buildRolluikDesc(item);
 }
 
 // ======= Teamleader API Integration =======
@@ -1710,7 +1744,7 @@ async function tlExportQuotation(e){
 
     // Aankoopprijs in description (zichtbaar in TL)
     const aankoopLabel = `Aankoopprijs: €${fmt(item.aankoop)} (excl. BTW)`;
-    extDesc = extDesc + '\n\n' + aankoopLabel;
+    extDesc = extDesc + (extDesc.trimStart().startsWith('<') ? `<br><br>${aankoopLabel}` : `\n\n${aankoopLabel}`);
 
     // Title
     const plaatsingLabel = item.plaatsing ? ` (${item.plaatsing.toUpperCase()})` : '';
@@ -1906,7 +1940,7 @@ const CONFIG = {
 
 // ----- Field visibility per product (FIELD_VIS) -----
 const DEFAULT_FIELD_VIS = {
-  rolluik:{geleider_kast:true,kleurOmkasting:true,motor:true,lamel:true,kleurCustom:true,koppelen_bereik:true,bediening:true,korting_marge:true,opmerkingen:true,vrijeOpties:true},
+  rolluik:{geleider_kast:true,kleurOmkasting:true,motor:true,lamel:true,onderlat:true,kleurCustom:true,koppelen_bereik:true,bediening:true,korting_marge:true,opmerkingen:true,vrijeOpties:true},
   screen:{geleider_onderlat:true,motor_bereik:true,doek_koppelen:true,bediening:true,korting_marge:true,opmerkingen:true,vrijeOpties:true},
   knikarm:{verdieping_bereik:true,gevel_muur:true,doek_led:true,bediening:true,korting_marge:true,opmerkingen:true,vrijeOpties:true},
   veranda:{mkabel:true,gevel_doek:true,bereik_led:true,verdieping:true,extras:true,bediening:true,korting_marge:true,opmerkingen:true},
@@ -2419,7 +2453,7 @@ function resetTlTemplate(){
 
 // ===== VELDEN =====
 const VELD_LABELS = {
-  rolluik:{geleider_kast:'Geleider & kasttype',kleurOmkasting:'Kleur omkasting',motor:'Motor & motorkabel',lamel:'Lamel & kleur lamel',kleurCustom:'Vrije kleurinvoer',koppelen_bereik:'Koppelen & bereikbaarheid',bediening:'Bediening',korting_marge:'Korting & marge',opmerkingen:'Opmerkingen',vrijeOpties:'Vrije opties'},
+  rolluik:{geleider_kast:'Geleider & kasttype',kleurOmkasting:'Kleur omkasting',motor:'Motor & motorkabel',lamel:'Lamel & kleur lamel',onderlat:'Onderlat',kleurCustom:'Vrije kleurinvoer',koppelen_bereik:'Koppelen & bereikbaarheid',bediening:'Bediening',korting_marge:'Korting & marge',opmerkingen:'Opmerkingen',vrijeOpties:'Vrije opties'},
   screen:{geleider_onderlat:'Geleider & onderlat',motor_bereik:'Motor & bereikbaarheid',doek_koppelen:'Doek & koppelen',bediening:'Bediening',korting_marge:'Korting & marge',opmerkingen:'Opmerkingen',vrijeOpties:'Vrije opties'},
   knikarm:{verdieping_bereik:'Verdieping & bereikbaarheid',gevel_muur:'Gevel & muursteun',doek_led:'Doek & LED',bediening:'Bediening',korting_marge:'Korting & marge',opmerkingen:'Opmerkingen',vrijeOpties:'Vrije opties'},
   veranda:{mkabel:'Motorkabel',gevel_doek:'Gevel & doek',bereik_led:'Bereikbaarheid & LED',verdieping:'Verdieping',extras:'Extra opties',bediening:'Bediening',korting_marge:'Korting & marge',opmerkingen:'Opmerkingen'},
