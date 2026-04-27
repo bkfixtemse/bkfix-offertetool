@@ -281,8 +281,9 @@ details[open] summary{margin-bottom:8px}
     <select id="tl-tax-rate"><option value="">Laden…</option></select>
   </div>
   <div class="field" style="margin-bottom:12px">
-    <label>Layout offerte</label>
+    <label>Layout offerte <button type="button" onclick="tlFetchLayouts()" style="font-size:11px;padding:2px 7px;margin-left:6px;background:#334155;border:none;border-radius:4px;color:#94a3b8;cursor:pointer" title="Herladen">↻</button></label>
     <select id="tl-layout"><option value="">— geen layout —</option></select>
+    <div id="tl-layout-error" style="color:#f87171;font-size:11px;margin-top:4px;display:none"></div>
   </div>
   <div class="btn-group">
     <button id="tl-export-btn" onclick="tlExportQuotation(event)" style="background:#1a6b3c;flex:1">⬆ Exporteer naar Teamleader</button>
@@ -1890,12 +1891,18 @@ async function tlOnConnected(){
 }
 
 async function tlFetchLayouts(){
+  const errEl = $('tl-layout-error');
+  if(errEl){ errEl.style.display='none'; errEl.textContent=''; }
   try{
-    const data = await tlCall('quotationLayouts.list',{page:{size:20,number:1}});
+    const data = await tlCall('quotationLayouts.list',{page:{size:100,number:1}});
     const layouts = data.data||[];
     const sel = $('tl-layout');
     if(!sel) return;
     sel.innerHTML = '<option value="">— geen layout —</option>';
+    if(layouts.length === 0 && errEl){
+      errEl.textContent = 'Geen layouts gevonden in Teamleader.';
+      errEl.style.display = 'block';
+    }
     layouts.forEach(l=>{
       const o = document.createElement('option');
       o.value = l.id;
@@ -1904,9 +1911,12 @@ async function tlFetchLayouts(){
       sel.appendChild(o);
     });
     const saved = localStorage.getItem('tl_layout_id');
-    if(saved) sel.value = saved;
+    if(saved && sel.querySelector(`option[value="${saved}"]`)) sel.value = saved;
     sel.onchange = ()=>localStorage.setItem('tl_layout_id', sel.value);
-  }catch(e){ console.warn('Layouts fetch failed:', e.message); }
+  }catch(e){
+    console.warn('Layouts fetch failed:', e.message);
+    if(errEl){ errEl.textContent = `Layouts laden mislukt: ${e.message}`; errEl.style.display='block'; }
+  }
 }
 
 function tlDisconnect(){
@@ -2014,10 +2024,6 @@ async function tlExportQuotation(e){
 
     // Extended description
     let extDesc = getTlDescription(item);
-
-    // Aankoopprijs in description (zichtbaar in TL)
-    const aankoopLabel = `Aankoopprijs: €${fmt(item.aankoop)} (excl. BTW)`;
-    extDesc = extDesc + (extDesc.trimStart().startsWith('<') ? `<br><br>${aankoopLabel}` : `\n\n${aankoopLabel}`);
 
     // Title
     const plaatsingLabel = item.plaatsing ? ` (${item.plaatsing.toUpperCase()})` : '';
