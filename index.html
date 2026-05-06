@@ -411,6 +411,44 @@ const TYPE_GEVEL = Object.keys(DATA.opties.algemene.type_gevel);
 const DOEKGROEPEN = Object.keys(DATA.opties.algemene.doekgroep);
 const KLEUREN_STD = ['glad','fijn structuur','metallic structuur'];
 
+// Allround kleurencollectie 2026
+const KLEURENCOLLECTIE = {
+  glad: ['7009','7010','7011','7012','7013','7015','7016','7021','7022','7023','7024',
+         '7026','7030','7031','7032','7033','7034','7035','7036','7037','7038','7039',
+         '7040','7042','7043','7044','7045','7046','7047',
+         '8000','8001','8002','8003','8004','8007','8008','8011','8012','8014','8015',
+         '8016','8017','8019','8022','8023','8024','8025','8028',
+         '9001','9002','9003','9004','9005','9006','9007','9010','9011','9016','9017','9018'],
+  structuur: ['5011','6009','7016','7021','7039','9001','9005','9010','9016'], // suffix -SL
+  metallic:  ['DB703','7016','8019','9006','9007'],                            // suffix -SM
+};
+const KLEUR_MEERPRIJS = 675; // € voor kleuren buiten Allround collectie
+
+function buildKleurSelect(id, onchangeCall){
+  const ral = r => r.startsWith('DB') ? r : `RAL ${r}`;
+  let h = `<select id="${id}" onchange="${onchangeCall}" style="width:100%">`;
+  h += '<option value="">— standaard (wit) —</option>';
+  h += '<optgroup label="GLAD">';
+  KLEURENCOLLECTIE.glad.forEach(r=>{ h+=`<option value="${ral(r)}">${ral(r)}</option>`; });
+  h += '</optgroup>';
+  h += '<optgroup label="FIJN STRUCTUUR (SL)">';
+  KLEURENCOLLECTIE.structuur.forEach(r=>{ h+=`<option value="${ral(r)} SL">${ral(r)} SL</option>`; });
+  h += '</optgroup>';
+  h += '<optgroup label="METALLIC STRUCTUUR (SM)">';
+  KLEURENCOLLECTIE.metallic.forEach(r=>{ h+=`<option value="${ral(r)} SM">${ral(r)} SM</option>`; });
+  h += '</optgroup>';
+  h += `<option value="andere">🎨 Andere kleur / poedercoating (+€${KLEUR_MEERPRIJS})</option>`;
+  h += '</select>';
+  return h;
+}
+
+function onKleurSelectChange(prefix){
+  const sel = $(`${prefix}-kleur-select`);
+  const wrap = $(`${prefix}-kleur-custom-wrap`);
+  if(wrap) wrap.style.display = sel?.value === 'andere' ? '' : 'none';
+  recalcCurrentProduct();
+}
+
 // ======= ROLLUIK form =======
 function renderRolluik(){
   const types = Object.keys(DATA.rolluik.prices).filter(t => t !== 'Ecoroll_L_Solar');
@@ -466,8 +504,8 @@ function renderRolluik(){
     <div class="field"></div>
   </div>
   <div data-vis-grp="kleurCustom" class="row">
-    <div class="field"><label>Andere kleur</label><input type="text" id="r-kleur-custom" placeholder="Vrij invullen indien nodig"></div>
-    <div class="field"><label>&nbsp;</label><div class="info-box">Kies uit de lijst of vul zelf een kleur in.</div></div>
+    <div class="field"><label>Kleur omkasting / lamellen</label>${buildKleurSelect('r-kleur-select','onKleurSelectChange("r")')}</div>
+    <div id="r-kleur-custom-wrap" class="field" style="display:none"><label>Andere kleur omschrijving</label><input type="text" id="r-kleur-custom" placeholder="bv. RAL 6009 fijnstructuur"></div>
   </div>
   <div data-vis-grp="koppelen_bereik" class="row">
     <div class="field"><label>Koppelen</label><select id="r-koppel"></select></div>
@@ -505,8 +543,8 @@ function renderRolluik(){
   ['Design onderlat','Vlakke onderlat'].forEach(o=>sel('r-onderlat').appendChild(opt(o,o)));
 
   // Attach listeners
-  ['r-type','r-aantal','r-breedte','r-hoogte','r-plaatsing','r-geleider','r-kasttype','r-kleur-omkasting','r-motor','r-mkabel','r-lamel','r-kleur','r-kleur-custom','r-koppel','r-bereik','r-onderlat','r-bed1','r-bed2','r-korting','r-marge','r-bkfix-marge'].forEach(id=>{
-    const el=$(id);['change','input'].forEach(ev=>el.addEventListener(ev,calcRolluik));
+  ['r-type','r-aantal','r-breedte','r-hoogte','r-plaatsing','r-geleider','r-kasttype','r-kleur-omkasting','r-motor','r-mkabel','r-lamel','r-kleur','r-kleur-select','r-kleur-custom','r-koppel','r-bereik','r-onderlat','r-bed1','r-bed2','r-korting','r-marge','r-bkfix-marge'].forEach(id=>{
+    const el=$(id); if(el) ['change','input'].forEach(ev=>el.addEventListener(ev,calcRolluik));
   });
   applyFieldVis('rolluik');
   calcRolluik();
@@ -610,9 +648,11 @@ function calcRolluik(){
   // Soort lamel (hardschuim)
   const lamel = $('r-lamel').value;
   const kleur = $('r-kleur').value;
-  const kleurCustom = $('r-kleur-custom').value.trim();
-  const kleurOmkasting = $('r-kleur-omkasting').value.trim();
-  const kleurLabel = kleurCustom || kleur;
+  const kleurSelectVal = $('r-kleur-select')?.value || '';
+  const kleurCustom = kleurSelectVal === 'andere' ? ($('r-kleur-custom')?.value.trim() || '') : '';
+  const kleurMeerprijs = kleurSelectVal === 'andere' ? KLEUR_MEERPRIJS : 0;
+  const kleurLabel = kleurSelectVal === 'andere' ? (kleurCustom || 'Andere kleur (+€'+KLEUR_MEERPRIJS+')') : kleurSelectVal || kleur;
+  const kleurOmkasting = $('r-kleur-omkasting')?.value.trim() || '';
   let lamelPrice = 0;
   if(lamel === 'hardschuim'){
     const kleurData = kleur ? DATA.opties.rolluik_extras.lamel_colors[kleur] : null;
@@ -645,7 +685,7 @@ function calcRolluik(){
   const plaatsingTotaal = (plaatsingPerStuk + bereikPrice) * aantal;
 
   // Subtotal rolluik (product)
-  const productSubtotal = (basePrice + kastPrice + geleiderPrice + motorPrice + mkabelPrice + kastTypePrice + koppelPrice + lamelPrice) * aantal + manualOptionsPrice;
+  const productSubtotal = (basePrice + kastPrice + geleiderPrice + motorPrice + mkabelPrice + kastTypePrice + koppelPrice + lamelPrice + kleurMeerprijs) * aantal + manualOptionsPrice;
   const korting = parseFloat($('r-korting').value) || 0;
 
   const bedTotal = bed1Price + bed2Price;
@@ -661,7 +701,7 @@ function calcRolluik(){
   const item = {
     product:'Rolluik',
     type,aantal,breedte,hoogte,plaatsing,
-    geleider,motor,lamel,kleur,kleurCustom,kasttype,kleurOmkasting,onderlat,bed1,bed2,
+    geleider,motor,lamel,kleur,kleurCustom,kleurSelectVal,kasttype,kleurOmkasting,onderlat,bed1,bed2,
     bestelBreedte,bestelHoogte,
     bestelmaat:`${bCeil}×${hCeil}`,
     options:[
@@ -671,6 +711,7 @@ function calcRolluik(){
       mkabel && `Afw. motorkabel: ${mkabel}`,
       lamel==='hardschuim' && `Lamel: hardschuim`,
       kleurLabel && `Kleur: ${kleurLabel}`,
+      kleurMeerprijs > 0 && `Kleur meerprijs: +€${kleurMeerprijs}`,
       onderlat && `Onderlat: ${onderlat}`,
       koppel && `Koppelen: ${koppel}`,
       bereik && `Bereikbaarheid: ${bereik}`,
@@ -679,7 +720,7 @@ function calcRolluik(){
       ...manualOptions.map(opt=>`${opt.description}: €${fmt(opt.amount)}`)
     ].filter(Boolean),
     opmerkingen: $('r-opm').value,
-    basePrice,kastPrice,geleiderPrice,motorPrice,mkabelPrice,kastTypePrice,koppelPrice,lamelPrice,
+    basePrice,kastPrice,geleiderPrice,motorPrice,mkabelPrice,kastTypePrice,koppelPrice,lamelPrice,kleurMeerprijs,
     extrasPrice:manualOptionsPrice,
     productSubtotal,bereikPrice,bed1Price,bed2Price,plaatsingPerStuk,plaatsingTotaal,
     korting,marge,bkfixMarge,aankoop,verkoop,uwVerkoop,
@@ -726,6 +767,10 @@ function renderScreen(){
     <div class="field"><label>Doek groep</label><select id="s-doek"></select></div>
     <div class="field"><label>Koppelen</label><select id="s-koppel"></select></div>
   </div>
+  <div data-vis-grp="kleurCustom" class="row">
+    <div class="field"><label>Kleur</label>${buildKleurSelect('s-kleur-select','onKleurSelectChange("s")')}</div>
+    <div id="s-kleur-custom-wrap" class="field" style="display:none"><label>Andere kleur omschrijving</label><input type="text" id="s-kleur-custom" placeholder="bv. RAL 6009 fijnstructuur"></div>
+  </div>
   <div data-vis-grp="bediening" class="row">
     <div class="field"><label>Bediening 1</label><select id="s-bed1"></select></div>
     <div class="field"><label>Bediening 2</label><select id="s-bed2"></select></div>
@@ -750,8 +795,8 @@ function renderScreen(){
   [''].concat(BEDIENINGEN).forEach(b=>$('s-bed1').appendChild(opt(b,b||'(geen)')));
   [''].concat(BEDIENINGEN).forEach(b=>$('s-bed2').appendChild(opt(b,b||'(geen)')));
 
-  ['s-type','s-aantal','s-breedte','s-hoogte','s-plaatsing','s-geleider','s-onderlat','s-motor','s-bereik','s-doek','s-koppel','s-bed1','s-bed2','s-korting','s-marge','s-bkfix-marge'].forEach(id=>{
-    const el=$(id);['change','input'].forEach(ev=>el.addEventListener(ev,calcScreen));
+  ['s-type','s-aantal','s-breedte','s-hoogte','s-plaatsing','s-geleider','s-onderlat','s-motor','s-bereik','s-doek','s-koppel','s-kleur-select','s-kleur-custom','s-bed1','s-bed2','s-korting','s-marge','s-bkfix-marge'].forEach(id=>{
+    const el=$(id); if(el) ['change','input'].forEach(ev=>el.addEventListener(ev,calcScreen));
   });
   applyFieldVis('screen');
   calcScreen();
@@ -836,12 +881,18 @@ function calcScreen(){
   const manualOptions = getCustomOptionRows('s');
   const manualOptionsPrice = manualOptions.reduce((sum,opt)=>sum+opt.amount,0);
 
+  // Kleur
+  const kleurSelectVal = $('s-kleur-select')?.value || '';
+  const kleurCustom = kleurSelectVal === 'andere' ? ($('s-kleur-custom')?.value.trim() || '') : '';
+  const kleurMeerprijs = kleurSelectVal === 'andere' ? KLEUR_MEERPRIJS : 0;
+  const kleurLabel = kleurSelectVal === 'andere' ? (kleurCustom || 'Andere kleur (+€'+KLEUR_MEERPRIJS+')') : kleurSelectVal;
+
   // Plaatsing (screens: 100 per aantal + 100 voor nova types, 50 voor solar)
   const novaExtra = {'Nova 83':100,'Nova 103':100,'Nova 123':100,'Nova solar 103':50}[type] || 100;
   const plaatsingPerStuk = cs.screen_plaatsing_base + novaExtra;
   const plaatsingTotaal = (plaatsingPerStuk + bereikPrice) * aantal;
 
-  const productSubtotal = (basePrice + gelPrice + onderlatPrice + motorPrice + doekPrice + koppelPrice) * aantal + manualOptionsPrice;
+  const productSubtotal = (basePrice + gelPrice + onderlatPrice + motorPrice + doekPrice + koppelPrice + kleurMeerprijs) * aantal + manualOptionsPrice;
   const korting = parseFloat($('s-korting').value) || 0;
   const bedTotal = bed1Price + bed2Price;
 
@@ -854,6 +905,7 @@ function calcScreen(){
   const item = {
     product:'Screen',
     type,aantal,breedte,hoogte,plaatsing,
+    kleurSelectVal,kleurCustom,
     bestelmaat:`${bCeil}×${hCeil}`,
     options:[
       gel && `Geleider: ${gel}`,
@@ -862,13 +914,15 @@ function calcScreen(){
       bereik && `Bereikbaarheid: ${bereik}`,
       doek && doek!=='standaard' && `Doek: ${doek}`,
       koppel && `Koppelen: ${koppel}`,
+      kleurLabel && `Kleur: ${kleurLabel}`,
+      kleurMeerprijs > 0 && `Kleur meerprijs: +€${kleurMeerprijs}`,
       bed1 && `Bediening 1: ${bed1}`,
       bed2 && `Bediening 2: ${bed2}`,
       ...manualOptions.map(opt=>`${opt.description}: €${fmt(opt.amount)}`)
     ].filter(Boolean),
     opmerkingen: $('s-opm').value,
     bed1,bed2,
-    basePrice,geleiderPrice:gelPrice,onderlatPrice,motorPrice,doekPrice,koppelPrice,
+    basePrice,geleiderPrice:gelPrice,onderlatPrice,motorPrice,doekPrice,koppelPrice,kleurMeerprijs,
     extrasPrice:manualOptionsPrice,
     productSubtotal,bereikPrice,bed1Price,bed2Price,plaatsingPerStuk,plaatsingTotaal,
     korting,marge,bkfixMarge,aankoop,verkoop,uwVerkoop,
@@ -917,6 +971,10 @@ function renderKnikarm(){
     <div class="field"><label>Doek</label><select id="k-doek"></select></div>
     <div class="field"><label>LED verlichting</label><select id="k-led"></select></div>
   </div>
+  <div data-vis-grp="kleurCustom" class="row">
+    <div class="field"><label>Kleur frame</label>${buildKleurSelect('k-kleur-select','onKleurSelectChange("k")')}</div>
+    <div id="k-kleur-custom-wrap" class="field" style="display:none"><label>Andere kleur omschrijving</label><input type="text" id="k-kleur-custom" placeholder="bv. RAL 6009 fijnstructuur"></div>
+  </div>
   <div data-vis-grp="bediening" class="row">
     <div class="field"><label>Bediening 1</label><select id="k-bed1"></select></div>
     <div class="field"><label>Bediening 2</label><select id="k-bed2"></select></div>
@@ -941,8 +999,8 @@ function renderKnikarm(){
   [''].concat(BEDIENINGEN).forEach(b=>$('k-bed1').appendChild(opt(b,b||'(geen)')));
   [''].concat(BEDIENINGEN).forEach(b=>$('k-bed2').appendChild(opt(b,b||'(geen)')));
 
-  ['k-type','k-aantal','k-breedte','k-uitval','k-verdieping','k-bereik','k-gevel','k-muur','k-doek','k-led','k-bed1','k-bed2','k-korting','k-marge','k-bkfix-marge'].forEach(id=>{
-    const el=$(id);['change','input'].forEach(ev=>el.addEventListener(ev,calcKnikarm));
+  ['k-type','k-aantal','k-breedte','k-uitval','k-verdieping','k-bereik','k-gevel','k-muur','k-doek','k-led','k-kleur-select','k-kleur-custom','k-bed1','k-bed2','k-korting','k-marge','k-bkfix-marge'].forEach(id=>{
+    const el=$(id); if(el) ['change','input'].forEach(ev=>el.addEventListener(ev,calcKnikarm));
   });
   applyFieldVis('knikarm');
   calcKnikarm();
@@ -1013,11 +1071,17 @@ function calcKnikarm(){
   const manualOptions = getCustomOptionRows('k');
   const manualOptionsPrice = manualOptions.reduce((sum,opt)=>sum+opt.amount,0);
 
+  // Kleur
+  const kleurSelectVal = $('k-kleur-select')?.value || '';
+  const kleurCustom = kleurSelectVal === 'andere' ? ($('k-kleur-custom')?.value.trim() || '') : '';
+  const kleurMeerprijs = kleurSelectVal === 'andere' ? KLEUR_MEERPRIJS : 0;
+  const kleurLabel = kleurSelectVal === 'andere' ? (kleurCustom || 'Andere kleur (+€'+KLEUR_MEERPRIJS+')') : kleurSelectVal;
+
   // Plaatsing: (breedte_ceil/1000)*100 + 250 (per stuk)
   const plaatsingPerStuk = (bCeil/1000)*100 + 250;
   const plaatsingTotaal = (plaatsingPerStuk + bereikPrice) * aantal + verdPrice + gevelPrice;
 
-  const productSubtotal = (basePrice + muurPrice + doekPrice + ledPrice) * aantal + manualOptionsPrice;
+  const productSubtotal = (basePrice + muurPrice + doekPrice + ledPrice + kleurMeerprijs) * aantal + manualOptionsPrice;
   const korting = parseFloat($('k-korting').value) || 0;
   const bedTotal = bed1Price + bed2Price;
 
@@ -1030,6 +1094,7 @@ function calcKnikarm(){
   const item = {
     product:'Knikarmscherm',
     type,aantal,breedte,uitval,
+    kleurSelectVal,kleurCustom,
     bestelmaat:`${bCeil}×${uCeil}`,
     armen:(typeof armen==='number'?armen:'-'),
     options:[
@@ -1039,13 +1104,15 @@ function calcKnikarm(){
       muur && `Muursteun: ${muur}`,
       doek && `Doek: ${doek}`,
       led && `LED: ${led}`,
+      kleurLabel && `Kleur: ${kleurLabel}`,
+      kleurMeerprijs > 0 && `Kleur meerprijs: +€${kleurMeerprijs}`,
       bed1 && `Bediening 1: ${bed1}`,
       bed2 && `Bediening 2: ${bed2}`,
       ...manualOptions.map(opt=>`${opt.description}: €${fmt(opt.amount)}`)
     ].filter(Boolean),
     opmerkingen: $('k-opm').value,
     bed1,bed2,
-    basePrice,muurPrice,doekPrice,ledPrice,
+    basePrice,muurPrice,doekPrice,ledPrice,kleurMeerprijs,
     extrasPrice:manualOptionsPrice,
     productSubtotal,bereikPrice,verdPrice,gevelPrice,bed1Price,bed2Price,plaatsingPerStuk,plaatsingTotaal,
     korting,marge,bkfixMarge,aankoop,verkoop,uwVerkoop,
@@ -1103,6 +1170,10 @@ function renderVeranda(){
   </div>
 
   <h3>Bediening & prijzen</h3>
+  <div data-vis-grp="kleurCustom" class="row">
+    <div class="field"><label>Kleur frame</label>${buildKleurSelect('v-kleur-select','onKleurSelectChange("v")')}</div>
+    <div id="v-kleur-custom-wrap" class="field" style="display:none"><label>Andere kleur omschrijving</label><input type="text" id="v-kleur-custom" placeholder="bv. RAL 6009 fijnstructuur"></div>
+  </div>
   <div data-vis-grp="bediening" class="row">
     <div class="field"><label>Bediening 1</label><select id="v-bed1"></select></div>
     <div class="field"><label>Bediening 2</label><select id="v-bed2"></select></div>
@@ -1125,8 +1196,8 @@ function renderVeranda(){
   [''].concat(BEDIENINGEN).forEach(b=>$('v-bed1').appendChild(opt(b,b||'(geen)')));
   [''].concat(BEDIENINGEN).forEach(b=>$('v-bed2').appendChild(opt(b,b||'(geen)')));
 
-  ['v-type','v-aantal','v-breedte','v-uitval','v-mkabel','v-gevel','v-doek','v-bereik','v-led','v-verdieping','v-bed1','v-bed2','v-korting','v-marge','v-bkfix-marge'].forEach(id=>{
-    const el=$(id);['change','input'].forEach(ev=>el.addEventListener(ev,calcVeranda));
+  ['v-type','v-aantal','v-breedte','v-uitval','v-mkabel','v-gevel','v-doek','v-bereik','v-led','v-verdieping','v-kleur-select','v-kleur-custom','v-bed1','v-bed2','v-korting','v-marge','v-bkfix-marge'].forEach(id=>{
+    const el=$(id); if(el) ['change','input'].forEach(ev=>el.addEventListener(ev,calcVeranda));
   });
   $('v-type').addEventListener('change',()=>{syncVerandaAccessoryChoices();calcVeranda();});
   syncVerandaAccessoryChoices();
@@ -1271,10 +1342,16 @@ function calcVeranda(){
     }
   }
 
+  // Kleur
+  const kleurSelectVal = $('v-kleur-select')?.value || '';
+  const kleurCustom = kleurSelectVal === 'andere' ? ($('v-kleur-custom')?.value.trim() || '') : '';
+  const kleurMeerprijs = kleurSelectVal === 'andere' ? KLEUR_MEERPRIJS : 0;
+  const kleurLabel = kleurSelectVal === 'andere' ? (kleurCustom || 'Andere kleur (+€'+KLEUR_MEERPRIJS+')') : kleurSelectVal;
+
   const plaatsingPerStuk = cv.veranda_plaatsing_flat;
   const plaatsingTotaal = (plaatsingPerStuk + bereikPrice) * aantal + gevelPrice;
 
-  const productSubtotal = (basePrice + smallSurcharge + mkabelPrice + doekPrice + ledPrice) * aantal + extrasPrice + manualOptionsPrice;
+  const productSubtotal = (basePrice + smallSurcharge + mkabelPrice + doekPrice + ledPrice + kleurMeerprijs) * aantal + extrasPrice + manualOptionsPrice;
   const korting = parseFloat($('v-korting').value) || 0;
   const bedTotal = bed1Price + bed2Price;
 
@@ -1287,6 +1364,7 @@ function calcVeranda(){
   const item = {
     product:'Veranda',
     type,aantal,breedte,uitval,
+    kleurSelectVal,kleurCustom,
     bestelmaat:`${bCeil}×${uCeil}`,
     options:[
       smallSurcharge>0 && `Kleine breedte toeslag +€${smallSurcharge}`,
@@ -1295,6 +1373,8 @@ function calcVeranda(){
       doek && `Doek: ${doek}`,
       bereik && `Bereikbaarheid: ${bereik}`,
       led && `${led}`,
+      kleurLabel && `Kleur: ${kleurLabel}`,
+      kleurMeerprijs > 0 && `Kleur meerprijs: +€${kleurMeerprijs}`,
       ...extrasList,
       bed1 && `Bediening 1: ${bed1}`,
       bed2 && `Bediening 2: ${bed2}`,
@@ -1302,7 +1382,7 @@ function calcVeranda(){
     ].filter(Boolean),
     opmerkingen: $('v-opm').value,
     bed1,bed2,
-    basePrice,smallSurcharge,mkabelPrice,doekPrice,ledPrice,extrasPrice:extrasPrice + manualOptionsPrice,
+    basePrice,smallSurcharge,mkabelPrice,doekPrice,ledPrice,kleurMeerprijs,extrasPrice:extrasPrice + manualOptionsPrice,
     productSubtotal,bereikPrice,gevelPrice,bed1Price,bed2Price,plaatsingPerStuk,plaatsingTotaal,
     korting,marge,bkfixMarge,aankoop,verkoop,uwVerkoop,
     errors,warnings
@@ -2119,7 +2199,7 @@ function downloadBestelExcel(offer){
       item.hoogte || item.uitval || '',
       bestelB, bestelH,
       item.bestelmaat||'',
-      item.kleurCustom || item.kleur || '',
+      item.kleurSelectVal === 'andere' ? (item.kleurCustom || 'Andere kleur') : (item.kleurSelectVal || item.kleurCustom || item.kleur || ''),
       item.kleurOmkasting||'',
       item.geleider||'',
       item.lamel||'',
