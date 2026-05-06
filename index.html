@@ -11,6 +11,9 @@
 <meta name="apple-mobile-web-app-title" content="Allround">
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.mini.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -298,6 +301,9 @@ details[open] summary{margin-bottom:8px}
   <div class="btn-group">
     <button id="tl-export-btn" onclick="tlExportQuotation(event)" style="background:#1a6b3c;flex:1">⬆ Exporteer naar Teamleader</button>
     <button class="secondary" onclick="tlDisconnect()">Afmelden</button>
+  </div>
+  <div style="text-align:right;margin-top:6px">
+    <span id="fb-sync-status" style="font-size:10px;color:#64748b" title="Firebase sync"></span>
   </div>
 </div>
 </div>
@@ -1579,6 +1585,7 @@ function saveOfferToHistory(tlQuotationId){
     history.unshift(entry);
     if(history.length > 100) history.pop();
     localStorage.setItem('bkfix_offer_history', JSON.stringify(history));
+    window.fbSave?.('offer_history', history);
   } catch(e) { console.error('Historie opslaan mislukt:', e); }
 }
 
@@ -1636,7 +1643,9 @@ function loadHistoryEntry(id){
 function deleteHistoryEntry(id){
   if(!confirm('Verwijder deze offerte uit de historie?')) return;
   const history = JSON.parse(localStorage.getItem('bkfix_offer_history') || '[]');
-  localStorage.setItem('bkfix_offer_history', JSON.stringify(history.filter(e=>e.id!==id)));
+  const updated = history.filter(e=>e.id!==id);
+  localStorage.setItem('bkfix_offer_history', JSON.stringify(updated));
+  window.fbSave?.('offer_history', updated);
   renderHistorie($('beheer-content'));
 }
 
@@ -1973,6 +1982,7 @@ function tlAddManualLayout(){
   if(!saved.find(l=>l.id===id)) saved.push({id, name});
   localStorage.setItem('tl_manual_layouts', JSON.stringify(saved));
   localStorage.setItem('tl_layout_id', id);
+  window.fbSave?.('manual_layouts', saved);
   if(idEl) idEl.value='';
   if(nameEl) nameEl.value='';
   tlFetchLayouts();
@@ -1980,7 +1990,9 @@ function tlAddManualLayout(){
 
 function tlDeleteManualLayout(id){
   const saved = JSON.parse(localStorage.getItem('tl_manual_layouts')||'[]');
-  localStorage.setItem('tl_manual_layouts', JSON.stringify(saved.filter(l=>l.id!==id)));
+  const updated = saved.filter(l=>l.id!==id);
+  localStorage.setItem('tl_manual_layouts', JSON.stringify(updated));
+  window.fbSave?.('manual_layouts', updated);
   if(localStorage.getItem('tl_layout_id')===id) localStorage.removeItem('tl_layout_id');
   tlFetchLayouts();
 }
@@ -2318,13 +2330,13 @@ document.querySelectorAll('.tab').forEach(tab=>{
 // ----- Config storage -----
 const ADMIN = {
   get articles(){ return JSON.parse(localStorage.getItem('bkfix_articles')||'[]'); },
-  set articles(v){ localStorage.setItem('bkfix_articles',JSON.stringify(v)); },
+  set articles(v){ localStorage.setItem('bkfix_articles',JSON.stringify(v)); window.fbSave?.('articles',v); },
   get products(){ return JSON.parse(localStorage.getItem('bkfix_cust_prods')||'[]'); },
-  set products(v){ localStorage.setItem('bkfix_cust_prods',JSON.stringify(v)); },
+  set products(v){ localStorage.setItem('bkfix_cust_prods',JSON.stringify(v)); window.fbSave?.('products',v); },
   get tlTemplates(){ return JSON.parse(localStorage.getItem('bkfix_tl_tmpl')||'{}'); },
-  set tlTemplates(v){ localStorage.setItem('bkfix_tl_tmpl',JSON.stringify(v)); },
+  set tlTemplates(v){ localStorage.setItem('bkfix_tl_tmpl',JSON.stringify(v)); window.fbSave?.('tl_tmpl',v); },
   get settings(){ return JSON.parse(localStorage.getItem('bkfix_settings')||'{}'); },
-  set settings(v){ localStorage.setItem('bkfix_settings',JSON.stringify(v)); },
+  set settings(v){ localStorage.setItem('bkfix_settings',JSON.stringify(v)); window.fbSave?.('settings',v); },
 };
 
 // ----- Calculation parameters (CONFIG) -----
@@ -2352,8 +2364,8 @@ const DEFAULT_CONFIG = {
 };
 const CONFIG = {
   get data(){ const s=localStorage.getItem('bkfix_config'); return s?{...DEFAULT_CONFIG,...JSON.parse(s)}:{...DEFAULT_CONFIG}; },
-  save(obj){ localStorage.setItem('bkfix_config',JSON.stringify({...this.data,...obj})); },
-  reset(){ localStorage.removeItem('bkfix_config'); },
+  save(obj){ const n={...this.data,...obj}; localStorage.setItem('bkfix_config',JSON.stringify(n)); window.fbSave?.('config',n); },
+  reset(){ localStorage.removeItem('bkfix_config'); window.fbSave?.('config',{}); },
 };
 
 // ----- Field visibility per product (FIELD_VIS) -----
@@ -2370,9 +2382,97 @@ const FIELD_VIS = {
     const d=JSON.parse(s);
     return Object.fromEntries(Object.keys(DEFAULT_FIELD_VIS).map(p=>[p,{...DEFAULT_FIELD_VIS[p],...(d[p]||{})}]));
   },
-  save(prod,key,val){ const d=this.data; d[prod][key]=val; localStorage.setItem('bkfix_field_vis',JSON.stringify(d)); },
-  reset(prod){ const d=this.data; d[prod]={...DEFAULT_FIELD_VIS[prod]}; localStorage.setItem('bkfix_field_vis',JSON.stringify(d)); },
+  save(prod,key,val){ const d=this.data; d[prod][key]=val; localStorage.setItem('bkfix_field_vis',JSON.stringify(d)); window.fbSave?.('field_vis',d); },
+  reset(prod){ const d=this.data; d[prod]={...DEFAULT_FIELD_VIS[prod]}; localStorage.setItem('bkfix_field_vis',JSON.stringify(d)); window.fbSave?.('field_vis',d); },
 };
+
+// ======= Firebase / Firestore sync =======
+(function(){
+  const FB_CONFIG = {
+    apiKey: "AIzaSyDXNfDzTeNrQM-OI0kvdkpZjzG8s4gQPbs",
+    authDomain: "offertetool-134c5.firebaseapp.com",
+    projectId: "offertetool-134c5",
+    storageBucket: "offertetool-134c5.firebasestorage.app",
+    messagingSenderId: "573784325240",
+    appId: "1:573784325240:web:8ebde66adec4d07b27418d"
+  };
+
+  // Map Firestore doc-id → localStorage key
+  const KEY_MAP = {
+    articles:       'bkfix_articles',
+    products:       'bkfix_cust_prods',
+    tl_tmpl:        'bkfix_tl_tmpl',
+    settings:       'bkfix_settings',
+    config:         'bkfix_config',
+    field_vis:      'bkfix_field_vis',
+    manual_layouts: 'tl_manual_layouts',
+    prices:         'bkfix_prices',
+    offer_history:  'bkfix_offer_history',
+  };
+
+  function fbStatus(msg, color){
+    const el = document.getElementById('fb-sync-status');
+    if(el){ el.textContent = msg; el.style.color = color||'#64748b'; }
+  }
+
+  // Debounced write — batches rapid saves into one Firestore write
+  const _timers = {};
+  window.fbSave = function(docId, value){
+    if(!window._fbDb) return;
+    clearTimeout(_timers[docId]);
+    _timers[docId] = setTimeout(async ()=>{
+      fbStatus('↑ sync…','#94a3b8');
+      try{
+        await window._fbDb.collection('bkfix').doc(docId).set({ value, ts: Date.now() });
+        fbStatus('✓ opgeslagen','#22c55e');
+        setTimeout(()=>fbStatus('',''), 2500);
+      }catch(e){
+        console.warn('fbSave failed', docId, e);
+        fbStatus('⚠ sync fout','#f87171');
+      }
+    }, 900);
+  };
+
+  async function fbLoadAll(){
+    fbStatus('↓ laden…','#94a3b8');
+    try{
+      const snap = await window._fbDb.collection('bkfix').get();
+      let changed = false;
+      snap.forEach(doc=>{
+        const lsKey = KEY_MAP[doc.id];
+        if(lsKey && doc.data().value !== undefined){
+          const fresh = JSON.stringify(doc.data().value);
+          if(localStorage.getItem(lsKey) !== fresh){
+            localStorage.setItem(lsKey, fresh);
+            changed = true;
+          }
+        }
+      });
+      if(changed){
+        // Re-render affected UI
+        if(typeof renderOffer==='function') renderOffer();
+        if(typeof tlFetchLayouts==='function') tlFetchLayouts();
+        if(typeof renderCustomProductTabs==='function') renderCustomProductTabs();
+      }
+      fbStatus('✓ verbonden','#22c55e');
+      setTimeout(()=>fbStatus('',''), 3000);
+    }catch(e){
+      console.warn('fbLoadAll failed:', e);
+      fbStatus('⚠ offline','#f87171');
+    }
+  }
+
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+    window._fbDb = firebase.firestore();
+    fbStatus('…','#94a3b8');
+    firebase.auth().signInAnonymously()
+      .then(()=>fbLoadAll())
+      .catch(e=>{ console.warn('Firebase auth:', e); fbStatus('⚠ offline','#f87171'); });
+  }catch(e){
+    console.warn('Firebase init failed:', e);
+  }
+})();
 
 // Init — apply persisted price overrides before first render
 (function(){
@@ -3022,11 +3122,13 @@ function saveInstellingen(){
     const el=$('cfg_'+k); if(el) cfgUpdates[k]=parseFloat(el.value);
   });
   if(Object.keys(cfgUpdates).length) CONFIG.save(cfgUpdates);
-  localStorage.setItem('bkfix_prices', JSON.stringify({
+  const _prices = {
     rolluik_geleiders: {...DATA.opties.rolluik_extras.geleiders},
     rolluik_motoren:   {...DATA.opties.rolluik_extras.motoren},
     bediening:         {...DATA.opties.algemene.bediening},
-  }));
+  };
+  localStorage.setItem('bkfix_prices', JSON.stringify(_prices));
+  window.fbSave?.('prices', _prices);
   alert('Instellingen opgeslagen!');
 }
 
