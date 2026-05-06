@@ -246,7 +246,7 @@ details[open] summary{margin-bottom:8px}
 </div>
 
 <div class="tl-section">
-<h2 style="margin-bottom:10px">Teamleader</h2>
+<h2 style="margin-bottom:6px;display:flex;align-items:center;gap:8px">Teamleader <span id="fb-sync-status" style="font-size:10px;font-weight:400;padding:2px 7px;border-radius:10px;background:#1e293b;color:#64748b;border:1px solid #334155" title="Firebase database sync"></span></h2>
 <div id="tl-status"></div>
 
 <div id="tl-config">
@@ -302,8 +302,6 @@ details[open] summary{margin-bottom:8px}
     <button id="tl-export-btn" onclick="tlExportQuotation(event)" style="background:#1a6b3c;flex:1">⬆ Exporteer naar Teamleader</button>
     <button class="secondary" onclick="tlDisconnect()">Afmelden</button>
   </div>
-  <div style="text-align:right;margin-top:6px">
-    <span id="fb-sync-status" style="font-size:10px;color:#64748b" title="Firebase sync"></span>
   </div>
 </div>
 </div>
@@ -2410,9 +2408,19 @@ const FIELD_VIS = {
     offer_history:  'bkfix_offer_history',
   };
 
-  function fbStatus(msg, color){
+  let _fbConnected = false;
+
+  function fbStatus(msg, color, bg){
     const el = document.getElementById('fb-sync-status');
-    if(el){ el.textContent = msg; el.style.color = color||'#64748b'; }
+    if(!el) return;
+    el.textContent = msg;
+    el.style.color = color || '#64748b';
+    el.style.background = bg || '#1e293b';
+    el.style.borderColor = color || '#334155';
+  }
+
+  function fbStatusConnected(){
+    fbStatus('● Firebase', '#22c55e', '#052e16');
   }
 
   // Debounced write — batches rapid saves into one Firestore write
@@ -2421,20 +2429,20 @@ const FIELD_VIS = {
     if(!window._fbDb) return;
     clearTimeout(_timers[docId]);
     _timers[docId] = setTimeout(async ()=>{
-      fbStatus('↑ sync…','#94a3b8');
+      fbStatus('↑ sync…', '#94a3b8', '#1e293b');
       try{
         await window._fbDb.collection('bkfix').doc(docId).set({ value, ts: Date.now() });
-        fbStatus('✓ opgeslagen','#22c55e');
-        setTimeout(()=>fbStatus('',''), 2500);
+        fbStatus('✓ sync', '#22c55e', '#052e16');
+        setTimeout(()=>{ if(_fbConnected) fbStatusConnected(); }, 1800);
       }catch(e){
         console.warn('fbSave failed', docId, e);
-        fbStatus('⚠ sync fout','#f87171');
+        fbStatus('⚠ sync fout', '#f87171', '#450a0a');
       }
     }, 900);
   };
 
   async function fbLoadAll(){
-    fbStatus('↓ laden…','#94a3b8');
+    fbStatus('↓ laden…', '#94a3b8', '#1e293b');
     try{
       const snap = await window._fbDb.collection('bkfix').get();
       let changed = false;
@@ -2449,28 +2457,28 @@ const FIELD_VIS = {
         }
       });
       if(changed){
-        // Re-render affected UI
         if(typeof renderOffer==='function') renderOffer();
         if(typeof tlFetchLayouts==='function') tlFetchLayouts();
         if(typeof renderCustomProductTabs==='function') renderCustomProductTabs();
       }
-      fbStatus('✓ verbonden','#22c55e');
-      setTimeout(()=>fbStatus('',''), 3000);
+      _fbConnected = true;
+      fbStatusConnected();
     }catch(e){
       console.warn('fbLoadAll failed:', e);
-      fbStatus('⚠ offline','#f87171');
+      fbStatus('⚠ offline', '#f87171', '#450a0a');
     }
   }
 
   try{
     if(!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
     window._fbDb = firebase.firestore();
-    fbStatus('…','#94a3b8');
+    fbStatus('…', '#94a3b8', '#1e293b');
     firebase.auth().signInAnonymously()
       .then(()=>fbLoadAll())
-      .catch(e=>{ console.warn('Firebase auth:', e); fbStatus('⚠ offline','#f87171'); });
+      .catch(e=>{ console.warn('Firebase auth:', e); fbStatus('⚠ offline', '#f87171', '#450a0a'); });
   }catch(e){
     console.warn('Firebase init failed:', e);
+    fbStatus('⚠ fout', '#f87171', '#450a0a');
   }
 })();
 
