@@ -823,19 +823,23 @@ function calcScreen(){
     if(hoogte > mh) errors.push(`Hoogte ${hoogte}mm overschrijdt maximum voor ${type} (${mh}mm)`);
   }
 
-  // Bestelmaat
-  // ODD: voeg toe volgens plaatsing_types[type] (hoogte_add_odd, breedte_add_odd)
-  // IDD: -4
+  // Prijstabel is geïndexeerd op DAGMAAT (niet bestelmaat).
+  // N83 = 100mm stappen; N103/N123/S103 = 200mm stappen.
+  // Bestelmaat (voor fabrikant) = dagmaat + ODD/IDD toeslag — apart bijgehouden.
   const cs = CONFIG.data;
   const effectiefB = Math.max(cs.screen_min_dim, breedte);
   const effectiefH = Math.max(cs.screen_min_dim, hoogte);
   if(breedte < cs.screen_min_dim) warnings.push(`Breedte ${breedte}mm < 1m: prijs van ${cs.screen_min_dim}mm gebruikt`);
   if(hoogte < cs.screen_min_dim) warnings.push(`Hoogte ${hoogte}mm < 1m: prijs van ${cs.screen_min_dim}mm gebruikt`);
   const sizeAdd = DATA.opties.screen_extras.plaatsing_types[type] || {hoogte_add_odd:100,breedte_add_odd:80};
-  const bestB = plaatsing==='odd' ? effectiefB+sizeAdd.breedte_add_odd : effectiefB+cs.screen_idd_adj;
-  const bestH = plaatsing==='odd' ? effectiefH+sizeAdd.hoogte_add_odd : effectiefH+cs.screen_idd_adj;
-  const bCeil = Math.max(cs.screen_min_dim, ceil(bestB,100));
-  const hCeil = Math.max(cs.screen_min_dim, ceil(bestH,100));
+  // Stap per type voor prijsopzoeking
+  const screenStep = {'Nova 83':100,'Nova 103':200,'Nova 123':200,'Nova solar 103':200}[type] || 100;
+  // Prijsopzoeking op dagmaat (afgerond naar stap)
+  const bCeil = Math.max(cs.screen_min_dim, ceil(effectiefB, screenStep));
+  const hCeil = Math.max(cs.screen_min_dim, ceil(effectiefH, screenStep));
+  // Bestelmaat = dagmaat + plaatsingstoeslag (voor fabrikant / bestelbon)
+  const bestelBreedte = breedte + (plaatsing==='odd' ? sizeAdd.breedte_add_odd : cs.screen_idd_adj);
+  const bestelHoogte  = hoogte  + (plaatsing==='odd' ? sizeAdd.hoogte_add_odd  : cs.screen_idd_adj);
 
   const prefix = DATA.screens.prefixes[type];
   const heightKey = `${prefix}_H_${hCeil}`;
@@ -906,6 +910,7 @@ function calcScreen(){
     product:'Screen',
     type,aantal,breedte,hoogte,plaatsing,
     kleurSelectVal,kleurCustom,
+    bestelBreedte,bestelHoogte,
     bestelmaat:`${bCeil}×${hCeil}`,
     options:[
       gel && `Geleider: ${gel}`,
