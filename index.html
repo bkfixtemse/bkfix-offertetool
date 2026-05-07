@@ -909,7 +909,9 @@ function calcScreen(){
   const item = {
     product:'Screen',
     type,aantal,breedte,hoogte,plaatsing,
-    kleurSelectVal,kleurCustom,
+    gel,motor,bereik,doek,koppel,
+    onderlatHoog: $('s-onderlat').value==='ja',
+    kleurSelectVal,kleurCustom,kleurLabel,
     bestelBreedte,bestelHoogte,
     bestelmaat:`${bCeil}×${hCeil}`,
     options:[
@@ -1099,7 +1101,8 @@ function calcKnikarm(){
   const item = {
     product:'Knikarmscherm',
     type,aantal,breedte,uitval,
-    kleurSelectVal,kleurCustom,
+    verd,bereik,gevel,muur,doek,led,
+    kleurSelectVal,kleurCustom,kleurLabel,
     bestelmaat:`${bCeil}×${uCeil}`,
     armen:(typeof armen==='number'?armen:'-'),
     options:[
@@ -1369,7 +1372,8 @@ function calcVeranda(){
   const item = {
     product:'Veranda',
     type,aantal,breedte,uitval,
-    kleurSelectVal,kleurCustom,
+    mkabel,gevel,doek,bereik,led,extrasList,
+    kleurSelectVal,kleurCustom,kleurLabel,
     bestelmaat:`${bCeil}×${uCeil}`,
     options:[
       smallSurcharge>0 && `Kleine breedte toeslag +€${smallSurcharge}`,
@@ -1785,11 +1789,14 @@ function getTlDescription(item){
   if(customTmpl && customTmpl.length>0){
     return buildTlDescriptionFromTemplate(customTmpl, item);
   }
-  if(item.product==='Rolluik') return tlRolluikDescription(item);
+  if(item.product==='Rolluik')       return tlRolluikDescription(item);
+  if(item.product==='Screen')        return tlScreenDescription(item);
+  if(item.product==='Knikarmscherm') return tlKnikarmDescription(item);
+  if(item.product==='Veranda')       return tlVerandaDescription(item);
   if(item.product==='Artikel'){
     return [(item.options||[]).join('\n'), item.opmerkingen||''].filter(Boolean).join('\n') || item.product;
   }
-  // Screen, Knikarmscherm, Veranda en custom producten
+  // Custom producten
   const dagmaat = item.hoogte
     ? `Dagmaat: ${item.breedte}×${item.hoogte}mm`
     : item.uitval ? `Dagmaat: ${item.breedte}×${item.uitval}mm` : '';
@@ -1869,6 +1876,84 @@ function buildRolluikDesc(item) {
 
 function tlRolluikDescription(item) {
   return buildRolluikDesc(item);
+}
+
+function tlScreenDescription(item){
+  const plaatsingLabel = item.plaatsing === 'odd' ? 'ODD' : 'IDD';
+  const kleur = item.kleurLabel || (item.kleurSelectVal === 'andere' ? item.kleurCustom : item.kleurSelectVal) || '';
+
+  let h = '<ul style="margin:4px 0;padding-left:18px">';
+  h += `<li>Dagmaat: ${item.breedte}×${item.hoogte}mm</li>`;
+  h += `<li>Plaatsing: ${plaatsingLabel}</li>`;
+  h += `<li>Calculatiemaat: ${item.bestelmaat}mm</li>`;
+  if(item.bestelBreedte || item.bestelHoogte){
+    h += `<li>Bestelmaat (fabrikant): ${item.bestelBreedte}×${item.bestelHoogte}mm</li>`;
+  }
+  // Geleider
+  h += `<li>Geleider: <strong>${item.gel || 'standaard'}</strong></li>`;
+  // Onderlat
+  if(item.onderlatHoog) h += `<li>Onderlat: <strong>hoge verzwaarde onderlat</strong></li>`;
+  // Motor
+  h += `<li>Motor: <strong>${item.motor || 'Maestria io'}</strong></li>`;
+  // Doek
+  if(item.doek && item.doek !== 'standaard'){
+    h += `<li>Doek: <strong>${item.doek}</strong></li>`;
+  }
+  // Kleur
+  if(kleur){
+    h += `<li>Kleur: <strong>${kleur}</strong></li>`;
+  }
+  // Koppelen
+  if(item.koppel) h += `<li>Koppelen: ${item.koppel}</li>`;
+  // Bediening
+  if(item.bed1) h += `<li>Bediening 1: <strong>${item.bed1}</strong></li>`;
+  if(item.bed2) h += `<li>Bediening 2: <strong>${item.bed2}</strong></li>`;
+  if(item.opmerkingen) h += `<li>Opmerkingen: ${item.opmerkingen}</li>`;
+  h += '</ul>';
+  return h;
+}
+
+function tlKnikarmDescription(item){
+  const kleur = item.kleurLabel || (item.kleurSelectVal === 'andere' ? item.kleurCustom : item.kleurSelectVal) || '';
+
+  let h = '<ul style="margin:4px 0;padding-left:18px">';
+  h += `<li>Dagmaat (breedte × uitval): ${item.breedte}×${item.uitval}mm</li>`;
+  h += `<li>Calculatiemaat: ${item.bestelmaat}mm</li>`;
+  if(item.armen && item.armen !== '-') h += `<li>Armen: ${item.armen}</li>`;
+  if(item.verd && item.verd !== '0') h += `<li>Verdieping: <strong>${item.verd}</strong></li>`;
+  if(item.gevel) h += `<li>Type gevel: <strong>${item.gevel}</strong></li>`;
+  if(item.muur) h += `<li>Muursteun: <strong>${item.muur}</strong></li>`;
+  if(item.doek) h += `<li>Doek: <strong>${item.doek}</strong></li>`;
+  if(item.led) h += `<li>LED verlichting: <strong>${item.led}</strong></li>`;
+  if(kleur) h += `<li>Kleur frame: <strong>${kleur}</strong></li>`;
+  if(item.bed1) h += `<li>Bediening 1: <strong>${item.bed1}</strong></li>`;
+  if(item.bed2) h += `<li>Bediening 2: <strong>${item.bed2}</strong></li>`;
+  if(item.opmerkingen) h += `<li>Opmerkingen: ${item.opmerkingen}</li>`;
+  h += '</ul>';
+  return h;
+}
+
+function tlVerandaDescription(item){
+  const kleur = item.kleurLabel || (item.kleurSelectVal === 'andere' ? item.kleurCustom : item.kleurSelectVal) || '';
+
+  let h = '<ul style="margin:4px 0;padding-left:18px">';
+  h += `<li>Dagmaat (breedte × uitval): ${item.breedte}×${item.uitval}mm</li>`;
+  h += `<li>Calculatiemaat: ${item.bestelmaat}mm</li>`;
+  if(item.mkabel) h += `<li>Afwijkende motorkabel: <strong>${item.mkabel}</strong></li>`;
+  if(item.gevel) h += `<li>Type gevel: <strong>${item.gevel}</strong></li>`;
+  if(item.doek) h += `<li>Doek groep: <strong>${item.doek}</strong></li>`;
+  if(item.led) h += `<li>LED / volant: <strong>${item.led}</strong></li>`;
+  if(item.extrasList && item.extrasList.length>0){
+    h += `<li>Extra opties:<ul style="margin:2px 0;padding-left:16px">`;
+    item.extrasList.forEach(e=>{ h+=`<li>${e}</li>`; });
+    h += '</ul></li>';
+  }
+  if(kleur) h += `<li>Kleur frame: <strong>${kleur}</strong></li>`;
+  if(item.bed1) h += `<li>Bediening 1: <strong>${item.bed1}</strong></li>`;
+  if(item.bed2) h += `<li>Bediening 2: <strong>${item.bed2}</strong></li>`;
+  if(item.opmerkingen) h += `<li>Opmerkingen: ${item.opmerkingen}</li>`;
+  h += '</ul>';
+  return h;
 }
 
 // ======= Teamleader API Integration =======
