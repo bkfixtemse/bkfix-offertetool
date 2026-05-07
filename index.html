@@ -1787,17 +1787,15 @@ function getTlDescription(item){
   }
   if(item.product==='Rolluik') return tlRolluikDescription(item);
   if(item.product==='Artikel'){
-    return [(item.options||[]).join('\n'), item.opmerkingen||''].filter(Boolean).join('\n');
+    return [(item.options||[]).join('\n'), item.opmerkingen||''].filter(Boolean).join('\n') || item.product;
   }
-  // Custom products
-  if(item.options && item.options.length>0){
-    return item.options.join('\n') + (item.opmerkingen?'\n'+item.opmerkingen:'');
-  }
+  // Screen, Knikarmscherm, Veranda en custom producten
   const dagmaat = item.hoogte
     ? `Dagmaat: ${item.breedte}×${item.hoogte}mm`
     : item.uitval ? `Dagmaat: ${item.breedte}×${item.uitval}mm` : '';
-  const filteredOpts = (item.options||[]).filter(o=>!o.startsWith('Bereikbaarheid:'));
-  return [dagmaat, ...filteredOpts, item.opmerkingen||''].filter(Boolean).join('\n');
+  const filteredOpts = (item.options||[]).filter(o=>o && !o.startsWith('Bereikbaarheid:'));
+  const lines = [dagmaat, ...filteredOpts, item.opmerkingen||''].filter(Boolean);
+  return lines.length > 0 ? lines.join('\n') : `${item.product} - ${item.type||''}`;
 }
 
 // ======= Rolluik beschrijving (HTML bullets — voor TL en offerte) =======
@@ -2257,6 +2255,12 @@ async function tlExportQuotation(e){
 
     // Extended description
     let extDesc = getTlDescription(item);
+    // TL vereist niet-lege extended_description
+    if(!extDesc || !extDesc.trim()){
+      const dm = item.hoogte ? `${item.breedte}×${item.hoogte}mm`
+                 : item.uitval ? `${item.breedte}×${item.uitval}mm` : '';
+      extDesc = [item.product, item.type, dm].filter(Boolean).join(' - ');
+    }
 
     // Title
     const description = `${item.product} - ${item.type}`;
@@ -2277,7 +2281,7 @@ async function tlExportQuotation(e){
         amyItems.push({
           quantity: item.aantal,
           description: 'Amy io afstandsbediening',
-          extended_description: '',
+          extended_description: 'Amy io afstandsbediening (draadloze zender)',
           unit_price:{ amount: parseFloat(p.toFixed(2)), tax:'excluding' },
           tax_rate_id: taxRateId
         });
