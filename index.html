@@ -442,6 +442,46 @@ function buildKleurSelect(id, onchangeCall){
   return h;
 }
 
+// Pisano 230 heeft 3 inbegrepen standaardkleuren; alle overige kleuren = meerprijs
+const PISANO_STD_KLEUREN = ['RAL 9001','RAL 9010','RAL 7016 SL'];
+
+function buildKleurSelectKnikarm(id, onchangeCall, type){
+  const ral = r => r.startsWith('DB') ? r : `RAL ${r}`;
+  let h = `<select id="${id}" onchange="${onchangeCall}" style="width:100%">`;
+  h += '<option value="">— geen kleurspecificatie —</option>';
+
+  if(type === 'Pisano 230'){
+    // 3 standaardkleuren inbegrepen
+    h += '<optgroup label="STANDAARD (inbegrepen)">';
+    PISANO_STD_KLEUREN.forEach(k=>{ h+=`<option value="${k}">${k}</option>`; });
+    h += '</optgroup>';
+    // Alle overige Allround-kleuren = meerprijs
+    h += `<optgroup label="GLAD (+€${KLEUR_MEERPRIJS})">`;
+    KLEURENCOLLECTIE.glad.filter(r=>!PISANO_STD_KLEUREN.includes(`RAL ${r}`)).forEach(r=>{ h+=`<option value="${ral(r)}" data-meerprijs="1">${ral(r)}</option>`; });
+    h += '</optgroup>';
+    h += `<optgroup label="FIJN STRUCTUUR SL (+€${KLEUR_MEERPRIJS})">`;
+    KLEURENCOLLECTIE.structuur.filter(r=>!PISANO_STD_KLEUREN.includes(`RAL ${r} SL`)).forEach(r=>{ h+=`<option value="${ral(r)} SL" data-meerprijs="1">${ral(r)} SL</option>`; });
+    h += '</optgroup>';
+    h += `<optgroup label="METALLIC SM (+€${KLEUR_MEERPRIJS})">`;
+    KLEURENCOLLECTIE.metallic.forEach(r=>{ h+=`<option value="${ral(r)} SM" data-meerprijs="1">${ral(r)} SM</option>`; });
+    h += '</optgroup>';
+  } else {
+    // Alle Allround-kleuren inbegrepen
+    h += '<optgroup label="GLAD">';
+    KLEURENCOLLECTIE.glad.forEach(r=>{ h+=`<option value="${ral(r)}">${ral(r)}</option>`; });
+    h += '</optgroup>';
+    h += '<optgroup label="FIJN STRUCTUUR (SL)">';
+    KLEURENCOLLECTIE.structuur.forEach(r=>{ h+=`<option value="${ral(r)} SL">${ral(r)} SL</option>`; });
+    h += '</optgroup>';
+    h += '<optgroup label="METALLIC STRUCTUUR (SM)">';
+    KLEURENCOLLECTIE.metallic.forEach(r=>{ h+=`<option value="${ral(r)} SM">${ral(r)} SM</option>`; });
+    h += '</optgroup>';
+  }
+  h += `<option value="andere">🎨 Andere kleur / poedercoating (+€${KLEUR_MEERPRIJS})</option>`;
+  h += '</select>';
+  return h;
+}
+
 function onKleurSelectChange(prefix){
   const sel = $(`${prefix}-kleur-select`);
   const wrap = $(`${prefix}-kleur-custom-wrap`);
@@ -952,7 +992,7 @@ function renderKnikarm(){
   const c = $('form-container');
   c.innerHTML = `
   <h2>Knikarmscherm (zonnetent) configureren</h2>
-  <div class="info-box">De breedte wordt afgerond naar boven op 250mm, uitval op 500mm. Max. afmetingen verschillen per type.</div>
+  <div class="info-box">Breedte afgerond op 250mm; uitval op 500mm (Stilo: 250mm). Max. afmetingen per type.</div>
 
   <div class="row">
     <div class="field"><label>Type knikarmscherm *</label><select id="k-type"></select></div>
@@ -979,7 +1019,7 @@ function renderKnikarm(){
     <div class="field"><label>LED verlichting</label><select id="k-led"></select></div>
   </div>
   <div data-vis-grp="kleurCustom" class="row">
-    <div class="field"><label>Kleur frame</label>${buildKleurSelect('k-kleur-select','onKleurSelectChange("k")')}</div>
+    <div class="field"><label>Kleur frame</label><div id="k-kleur-select-wrap"></div></div>
     <div id="k-kleur-custom-wrap" class="field" style="display:none"><label>Andere kleur omschrijving</label><input type="text" id="k-kleur-custom" placeholder="bv. RAL 6009 fijnstructuur"></div>
   </div>
   <div data-vis-grp="bediening" class="row">
@@ -1006,7 +1046,19 @@ function renderKnikarm(){
   [''].concat(BEDIENINGEN).forEach(b=>$('k-bed1').appendChild(opt(b,b||'(geen)')));
   [''].concat(BEDIENINGEN).forEach(b=>$('k-bed2').appendChild(opt(b,b||'(geen)')));
 
-  ['k-type','k-aantal','k-breedte','k-uitval','k-verdieping','k-bereik','k-gevel','k-muur','k-doek','k-led','k-kleur-select','k-kleur-custom','k-bed1','k-bed2','k-korting','k-marge','k-bkfix-marge'].forEach(id=>{
+  // Kleur select dynamisch opbouwen per type
+  function rebuildKleurKnikarm(){
+    const type = $('k-type').value;
+    const wrap = $('k-kleur-select-wrap');
+    if(!wrap) return;
+    wrap.innerHTML = buildKleurSelectKnikarm('k-kleur-select','onKleurSelectChange("k")',type);
+    const sel = $('k-kleur-select');
+    if(sel) ['change','input'].forEach(ev=>sel.addEventListener(ev,calcKnikarm));
+  }
+  rebuildKleurKnikarm();
+  $('k-type').addEventListener('change', rebuildKleurKnikarm);
+
+  ['k-type','k-aantal','k-breedte','k-uitval','k-verdieping','k-bereik','k-gevel','k-muur','k-doek','k-led','k-kleur-custom','k-bed1','k-bed2','k-korting','k-marge','k-bkfix-marge'].forEach(id=>{
     const el=$(id); if(el) ['change','input'].forEach(ev=>el.addEventListener(ev,calcKnikarm));
   });
   applyFieldVis('knikarm');
@@ -1030,8 +1082,11 @@ function calcKnikarm(){
   const ck = CONFIG.data;
   if(breedte < ck.knikarm_min_breedte) warnings.push(`Breedte ${breedte}mm < 1m: prijs van ${ck.knikarm_min_breedte}mm gebruikt`);
 
-  const bCeil = Math.max(ck.knikarm_min_breedte, ceil(breedte, ck.knikarm_breedte_rounding));
-  const uCeil = ceil(uitval, ck.knikarm_uitval_rounding);
+  // Stilo 103/123 hebben 250mm uitval-stappen; alle overige types 500mm
+  const uitvalStep = (type==='Stilo 103 onderliggend'||type==='Stilo 123 onderliggend') ? 250 : ck.knikarm_uitval_rounding;
+  const minBreedte = Math.max(ck.knikarm_min_breedte, typeData.min_width || 0);
+  const bCeil = Math.max(minBreedte, ceil(breedte, ck.knikarm_breedte_rounding));
+  const uCeil = ceil(uitval, uitvalStep);
 
   const uitvalKey = `${typeData.prefix_U}${uCeil}`;
   const breedteKey = `${typeData.prefix_B}${bCeil}`;
@@ -1078,10 +1133,12 @@ function calcKnikarm(){
   const manualOptions = getCustomOptionRows('k');
   const manualOptionsPrice = manualOptions.reduce((sum,opt)=>sum+opt.amount,0);
 
-  // Kleur
-  const kleurSelectVal = $('k-kleur-select')?.value || '';
+  // Kleur — Pisano 230: alleen 3 standaardkleuren gratis, rest = meerprijs
+  const kleurSelectEl = $('k-kleur-select');
+  const kleurSelectVal = kleurSelectEl?.value || '';
   const kleurCustom = kleurSelectVal === 'andere' ? ($('k-kleur-custom')?.value.trim() || '') : '';
-  const kleurMeerprijs = kleurSelectVal === 'andere' ? KLEUR_MEERPRIJS : 0;
+  const isPisanoNonStd = type === 'Pisano 230' && kleurSelectVal && kleurSelectVal !== 'andere' && !PISANO_STD_KLEUREN.includes(kleurSelectVal);
+  const kleurMeerprijs = (kleurSelectVal === 'andere' || isPisanoNonStd) ? KLEUR_MEERPRIJS : 0;
   const kleurLabel = kleurSelectVal === 'andere' ? (kleurCustom || 'Andere kleur (+€'+KLEUR_MEERPRIJS+')') : kleurSelectVal;
 
   // Plaatsing: (breedte_ceil/1000)*100 + 250 (per stuk)
@@ -1103,6 +1160,7 @@ function calcKnikarm(){
     type,aantal,breedte,uitval,
     verd,bereik,gevel,muur,doek,led,
     kleurSelectVal,kleurCustom,kleurLabel,
+    bestelBreedte: bCeil, bestelHoogte: uCeil,
     bestelmaat:`${bCeil}×${uCeil}`,
     armen:(typeof armen==='number'?armen:'-'),
     options:[
@@ -1275,9 +1333,10 @@ function calcVeranda(){
   }
 
   const cv = CONFIG.data;
-  if(breedte < cv.veranda_min_breedte) warnings.push(`Breedte ${breedte}mm < 1m: prijs van ${cv.veranda_min_breedte}mm gebruikt`);
-  const bCeil = Math.max(cv.veranda_min_breedte, ceil(breedte, cv.veranda_breedte_rounding));
-  const uCeil = ceil(uitval, cv.veranda_uitval_rounding);
+  const verandaMinB = cv.veranda_min_breedte; // 1500mm — data begint bij 1500
+  if(breedte < verandaMinB) warnings.push(`Breedte ${breedte}mm < ${verandaMinB}mm: prijs van ${verandaMinB}mm gebruikt`);
+  const bCeil = Math.max(verandaMinB, ceil(breedte, cv.veranda_breedte_rounding));
+  const uCeil = Math.max(2000, ceil(uitval, cv.veranda_uitval_rounding)); // uitval min 2000mm
 
   const uitvalKey = `${typeData.prefix_U}${uCeil}`;
   const breedteKey = `${typeData.prefix_B}${bCeil}`;
@@ -1374,6 +1433,7 @@ function calcVeranda(){
     type,aantal,breedte,uitval,
     mkabel,gevel,doek,bereik,led,extrasList,
     kleurSelectVal,kleurCustom,kleurLabel,
+    bestelBreedte: bCeil, bestelHoogte: uCeil,
     bestelmaat:`${bCeil}×${uCeil}`,
     options:[
       smallSurcharge>0 && `Kleine breedte toeslag +€${smallSurcharge}`,
@@ -1879,78 +1939,190 @@ function tlRolluikDescription(item) {
 }
 
 function tlScreenDescription(item){
-  const plaatsingLabel = item.plaatsing === 'odd' ? 'ODD' : 'IDD';
+  const plaatsingLabel = item.plaatsing === 'odd' ? 'op de dag (ODD)' : 'in de dag (IDD)';
+  const isSolar = item.type === 'Nova solar 103';
   const kleur = item.kleurLabel || (item.kleurSelectVal === 'andere' ? item.kleurCustom : item.kleurSelectVal) || '';
+  const title = isSolar ? 'Solar zipscreen op maat:' : 'Zipscreen op maat:';
 
-  let h = '<ul style="margin:4px 0;padding-left:18px">';
-  h += `<li>Dagmaat: ${item.breedte}×${item.hoogte}mm</li>`;
-  h += `<li>Plaatsing: ${plaatsingLabel}</li>`;
-  h += `<li>Calculatiemaat: ${item.bestelmaat}mm</li>`;
-  if(item.bestelBreedte || item.bestelHoogte){
-    h += `<li>Bestelmaat (fabrikant): ${item.bestelBreedte}×${item.bestelHoogte}mm</li>`;
+  let h = `<p><strong>${title}</strong></p><ul style="margin:4px 0;padding-left:18px">`;
+  // Dagmaten
+  h += `<li>Dagmaten:<ul style="margin:2px 0;padding-left:16px">`;
+  h += `<li>Breedte: <strong>${item.breedte}mm</strong></li>`;
+  h += `<li>Hoogte: <strong>${item.hoogte}mm</strong></li>`;
+  h += '</ul></li>';
+  // Calculatiemaat & bestelmaat
+  h += `<li>Calculatiemaat: <strong>${item.bestelmaat}mm</strong></li>`;
+  if(item.bestelBreedte && item.bestelHoogte){
+    h += `<li>Bestelmaat (fabrikant): <strong>${item.bestelBreedte}×${item.bestelHoogte}mm</strong></li>`;
   }
-  // Geleider
-  h += `<li>Geleider: <strong>${item.gel || 'standaard'}</strong></li>`;
-  // Onderlat
-  if(item.onderlatHoog) h += `<li>Onderlat: <strong>hoge verzwaarde onderlat</strong></li>`;
-  // Motor
-  h += `<li>Motor: <strong>${item.motor || 'Maestria io'}</strong></li>`;
-  // Doek
-  if(item.doek && item.doek !== 'standaard'){
-    h += `<li>Doek: <strong>${item.doek}</strong></li>`;
+  // Plaatsing
+  h += `<li>Plaatsing: <strong>${plaatsingLabel}</strong></li>`;
+  // Omkasting
+  h += `<li>Omkasting:<ul style="margin:2px 0;padding-left:16px">`;
+  if(isSolar){
+    h += '<li>Rechte omkasting 103×103mm</li>';
+  } else {
+    h += '<li>Rechte geëxtrudeerde omkasting (103×103mm)</li>';
+    h += '<li>Afgeronde geëxtrudeerde omkasting (109×103mm)</li>';
   }
+  h += '</ul></li>';
   // Kleur
-  if(kleur){
-    h += `<li>Kleur: <strong>${kleur}</strong></li>`;
+  h += `<li>Kleur:<ul style="margin:2px 0;padding-left:16px">`;
+  h += '<li>193 standaard RAL-kleuren en 14 structuurlakkleuren</li>';
+  h += `<li>RAL: <strong>${kleur || '—'}</strong></li>`;
+  h += '</ul></li>';
+  // Geleiders
+  h += `<li>Geleiders:<ul style="margin:2px 0;padding-left:16px">`;
+  h += `<li>${item.gel ? item.gel : 'standaard Nova zip geleiders - 40×29mm'}</li>`;
+  h += '</ul></li>';
+  // Onderlijst
+  h += `<li>Onderlijst:<ul style="margin:2px 0;padding-left:16px">`;
+  h += `<li>${item.onderlatHoog ? 'hoge verzwaarde onderlat' : 'voorzien van benodigde verzwaring (afhankelijk van afmetingen)'}</li>`;
+  h += '</ul></li>';
+  // Doek
+  h += `<li>Doek:<ul style="margin:2px 0;padding-left:16px">`;
+  h += `<li>${(item.doek && item.doek !== 'standaard') ? item.doek : 'Sergé doek uit standaardcollectie'}</li>`;
+  h += '</ul></li>';
+  // Motor
+  h += `<li>Motor:<ul style="margin:2px 0;padding-left:16px">`;
+  if(isSolar){
+    h += `<li>${item.motor || 'Somfy RS100 SOLAR IO buismotor'}</li>`;
+    h += '<li>Aansturing op zonne-energie — geen stroomkabel vereist. Batterij en zonnepaneel inbegrepen.</li>';
+  } else {
+    h += `<li>${item.motor || 'Somfy Maestria IO buismotor'}</li>`;
   }
+  h += '</ul></li>';
   // Koppelen
-  if(item.koppel) h += `<li>Koppelen: ${item.koppel}</li>`;
+  if(item.koppel) h += `<li>Koppelen: <strong>${item.koppel}</strong></li>`;
   // Bediening
-  if(item.bed1) h += `<li>Bediening 1: <strong>${item.bed1}</strong></li>`;
-  if(item.bed2) h += `<li>Bediening 2: <strong>${item.bed2}</strong></li>`;
+  if(item.bed1) h += `<li>Bediening: <strong>${item.bed1}${item.bed2 ? ' + '+item.bed2 : ''}</strong></li>`;
   if(item.opmerkingen) h += `<li>Opmerkingen: ${item.opmerkingen}</li>`;
   h += '</ul>';
   return h;
 }
+
+// Knikarm type-specifieke info
+const KNIKARM_TYPE_INFO = {
+  'Pisano 230':           { title:'Knikarmscherm \'Pisano 230\'', sub:'Kast 230mm. Strakke, moderne look.', motor:'Somfy Sunea IO motor', doekLabel:'Acryldoek uit de Allround acrylcollectie', muurOpties:true },
+  'Mondria 150':          { title:'Knikarmscherm \'Mondria 150\'', sub:'Kast 150mm.', motor:'Somfy Sunea IO motor', doekLabel:'Acryldoek uit de Allround acrylcollectie', muurOpties:true },
+  'Gaudi 300':            { title:'Knikarmscherm \'Gaudi 300\'', sub:'Kast van 150×225mm. Strakke en moderne look.\nDeze zonnetent kan afmetingen aan tot 7m breed en een uitval tot 4m.', motor:'Somfy Sunea IO motor', doekLabel:'Acryldoek uit de Allround acrylcollectie', muurOpties:true },
+  'Gaudi 400':            { title:'Knikarmscherm \'Gaudi 400\'', sub:'Kast 150×225mm. Tot 12m breed en 4m uitval.', motor:'Somfy Sunea IO motor', doekLabel:'Acryldoek uit de Allround acrylcollectie', muurOpties:true },
+  'Moneo 400':            { title:'Knikarmscherm \'Moneo 400\'', sub:'Tot 7m breed, 4m uitval.', motor:'Somfy Sunea IO motor', doekLabel:'Acryldoek uit de Allround acrylcollectie', muurOpties:true },
+  'Stilo 103 onderliggend':{ title:'Knikarmscherm \'Stilo 103\'', sub:'Onderliggend systeem.', motor:'Somfy Sunea IO motor', doekLabel:'Keuze uit Allround doekencollectie', muurOpties:false },
+  'Stilo 123 onderliggend':{ title:'Knikarmscherm \'Stilo 123\'', sub:'Onderliggend systeem.', motor:'Somfy Sunea IO motor', doekLabel:'Keuze uit Allround doekencollectie', muurOpties:false },
+};
 
 function tlKnikarmDescription(item){
   const kleur = item.kleurLabel || (item.kleurSelectVal === 'andere' ? item.kleurCustom : item.kleurSelectVal) || '';
+  const info = KNIKARM_TYPE_INFO[item.type] || { title:`Knikarmscherm '${item.type}'`, motor:'Somfy Sunea IO motor', doekLabel:'Acryldoek uit de Allround acrylcollectie', muurOpties:true };
 
-  let h = '<ul style="margin:4px 0;padding-left:18px">';
-  h += `<li>Dagmaat (breedte × uitval): ${item.breedte}×${item.uitval}mm</li>`;
-  h += `<li>Calculatiemaat: ${item.bestelmaat}mm</li>`;
-  if(item.armen && item.armen !== '-') h += `<li>Armen: ${item.armen}</li>`;
-  if(item.verd && item.verd !== '0') h += `<li>Verdieping: <strong>${item.verd}</strong></li>`;
-  if(item.gevel) h += `<li>Type gevel: <strong>${item.gevel}</strong></li>`;
+  let h = `<p><strong>${info.title}</strong></p>`;
+  if(info.sub) h += `<p>${info.sub.replace(/\n/g,'<br>')}</p>`;
+  h += '<ul style="margin:4px 0;padding-left:18px">';
+  // Afmetingen
+  h += `<li>Afmetingen:<ul style="margin:2px 0;padding-left:16px">`;
+  h += `<li>Breedte: <strong>${item.breedte}mm</strong></li>`;
+  h += `<li>Uitval: <strong>${item.uitval}mm</strong></li>`;
+  h += '</ul></li>';
+  // Calculatiemaat
+  h += `<li>Calculatiemaat: <strong>${item.bestelmaat}mm</strong></li>`;
+  if(item.armen && item.armen !== '-') h += `<li>Aantal armen: <strong>${item.armen}</strong></li>`;
+  // Montage
+  h += `<li>Montage:<ul style="margin:2px 0;padding-left:16px">`;
+  const montage = item.verd && item.verd !== '0' ? `verdieping ${item.verd}` : 'standaard';
+  const gevelTxt = item.gevel ? item.gevel : 'standaard muurmontage';
+  h += `<li>${gevelTxt}</li>`;
+  if(info.muurOpties && !item.muur) h += '<li>Meerprijs op plafondmontage</li>';
   if(item.muur) h += `<li>Muursteun: <strong>${item.muur}</strong></li>`;
-  if(item.doek) h += `<li>Doek: <strong>${item.doek}</strong></li>`;
-  if(item.led) h += `<li>LED verlichting: <strong>${item.led}</strong></li>`;
-  if(kleur) h += `<li>Kleur frame: <strong>${kleur}</strong></li>`;
-  if(item.bed1) h += `<li>Bediening 1: <strong>${item.bed1}</strong></li>`;
-  if(item.bed2) h += `<li>Bediening 2: <strong>${item.bed2}</strong></li>`;
+  if(item.verd && item.verd !== '0') h += `<li>Verdieping: <strong>${item.verd}</strong></li>`;
+  h += '</ul></li>';
+  // Motor
+  h += `<li>Motor:<ul style="margin:2px 0;padding-left:16px">`;
+  h += `<li>${item.motor || info.motor}</li>`;
+  h += '</ul></li>';
+  // Doek
+  h += `<li>Doek:<ul style="margin:2px 0;padding-left:16px">`;
+  h += `<li>${item.doek && item.doek !== 'standaard' ? item.doek : info.doekLabel}</li>`;
+  h += '</ul></li>';
+  // Kast / kleur
+  h += `<li>Kast:<ul style="margin:2px 0;padding-left:16px">`;
+  if(item.type === 'Pisano 230'){
+    h += '<li>Standaardkleuren: RAL 9001, RAL 9010 of RAL 7016 SL (inbegrepen)</li>';
+    h += '<li>Meerprijs op alle andere RAL-kleuren</li>';
+  } else {
+    h += '<li>Keuze uit de Allround kleurencollectie</li>';
+  }
+  if(kleur) h += `<li>Gekozen kleur: <strong>${kleur}</strong></li>`;
+  h += '</ul></li>';
+  // LED
+  if(item.led) h += `<li>Verlichting: <strong>${item.led}</strong></li>`;
+  // Bediening
+  if(item.bed1||item.bed2){
+    h += `<li>Bediening: <strong>${[item.bed1,item.bed2].filter(Boolean).join(' + ')}</strong></li>`;
+  }
   if(item.opmerkingen) h += `<li>Opmerkingen: ${item.opmerkingen}</li>`;
   h += '</ul>';
   return h;
 }
 
+// Veranda type-specifieke info
+const VERANDA_TYPE_INFO = {
+  'Vinci 150 onderliggend':  { title:'Pergola \'Vinci 150\'', sub:'Onderliggend systeem. Kast 150mm.', motor:'Somfy RS100 IO' },
+  'Vinci 250 bovenliggend':  { title:'Pergola \'Vinci 250\'', sub:'Bovenliggend systeem. Kast 250mm.', motor:'Somfy RS100 IO' },
+  'Vinci 300 zonder zip':    { title:'Pergola \'Vinci 300\'', sub:'Zonder zip. Kast 300mm.', motor:'Somfy RS100 IO' },
+  'Vinci 250 met zip':       { title:'Pergola \'Vinci 250 met zip\'', sub:'Kast 250mm, met zijdelingse zip-geleiders.', motor:'Somfy RS100 IO' },
+  'Vinci 250+ volant':       { title:'Pergola \'Vinci 250+ volant\'', sub:'Kast 250mm, met Vario volant-optie.', motor:'Somfy RS100 IO' },
+  'vinci 450 waterdicht':    { title:'Pergola \'Vinci 450 waterdicht\'', sub:'Waterdicht systeem. Kast 450mm.', motor:'Somfy RS100 IO' },
+};
+
 function tlVerandaDescription(item){
   const kleur = item.kleurLabel || (item.kleurSelectVal === 'andere' ? item.kleurCustom : item.kleurSelectVal) || '';
+  const info = VERANDA_TYPE_INFO[item.type] || { title:`Pergola/Veranda '${item.type}'`, motor:'Somfy RS100 IO' };
 
-  let h = '<ul style="margin:4px 0;padding-left:18px">';
-  h += `<li>Dagmaat (breedte × uitval): ${item.breedte}×${item.uitval}mm</li>`;
-  h += `<li>Calculatiemaat: ${item.bestelmaat}mm</li>`;
+  let h = `<p><strong>${info.title}</strong></p>`;
+  if(info.sub) h += `<p>${info.sub}</p>`;
+  h += '<ul style="margin:4px 0;padding-left:18px">';
+  // Afmetingen
+  h += `<li>Afmetingen:<ul style="margin:2px 0;padding-left:16px">`;
+  h += `<li>Breedte: <strong>${item.breedte}mm</strong></li>`;
+  h += `<li>Uitval: <strong>${item.uitval}mm</strong></li>`;
+  h += '</ul></li>';
+  h += `<li>Calculatiemaat: <strong>${item.bestelmaat}mm</strong></li>`;
+  // Motor
+  h += `<li>Motor:<ul style="margin:2px 0;padding-left:16px">`;
+  h += `<li>${item.motor || info.motor}</li>`;
   if(item.mkabel) h += `<li>Afwijkende motorkabel: <strong>${item.mkabel}</strong></li>`;
+  h += '</ul></li>';
+  // Doek
+  if(item.doek){
+    h += `<li>Doek:<ul style="margin:2px 0;padding-left:16px">`;
+    h += `<li>${item.doek}</li>`;
+    h += '</ul></li>';
+  }
+  // LED / volant
+  if(item.led){
+    h += `<li>LED / volant:<ul style="margin:2px 0;padding-left:16px">`;
+    h += `<li><strong>${item.led}</strong></li>`;
+    h += '</ul></li>';
+  }
+  // Kleur
+  h += `<li>Kleur frame:<ul style="margin:2px 0;padding-left:16px">`;
+  h += '<li>Keuze uit de Allround kleurencollectie</li>';
+  h += '<li>Meerprijs op alle andere RAL-kleuren</li>';
+  if(kleur) h += `<li>Gekozen kleur: <strong>${kleur}</strong></li>`;
+  h += '</ul></li>';
+  // Gevel
   if(item.gevel) h += `<li>Type gevel: <strong>${item.gevel}</strong></li>`;
-  if(item.doek) h += `<li>Doek groep: <strong>${item.doek}</strong></li>`;
-  if(item.led) h += `<li>LED / volant: <strong>${item.led}</strong></li>`;
+  // Extras
   if(item.extrasList && item.extrasList.length>0){
     h += `<li>Extra opties:<ul style="margin:2px 0;padding-left:16px">`;
     item.extrasList.forEach(e=>{ h+=`<li>${e}</li>`; });
     h += '</ul></li>';
   }
-  if(kleur) h += `<li>Kleur frame: <strong>${kleur}</strong></li>`;
-  if(item.bed1) h += `<li>Bediening 1: <strong>${item.bed1}</strong></li>`;
-  if(item.bed2) h += `<li>Bediening 2: <strong>${item.bed2}</strong></li>`;
+  // Bediening
+  if(item.bed1||item.bed2){
+    h += `<li>Bediening: <strong>${[item.bed1,item.bed2].filter(Boolean).join(' + ')}</strong></li>`;
+  }
   if(item.opmerkingen) h += `<li>Opmerkingen: ${item.opmerkingen}</li>`;
   h += '</ul>';
   return h;
@@ -2525,10 +2697,10 @@ const DEFAULT_CONFIG = {
   rolluik_max:{Ecoroll_L:{b:3500,h:2800},Rollex_L:{b:3500,h:2800},Ecoroll_M:{b:3200,h:2800},Rollex_M:{b:3200,h:2800}},
   // Screen
   screen_min_dim:1000, screen_idd_adj:-4, screen_plaatsing_base:100,
-  // Knikarm
+  // Knikarm — breedte altijd 250mm stappen; uitval: Stilo=250mm, overige=500mm
   knikarm_min_breedte:1000, knikarm_breedte_rounding:250, knikarm_uitval_rounding:500,
-  // Veranda
-  veranda_min_breedte:1000, veranda_breedte_rounding:250, veranda_uitval_rounding:250,
+  // Veranda — data zit in 500mm stappen, minimumbreedte 1500mm
+  veranda_min_breedte:1500, veranda_breedte_rounding:500, veranda_uitval_rounding:500,
   veranda_plaatsing_flat:350, veranda_small_surcharge:245,
   veranda_small_surcharge_max_breedte:1400, veranda_default_marge:40,
   // Verplaatsingskosten
