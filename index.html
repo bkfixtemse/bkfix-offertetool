@@ -2121,11 +2121,6 @@ function tlScreenDescription(item){
   h += `<li>Breedte: <strong>${item.breedte}mm</strong></li>`;
   h += `<li>Hoogte: <strong>${item.hoogte}mm</strong></li>`;
   h += '</ul></li>';
-  // Calculatiemaat & bestelmaat
-  h += `<li>Calculatiemaat: <strong>${item.bestelmaat}mm</strong></li>`;
-  if(item.bestelBreedte && item.bestelHoogte){
-    h += `<li>Bestelmaat (fabrikant): <strong>${item.bestelBreedte}×${item.bestelHoogte}mm</strong></li>`;
-  }
   // Plaatsing
   h += `<li>Plaatsing: <strong>${plaatsingLabel}</strong></li>`;
   // Omkasting
@@ -2195,8 +2190,6 @@ function tlKnikarmDescription(item){
   h += `<li>Breedte: <strong>${item.breedte}mm</strong></li>`;
   h += `<li>Uitval: <strong>${item.uitval}mm</strong></li>`;
   h += '</ul></li>';
-  // Calculatiemaat
-  h += `<li>Calculatiemaat: <strong>${item.bestelmaat}mm</strong></li>`;
   if(item.armen && item.armen !== '-') h += `<li>Aantal armen: <strong>${item.armen}</strong></li>`;
   // Montage
   h += `<li>Montage:<ul style="margin:2px 0;padding-left:16px">`;
@@ -2258,7 +2251,6 @@ function tlVerandaDescription(item){
   h += `<li>Breedte: <strong>${item.breedte}mm</strong></li>`;
   h += `<li>Uitval: <strong>${item.uitval}mm</strong></li>`;
   h += '</ul></li>';
-  h += `<li>Calculatiemaat: <strong>${item.bestelmaat}mm</strong></li>`;
   // Motor
   h += `<li>Motor:<ul style="margin:2px 0;padding-left:16px">`;
   h += `<li>${item.motor || info.motor}</li>`;
