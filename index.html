@@ -116,6 +116,34 @@ details[open] summary{margin-bottom:8px}
 .bdang:hover{background:#fecaca}
 .sect-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
 .sect-title{font-size:15px;font-weight:700;color:#2c3e50}
+/* ===== Offertehistorie ===== */
+.hist-wrap{animation:fadeIn .2s}
+.hist-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.hist-head-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hist-head-actions input{padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px}
+.hist-empty{color:#94a3b8;font-size:14px;padding:48px 20px;text-align:center;line-height:1.7;border:2px dashed #e2e8f0;border-radius:12px}
+.hist-list{display:flex;flex-direction:column;gap:10px}
+.hist-card{display:flex;justify-content:space-between;align-items:stretch;gap:16px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 18px;cursor:pointer;transition:all .15s;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.hist-card:hover{border-color:#93c5fd;box-shadow:0 4px 14px rgba(59,130,246,.12);transform:translateY(-1px)}
+.hist-card-main{flex:1;min-width:0}
+.hist-card-title{font-size:15px;font-weight:700;color:#2c3e50;margin-bottom:4px}
+.hist-card-sub{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#64748b;margin-bottom:6px}
+.hist-card-sub .hist-tl{color:#059669;font-weight:600}
+.hist-card-prev{font-size:12px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-card-side{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;white-space:nowrap;border-left:1px solid #f1f5f9;padding-left:16px}
+.hist-amt-v{font-size:18px;font-weight:700;color:#059669}
+.hist-amt-a{font-size:11px;color:#f59e0b;margin-top:2px}
+.hist-card-arrow{font-size:11px;color:#3b82f6;margin-top:6px;font-weight:600}
+.hist-detail-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px 24px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:#334155}
+.hist-detail-meta .lbl{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#94a3b8;font-weight:600;margin-bottom:2px}
+.hist-detail-table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden}
+.hist-detail-table th{background:#f8fafc;padding:9px 10px;text-align:left;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.3px;font-weight:600;border-bottom:2px solid #e2e8f0}
+.hist-detail-table td{padding:9px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#334155}
+.hist-detail-table tbody tr:hover td{background:#fafafe}
+.hist-detail-table tfoot td{background:#f8fafc;border-top:2px solid #e2e8f0;padding:11px 10px}
+.hist-hidden{text-align:right;font-size:12px;color:#94a3b8;margin-top:8px}
+.hist-grand{display:flex;justify-content:space-between;align-items:center;background:#2c3e50;color:#fff;border-radius:10px;padding:14px 20px;margin-top:14px;font-size:15px}
+.hist-grand strong{font-size:22px}
 /* Login overlay */
 #login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#1a2332 0%,#2c3e50 60%,#4a6278 100%);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
 #login-box{background:#fff;border-radius:16px;padding:40px 36px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
@@ -166,7 +194,8 @@ details[open] summary{margin-bottom:8px}
 <button class="tab" data-prod="screen">Screen</button>
 <button class="tab" data-prod="knikarm">Knikarmscherm</button>
 <button class="tab" data-prod="veranda">Veranda/Pergola</button>
-<button class="tab" data-prod="beheer" style="margin-left:auto;color:#64748b">⚙ Beheer</button>
+<button class="tab" data-prod="historie" style="margin-left:auto;color:#64748b">📜 Historie</button>
+<button class="tab" data-prod="beheer" style="color:#64748b">⚙ Beheer</button>
 </div>
 
 <div id="form-container"></div>
@@ -1710,12 +1739,17 @@ function onHiddenCostChange(){
 }
 
 // ======= Offertehistorie =======
+function getOpsteller(){ return localStorage.getItem('bkfix_user_name') || ''; }
+function setOpsteller(naam){ localStorage.setItem('bkfix_user_name', naam||''); }
+
 function saveOfferToHistory(tlQuotationId){
   try {
+    if(!state.offer.length) return null;
     const history = JSON.parse(localStorage.getItem('bkfix_offer_history') || '[]');
     const entry = {
       id: genId(),
       date: new Date().toISOString(),
+      createdBy: getOpsteller() || 'Onbekend',
       dealId: state.tlSelectedDeal?.id || null,
       dealTitle: state.tlSelectedDeal?.title || '—',
       clientName: $('klant-naam')?.value || '',
@@ -1727,50 +1761,186 @@ function saveOfferToHistory(tlQuotationId){
         uren: parseFloat($('w-uren')?.value) || 0,
         personen: parseInt($('w-personen')?.value) || 2
       },
-      effectiveTotal: state.offer.reduce((s,i)=>s+i.uwVerkoop,0) + (parseFloat($('hidden-cost')?.value)||0)
+      totaalVerkoop: state.offer.reduce((s,i)=>s+(i.uwVerkoop||0),0) + (parseFloat($('hidden-cost')?.value)||0),
+      totaalAankoop: state.offer.reduce((s,i)=>s+(i.aankoop||0),0)
     };
+    entry.effectiveTotal = entry.totaalVerkoop; // backwards compat
     history.unshift(entry);
-    if(history.length > 100) history.pop();
+    if(history.length > 300) history.pop();
     localStorage.setItem('bkfix_offer_history', JSON.stringify(history));
-    window.fbSave?.('offer_history', history);
-  } catch(e) { console.error('Historie opslaan mislukt:', e); }
+    // Schrijf als eigen Firestore-document (voorkomt overschrijven van andere PC's)
+    window.fbSaveOffer?.(entry);
+    return entry.id;
+  } catch(e) { console.error('Historie opslaan mislukt:', e); return null; }
 }
 
-function renderHistorie(el){
-  const history = JSON.parse(localStorage.getItem('bkfix_offer_history') || '[]');
-  let html = `<div class="beheer-section">
-    <div class="sect-hdr">
-      <span class="sect-title">Offertehistorie</span>
-      <button class="bsec" onclick="saveOfferToHistory(null);renderHistorie($('beheer-content'))" style="font-size:12px">💾 Huidige offerte opslaan</button>
+// State voor historie-tab (lijst vs detail)
+let _historieDetailId = null;
+let _historieZoek = '';
+
+function getHistory(){
+  try { return JSON.parse(localStorage.getItem('bkfix_offer_history') || '[]'); }
+  catch(e){ return []; }
+}
+
+function fmtHistDate(iso){
+  const d = new Date(iso);
+  if(isNaN(d)) return '—';
+  return d.toLocaleDateString('nl-BE',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' +
+         d.toLocaleTimeString('nl-BE',{hour:'2-digit',minute:'2-digit'});
+}
+
+// Hoofd-render: kiest tussen lijst en detail
+function renderHistorieTab(){
+  const el = $('form-container');
+  if(!el) return;
+  if(_historieDetailId){ renderHistorieDetail(el); }
+  else { renderHistorieList(el); }
+}
+
+function renderHistorieList(el){
+  let history = getHistory();
+  const zoek = _historieZoek.trim().toLowerCase();
+  if(zoek){
+    history = history.filter(e=>
+      (e.dealTitle||'').toLowerCase().includes(zoek) ||
+      (e.clientName||'').toLowerCase().includes(zoek) ||
+      (e.createdBy||'').toLowerCase().includes(zoek) ||
+      (e.items||[]).some(i=>`${i.product} ${i.type}`.toLowerCase().includes(zoek))
+    );
+  }
+  const opsteller = getOpsteller();
+
+  let html = `
+  <div class="hist-wrap">
+    <div class="hist-head">
+      <h2 style="margin:0">📜 Offertehistorie</h2>
+      <div class="hist-head-actions">
+        <input id="hist-naam" placeholder="Jouw naam (opsteller)" value="${opsteller.replace(/"/g,'&quot;')}"
+               onchange="setOpsteller(this.value)" style="width:180px">
+        <input id="hist-zoek" placeholder="🔍 Zoek deal / klant / product" value="${_historieZoek.replace(/"/g,'&quot;')}"
+               oninput="_historieZoek=this.value; clearTimeout(window._histT); window._histT=setTimeout(renderHistorieTab,250)" style="width:240px">
+        <button class="bfull" onclick="if(saveOfferToHistory(null)){renderHistorieTab()}else{alert('Geen offerte om op te slaan — voeg eerst items toe.')}" style="white-space:nowrap">💾 Huidige offerte opslaan</button>
+      </div>
     </div>`;
+
   if(!history.length){
-    html += '<div style="color:#94a3b8;font-size:13px;padding:20px 0;text-align:center">Nog geen offertes opgeslagen. Exporteer naar Teamleader of klik "Huidige offerte opslaan".</div>';
+    html += `<div class="hist-empty">${_historieZoek ? 'Geen offertes gevonden voor deze zoekopdracht.' : 'Nog geen offertes opgeslagen.<br>Exporteer naar Teamleader of klik "Huidige offerte opslaan".'}</div>`;
   } else {
-    html += '<table class="admin-table"><tr><th>Datum</th><th>Deal / Klant</th><th>Artikelen</th><th>Totaal</th><th></th></tr>';
+    html += '<div class="hist-list">';
     history.forEach(e=>{
-      const d = new Date(e.date);
-      const dateStr = d.toLocaleDateString('nl-BE',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + d.toLocaleTimeString('nl-BE',{hour:'2-digit',minute:'2-digit'});
-      const previewItems = (e.items||[]).slice(0,3).map(i=>`${i.product} ${i.type}`).join(', ') + ((e.items||[]).length>3?'…':'');
-      html += `<tr>
-        <td style="white-space:nowrap;font-size:12px">${dateStr}</td>
-        <td><strong>${e.dealTitle||'—'}</strong>${e.clientName?`<br><span style="color:#64748b;font-size:11px">${e.clientName}</span>`:''} ${e.tlQuotationId?`<br><span style="color:#059669;font-size:10px">TL: ${e.tlQuotationId}</span>`:''}</td>
-        <td style="font-size:12px">${(e.items||[]).length} artikel(s)<br><span style="color:#64748b;font-size:11px;word-break:break-word">${previewItems}</span></td>
-        <td style="white-space:nowrap">€${fmt(e.effectiveTotal||0)}</td>
-        <td style="white-space:nowrap;min-width:120px">
-          <button class="bfull" onclick="loadHistoryEntry('${e.id}')" style="font-size:11px;padding:4px 8px;margin-bottom:4px;width:100%">✏ Laden & bewerken</button>
-          <button class="bsec" onclick="deleteHistoryEntry('${e.id}')" style="font-size:11px;padding:4px 8px;width:100%">🗑 Verwijderen</button>
-        </td>
-      </tr>`;
+      const aantal = (e.items||[]).length;
+      const preview = (e.items||[]).slice(0,4).map(i=>`${i.product}${i.type?' '+i.type:''}`).join(' · ') + (aantal>4?' …':'');
+      const verkoop = e.totaalVerkoop != null ? e.totaalVerkoop : (e.effectiveTotal||0);
+      const aankoop = e.totaalAankoop != null ? e.totaalAankoop : null;
+      html += `
+      <div class="hist-card" onclick="openHistorieDetail('${e.id}')">
+        <div class="hist-card-main">
+          <div class="hist-card-title">${e.dealTitle||'—'}</div>
+          <div class="hist-card-sub">
+            ${e.clientName?`<span>👤 ${e.clientName}</span>`:''}
+            <span>🕗 ${fmtHistDate(e.date)}</span>
+            <span>✍ ${e.createdBy||'Onbekend'}</span>
+            ${e.tlQuotationId?`<span class="hist-tl">TL ✓</span>`:''}
+          </div>
+          <div class="hist-card-prev">${aantal} artikel(s): ${preview||'—'}</div>
+        </div>
+        <div class="hist-card-side">
+          <div class="hist-amt-v">€${fmt(verkoop)}</div>
+          ${aankoop!=null?`<div class="hist-amt-a">aankoop €${fmt(aankoop)}</div>`:''}
+          <div class="hist-card-arrow">details ›</div>
+        </div>
+      </div>`;
     });
-    html += '</table>';
+    html += '</div>';
   }
   html += '</div>';
   el.innerHTML = html;
 }
 
+function openHistorieDetail(id){ _historieDetailId = id; renderHistorieTab(); }
+function closeHistorieDetail(){ _historieDetailId = null; renderHistorieTab(); }
+
+function renderHistorieDetail(el){
+  const entry = getHistory().find(e=>e.id===_historieDetailId);
+  if(!entry){ _historieDetailId=null; return renderHistorieList(el); }
+
+  const items = entry.items||[];
+  let totV=0, totA=0, totPl=0, totBed=0;
+
+  let rows = items.map((i,idx)=>{
+    const aantal = i.aantal||1;
+    const verkoop = i.uwVerkoop||0;
+    const aankoop = i.aankoop||0;
+    const plaats = i.plaatsingTotaal||0;
+    const bed = (i.bed1Price||0)+(i.bed2Price||0);
+    const marge = verkoop - aankoop - plaats;
+    totV+=verkoop; totA+=aankoop; totPl+=plaats; totBed+=bed;
+    const maat = i.hoogte ? `${i.breedte}×${i.hoogte}` : (i.uitval?`${i.breedte}×${i.uitval}`:'');
+    return `<tr>
+      <td>${idx+1}</td>
+      <td><strong>${i.product||''}</strong>${i.type?'<br><span style="color:#64748b;font-size:11px">'+i.type+'</span>':''}</td>
+      <td style="font-size:12px">${maat}${i.bestelmaat?'<br><span style="color:#64748b;font-size:11px">calc: '+i.bestelmaat+'</span>':''}</td>
+      <td style="text-align:center">${aantal}</td>
+      <td style="text-align:right;color:#d97706">€${fmt(aankoop)}</td>
+      <td style="text-align:right;color:#94a3b8">€${fmt(plaats)}</td>
+      <td style="text-align:right;font-weight:600;color:#059669">€${fmt(verkoop)}</td>
+      <td style="text-align:right;color:#64748b">€${fmt(marge)}</td>
+    </tr>`;
+  }).join('');
+
+  const hidden = entry.hiddenCost||0;
+  const grandV = (entry.totaalVerkoop!=null?entry.totaalVerkoop:(entry.effectiveTotal||totV));
+
+  el.innerHTML = `
+  <div class="hist-wrap">
+    <div class="hist-head">
+      <button class="bsec" onclick="closeHistorieDetail()">‹ Terug naar lijst</button>
+      <div class="hist-head-actions">
+        <button class="bfull" onclick="loadHistoryEntry('${entry.id}')">✏ Laden & bewerken</button>
+        <button class="bsec" onclick="deleteHistoryEntry('${entry.id}')" style="color:#f87171">🗑 Verwijderen</button>
+      </div>
+    </div>
+    <div class="hist-detail-meta">
+      <div><span class="lbl">Deal</span><strong>${entry.dealTitle||'—'}</strong></div>
+      <div><span class="lbl">Klant</span>${entry.clientName||'—'}</div>
+      <div><span class="lbl">Opgesteld door</span>${entry.createdBy||'Onbekend'}</div>
+      <div><span class="lbl">Datum</span>${fmtHistDate(entry.date)}</div>
+      ${entry.tlQuotationId?`<div><span class="lbl">Teamleader ID</span><span style="color:#059669">${entry.tlQuotationId}</span></div>`:''}
+    </div>
+    <table class="hist-detail-table">
+      <thead><tr>
+        <th>#</th><th>Product</th><th>Maat (mm)</th><th>Aantal</th>
+        <th style="text-align:right">Aankoop</th><th style="text-align:right">Plaatsing</th>
+        <th style="text-align:right">Verkoop</th><th style="text-align:right">Marge</th>
+      </tr></thead>
+      <tbody>${rows||'<tr><td colspan="8" style="text-align:center;color:#94a3b8">Geen artikelen</td></tr>'}</tbody>
+      <tfoot><tr>
+        <td colspan="4" style="text-align:right;font-weight:600">Totalen</td>
+        <td style="text-align:right;color:#d97706;font-weight:600">€${fmt(totA)}</td>
+        <td style="text-align:right;color:#94a3b8">€${fmt(totPl)}</td>
+        <td style="text-align:right;color:#059669;font-weight:700">€${fmt(totV)}</td>
+        <td style="text-align:right;color:#64748b">€${fmt(totV-totA-totPl)}</td>
+      </tr></tfoot>
+    </table>
+    ${hidden?`<div class="hist-hidden">+ Verborgen kost / verplaatsing: €${fmt(hidden)}</div>`:''}
+    <div class="hist-grand">
+      <span>Totaal offerte (verkoop)</span>
+      <strong>€${fmt(grandV)}</strong>
+    </div>
+  </div>`;
+}
+
+// In Beheer-tab (legacy): toon knop die naar het hoofdtabje leidt
+function renderHistorie(el){
+  el.innerHTML = `<div class="beheer-section" style="text-align:center;padding:30px">
+    <p style="color:#94a3b8;margin-bottom:16px">De offertehistorie heeft nu een eigen tabblad bovenaan.</p>
+    <button class="bfull" onclick="activateTab('historie')">📜 Open Offertehistorie</button>
+  </div>`;
+}
+
 function loadHistoryEntry(id){
-  const history = JSON.parse(localStorage.getItem('bkfix_offer_history') || '[]');
-  const entry = history.find(e=>e.id===id);
+  const entry = getHistory().find(e=>e.id===id);
   if(!entry){ alert('Offerte niet gevonden.'); return; }
   if(state.offer.length > 0 && !confirm(`Huidige offerte vervangen door "${entry.dealTitle}"?`)) return;
 
@@ -1780,20 +1950,20 @@ function loadHistoryEntry(id){
   if($('w-uren'))     $('w-uren').value     = entry.werkuren?.uren     || 0;
   if($('w-personen')) $('w-personen').value = entry.werkuren?.personen || 2;
   if($('klant-naam')) $('klant-naam').value = entry.clientName || '';
+  _historieDetailId = null;
   renderOffer();
 
-  // Go back to main offer view
   document.querySelector('.tab[data-prod="rolluik"]')?.click();
   setTimeout(()=> alert(`Offerte geladen: "${entry.dealTitle}"\n\nJe kan aanpassingen maken en daarna opnieuw exporteren naar TL als nieuwe offerte.`), 100);
 }
 
 function deleteHistoryEntry(id){
   if(!confirm('Verwijder deze offerte uit de historie?')) return;
-  const history = JSON.parse(localStorage.getItem('bkfix_offer_history') || '[]');
-  const updated = history.filter(e=>e.id!==id);
+  const updated = getHistory().filter(e=>e.id!==id);
   localStorage.setItem('bkfix_offer_history', JSON.stringify(updated));
-  window.fbSave?.('offer_history', updated);
-  renderHistorie($('beheer-content'));
+  window.fbDeleteOffer?.(id);
+  _historieDetailId = null;
+  renderHistorieTab();
 }
 
 function addVerplaatsingToOffer(){
@@ -2604,6 +2774,7 @@ function activateTab(prodKey){
   state.currentProduct = prodKey;
   verandaExtraCount = 0;
   if(prodKey === 'beheer'){ renderBeheer(); return; }
+  if(prodKey === 'historie'){ renderHistorieTab(); return; }
   if(prodKey.startsWith('custom_')){
     const cpId = prodKey.replace('custom_','');
     const cp = ADMIN.products.find(p=>p.id===cpId);
@@ -2787,32 +2958,80 @@ const FIELD_VIS = {
     }, 900);
   };
 
-  async function fbLoadAll(){
-    fbStatus('↓ laden…', '#94a3b8', '#1e293b');
+  // ----- Offerte-historie: elke offerte = eigen document (geen clobbering) -----
+  // Doc-id = 'offer_<id>' in dezelfde 'bkfix' collectie.
+  window.fbSaveOffer = async function(entry){
+    if(!window._fbDb || !entry?.id) return;
+    fbStatus('↑ offerte…', '#94a3b8', '#1e293b');
     try{
-      const snap = await window._fbDb.collection('bkfix').get();
-      let changed = false;
-      snap.forEach(doc=>{
-        const lsKey = KEY_MAP[doc.id];
-        if(lsKey && doc.data().value !== undefined){
-          const fresh = JSON.stringify(doc.data().value);
-          if(localStorage.getItem(lsKey) !== fresh){
-            localStorage.setItem(lsKey, fresh);
-            changed = true;
-          }
+      await window._fbDb.collection('bkfix').doc('offer_'+entry.id).set({ value: entry, ts: Date.now(), kind:'offer' });
+      fbStatus('✓ sync', '#22c55e', '#052e16');
+      setTimeout(()=>{ if(_fbConnected) fbStatusConnected(); }, 1800);
+    }catch(e){
+      console.warn('fbSaveOffer failed', e);
+      fbStatus('⚠ sync fout', '#f87171', '#450a0a');
+    }
+  };
+  window.fbDeleteOffer = async function(id){
+    if(!window._fbDb || !id) return;
+    try{ await window._fbDb.collection('bkfix').doc('offer_'+id).delete(); }
+    catch(e){ console.warn('fbDeleteOffer failed', e); }
+  };
+
+  // Bouw lokale historie-cache op uit alle offer_ docs in de snapshot
+  function rebuildLocalHistory(offers){
+    offers.sort((a,b)=> new Date(b.date||0) - new Date(a.date||0));
+    localStorage.setItem('bkfix_offer_history', JSON.stringify(offers));
+    // Her-render historie-tab als die actief is
+    if(typeof state!=='undefined' && state.currentProduct==='historie' && typeof renderHistorieTab==='function'){
+      renderHistorieTab();
+    }
+  }
+
+  let _migrated = false;
+  function handleSnapshot(snap){
+    let cfgChanged = false;
+    const offers = [];
+    let legacyArray = null;
+    snap.forEach(doc=>{
+      const id = doc.id;
+      const data = doc.data();
+      if(id.startsWith('offer_')){
+        if(data.value) offers.push(data.value);
+        return;
+      }
+      if(id === 'offer_history'){ legacyArray = data.value; return; } // legacy (migratie)
+      const lsKey = KEY_MAP[id];
+      if(lsKey && data.value !== undefined){
+        const fresh = JSON.stringify(data.value);
+        if(localStorage.getItem(lsKey) !== fresh){
+          localStorage.setItem(lsKey, fresh);
+          cfgChanged = true;
+        }
+      }
+    });
+
+    // Eenmalige migratie: oude offer_history array → losse offer_ docs
+    if(!_migrated && Array.isArray(legacyArray) && legacyArray.length){
+      _migrated = true;
+      const existingIds = new Set(offers.map(o=>o.id));
+      legacyArray.forEach(o=>{
+        if(o && o.id && !existingIds.has(o.id)){
+          offers.push(o);
+          window.fbSaveOffer(o); // schrijf weg als eigen doc
         }
       });
-      if(changed){
-        if(typeof renderOffer==='function') renderOffer();
-        if(typeof tlFetchLayouts==='function') tlFetchLayouts();
-        if(typeof renderCustomProductTabs==='function') renderCustomProductTabs();
-      }
-      _fbConnected = true;
-      fbStatusConnected();
-    }catch(e){
-      console.warn('fbLoadAll failed:', e);
-      fbStatus('⚠ offline', '#f87171', '#450a0a');
     }
+
+    rebuildLocalHistory(offers);
+
+    if(cfgChanged){
+      if(typeof renderOffer==='function') renderOffer();
+      if(typeof tlFetchLayouts==='function') tlFetchLayouts();
+      if(typeof renderCustomProductTabs==='function') renderCustomProductTabs();
+    }
+    _fbConnected = true;
+    fbStatusConnected();
   }
 
   try{
@@ -2820,7 +3039,14 @@ const FIELD_VIS = {
     window._fbDb = firebase.firestore();
     fbStatus('…', '#94a3b8', '#1e293b');
     firebase.auth().signInAnonymously()
-      .then(()=>fbLoadAll())
+      .then(()=>{
+        fbStatus('↓ laden…', '#94a3b8', '#1e293b');
+        // Realtime listener — vangt wijzigingen van álle PC's live op
+        window._fbDb.collection('bkfix').onSnapshot(
+          handleSnapshot,
+          err=>{ console.warn('onSnapshot error:', err); fbStatus('⚠ offline', '#f87171', '#450a0a'); }
+        );
+      })
       .catch(e=>{ console.warn('Firebase auth:', e); fbStatus('⚠ offline', '#f87171', '#450a0a'); });
   }catch(e){
     console.warn('Firebase init failed:', e);
@@ -2924,14 +3150,21 @@ function addArticleToOffer(article, qty=1){
 function renderCustomProductTabs(){
   const tabs = $('tabs');
   tabs.querySelectorAll('[data-custom-prod]').forEach(t=>t.remove());
-  const beheerTab = tabs.querySelector('[data-prod="beheer"]');
+  const anchorTab = tabs.querySelector('[data-prod="historie"]') || tabs.querySelector('[data-prod="beheer"]');
   ADMIN.products.forEach(p=>{
     const btn = document.createElement('button');
     btn.className='tab'; btn.dataset.prod='custom_'+p.id; btn.dataset.customProd=p.id;
     btn.textContent=(p.icon?p.icon+' ':'')+p.name;
     btn.addEventListener('click',()=>activateTab('custom_'+p.id));
-    tabs.insertBefore(btn, beheerTab);
+    tabs.insertBefore(btn, anchorTab);
   });
+  // Eerste rechts-uitgelijnde tab moet de margin-left:auto dragen
+  const firstCustom = tabs.querySelector('[data-custom-prod]');
+  const histTab = tabs.querySelector('[data-prod="historie"]');
+  if(histTab) histTab.style.marginLeft = '';
+  if(firstCustom){ firstCustom.style.marginLeft=''; }
+  // herstel: zet auto op historie (custom tabs staan ervoor, links)
+  if(histTab) histTab.style.marginLeft = 'auto';
 }
 
 // ----- Render custom product form -----
@@ -3008,7 +3241,6 @@ function renderBeheer(){
       <button class="beheer-nav-btn" data-tab="templates" onclick="switchBeheerTab('templates',this)">📋 TL templates</button>
       <button class="beheer-nav-btn" data-tab="velden" onclick="switchBeheerTab('velden',this)">👁 Velden</button>
       <button class="beheer-nav-btn" data-tab="instellingen" onclick="switchBeheerTab('instellingen',this)">⚙ Instellingen</button>
-      <button class="beheer-nav-btn" data-tab="historie" onclick="switchBeheerTab('historie',this)">📜 Historie</button>
     </div>
     <div id="beheer-content"></div>
   </div>`;
