@@ -2039,7 +2039,10 @@ function getTlDescription(item){
 function buildRolluikDesc(item) {
   const isSolar = item.motor && item.motor.toLowerCase().includes('solar');
   const plaatsingLabel = item.plaatsing === 'odd' ? 'ODD' : 'IDD';
-  const kleurLabel = item.kleurCustom || item.kleur || 'wit';
+  // Gekozen RAL-kleur uit de dropdown = kleur voor omkasting, geleiders én onderlat
+  const frameKleur = (item.kleurSelectVal === 'andere' ? item.kleurCustom : item.kleurSelectVal)
+                     || item.kleurOmkasting || 'standaard wit (RAL 9016)';
+  const lamelKleur = item.kleur || frameKleur;
   const onderlat = item.onderlat || 'Design onderlat';
 
   let h = '<ul style="margin:4px 0;padding-left:18px">';
@@ -2050,25 +2053,22 @@ function buildRolluikDesc(item) {
   // Plaatsing
   h += `<li>Plaatsing: ${plaatsingLabel}</li>`;
 
-  // Kleur
+  // Kleur (algemeen)
   h += '<li>Kleur:<ul style="margin:2px 0;padding-left:16px">';
-  if (item.kleurCustom) {
-    h += '<li>Keuze uit 206 standaardkleuren:</li>';
-    h += `<li>RAL-kleur: <strong>${item.kleurCustom}</strong></li>`;
-  } else {
-    h += `<li>Keuze uit 206 standaardkleuren: <strong>${item.kleur || ''}</strong></li>`;
-  }
+  h += '<li>Keuze uit 206 standaardkleuren</li>';
+  h += `<li>Gekozen kleur: <strong>${frameKleur}</strong></li>`;
   h += '</ul></li>';
 
-  // Geleiders
+  // Geleiders — met kleur
   h += '<li>Geleiders:<ul style="margin:2px 0;padding-left:16px">';
   h += `<li>${item.geleider || 'Standaard: HTF 53×22mm'}</li>`;
+  h += `<li>Kleur: <strong>${frameKleur}</strong></li>`;
   h += '</ul></li>';
 
-  // Lamel
+  // Lamel — met (lamel)kleur
   h += '<li>Lamel:<ul style="margin:2px 0;padding-left:16px">';
   h += `<li>${item.lamel === 'hardschuim' ? 'Hardschuim lamel' : 'L-lamel: 42×9.3mm'}</li>`;
-  h += `<li>Kleur: <strong>${kleurLabel}</strong></li>`;
+  h += `<li>Kleur: <strong>${lamelKleur}</strong></li>`;
   h += '</ul></li>';
 
   // Motor
@@ -2084,15 +2084,16 @@ function buildRolluikDesc(item) {
   }
   h += '</ul></li>';
 
-  // Kast
+  // Kast / omkasting — met kleur
   h += '<li>Kast:<ul style="margin:2px 0;padding-left:16px">';
   h += `<li>${item.kasttype || 'Standaard: afgeschuind 45°'}</li>`;
-  if (item.kleurOmkasting) h += `<li>Kleur omkasting: ${item.kleurOmkasting}</li>`;
+  h += `<li>Kleur omkasting: <strong>${frameKleur}</strong></li>`;
   h += '</ul></li>';
 
-  // Onderlat
+  // Onderlat — met kleur
   h += '<li>Onderlat:<ul style="margin:2px 0;padding-left:16px">';
   h += `<li>${onderlat}</li>`;
+  h += `<li>Kleur: <strong>${frameKleur}</strong></li>`;
   h += '</ul></li>';
 
   // Opmerkingen
@@ -2886,9 +2887,9 @@ const CONFIG = {
 // ----- Field visibility per product (FIELD_VIS) -----
 const DEFAULT_FIELD_VIS = {
   rolluik:{geleider_kast:true,kleurOmkasting:true,motor:true,lamel:true,onderlat:true,kleurCustom:true,koppelen_bereik:true,bediening:true,korting_marge:true,opmerkingen:true,vrijeOpties:true},
-  screen:{geleider_onderlat:true,motor_bereik:true,doek_koppelen:true,bediening:true,korting_marge:true,opmerkingen:true,vrijeOpties:true},
-  knikarm:{verdieping_bereik:true,gevel_muur:true,doek_led:true,bediening:true,korting_marge:true,opmerkingen:true,vrijeOpties:true},
-  veranda:{mkabel:true,gevel_doek:true,bereik_led:true,verdieping:true,extras:true,bediening:true,korting_marge:true,opmerkingen:true},
+  screen:{geleider_onderlat:true,motor_bereik:true,doek_koppelen:true,kleurCustom:true,bediening:true,korting_marge:true,opmerkingen:true,vrijeOpties:true},
+  knikarm:{verdieping_bereik:true,gevel_muur:true,doek_led:true,kleurCustom:true,bediening:true,korting_marge:true,opmerkingen:true,vrijeOpties:true},
+  veranda:{mkabel:true,gevel_doek:true,bereik_led:true,verdieping:true,extras:true,kleurCustom:true,bediening:true,korting_marge:true,opmerkingen:true},
 };
 const FIELD_VIS = {
   get data(){
@@ -3559,10 +3560,10 @@ function resetTlTemplate(){
 
 // ===== VELDEN =====
 const VELD_LABELS = {
-  rolluik:{geleider_kast:'Geleider & kasttype',kleurOmkasting:'Kleur omkasting',motor:'Motor & motorkabel',lamel:'Lamel & kleur lamel',onderlat:'Onderlat',kleurCustom:'Vrije kleurinvoer',koppelen_bereik:'Koppelen & bereikbaarheid',bediening:'Bediening',korting_marge:'Korting & marge',opmerkingen:'Opmerkingen',vrijeOpties:'Vrije opties'},
-  screen:{geleider_onderlat:'Geleider & onderlat',motor_bereik:'Motor & bereikbaarheid',doek_koppelen:'Doek & koppelen',bediening:'Bediening',korting_marge:'Korting & marge',opmerkingen:'Opmerkingen',vrijeOpties:'Vrije opties'},
-  knikarm:{verdieping_bereik:'Verdieping & bereikbaarheid',gevel_muur:'Gevel & muursteun',doek_led:'Doek & LED',bediening:'Bediening',korting_marge:'Korting & marge',opmerkingen:'Opmerkingen',vrijeOpties:'Vrije opties'},
-  veranda:{mkabel:'Motorkabel',gevel_doek:'Gevel & doek',bereik_led:'Bereikbaarheid & LED',verdieping:'Verdieping',extras:'Extra opties',bediening:'Bediening',korting_marge:'Korting & marge',opmerkingen:'Opmerkingen'},
+  rolluik:{geleider_kast:'Geleider & kasttype',kleurOmkasting:'Kleur omkasting',motor:'Motor & motorkabel',lamel:'Lamel & kleur lamel',onderlat:'Onderlat',kleurCustom:'RAL kleurkeuze',koppelen_bereik:'Koppelen & bereikbaarheid',bediening:'Bediening',korting_marge:'Korting & marge',opmerkingen:'Opmerkingen',vrijeOpties:'Vrije opties'},
+  screen:{geleider_onderlat:'Geleider & onderlat',motor_bereik:'Motor & bereikbaarheid',doek_koppelen:'Doek & koppelen',kleurCustom:'RAL kleurkeuze',bediening:'Bediening',korting_marge:'Korting & marge',opmerkingen:'Opmerkingen',vrijeOpties:'Vrije opties'},
+  knikarm:{verdieping_bereik:'Verdieping & bereikbaarheid',gevel_muur:'Gevel & muursteun',doek_led:'Doek & LED',kleurCustom:'RAL kleurkeuze',bediening:'Bediening',korting_marge:'Korting & marge',opmerkingen:'Opmerkingen',vrijeOpties:'Vrije opties'},
+  veranda:{mkabel:'Motorkabel',gevel_doek:'Gevel & doek',bereik_led:'Bereikbaarheid & LED',verdieping:'Verdieping',extras:'Extra opties',kleurCustom:'RAL kleurkeuze',bediening:'Bediening',korting_marge:'Korting & marge',opmerkingen:'Opmerkingen'},
 };
 const PROD_LABELS = {rolluik:'Rolluik',screen:'Screen',knikarm:'Knikarmscherm',veranda:'Veranda / Pergola'};
 
