@@ -3047,17 +3047,111 @@ const FIELD_VIS = {
   }
 })();
 
+// ===== Bewerkbare optieprijzen (Beheer > Instellingen) =====
+// Elke groep verwijst naar een live DATA.opties-object. Alleen numerieke waarden
+// zijn bewerkbaar; tekstwaarden ('op aanvraag', 'incl') blijven vast.
+const PRICE_GROUPS = [
+  // Algemeen (gedeeld)
+  {id:'alg_bediening',      prod:'Algemeen', label:'Bediening',                         get:()=>DATA.opties.algemene.bediening},
+  {id:'alg_doekgroep',      prod:'Algemeen', label:'Doekgroep (screen + veranda)',      get:()=>DATA.opties.algemene.doekgroep},
+  {id:'alg_bereikbaarheid', prod:'Algemeen', label:'Bereikbaarheid',                    get:()=>DATA.opties.algemene.bereikbaarheid},
+  {id:'alg_type_gevel',     prod:'Algemeen', label:'Type gevel (veranda)',              get:()=>DATA.opties.algemene.type_gevel},
+  {id:'alg_motorkabel',     prod:'Algemeen', label:'Afwijkende motorkabel (veranda)',   get:()=>DATA.opties.algemene.motorkabel},
+  // Rolluik
+  {id:'rl_motoren',         prod:'Rolluik',  label:'Motoren (meer-/minderprijs)',       get:()=>DATA.opties.rolluik_extras.motoren},
+  {id:'rl_geleiders',       prod:'Rolluik',  label:'Geleiders (€/m)',                   get:()=>DATA.opties.rolluik_extras.geleiders},
+  {id:'rl_kast_types',      prod:'Rolluik',  label:'Kasttypes',                         get:()=>DATA.opties.rolluik_extras.kast_types},
+  {id:'rl_koppelen',        prod:'Rolluik',  label:'Koppelen',                          get:()=>DATA.opties.rolluik_extras.koppelen},
+  {id:'rl_afw_motorkabel',  prod:'Rolluik',  label:'Afwijkende motorkabel',             get:()=>DATA.opties.rolluik_extras.afwijkende_motorkabel},
+  // Screen
+  {id:'sc_motoren',         prod:'Screen',   label:'Motoren (meer-/minderprijs)',       get:()=>DATA.opties.screen_extras.motoren},
+  {id:'sc_geleiders',       prod:'Screen',   label:'Geleiders',                         get:()=>DATA.opties.screen_extras.geleiders},
+  {id:'sc_koppelen',        prod:'Screen',   label:'Koppelen',                          get:()=>DATA.opties.screen_extras.koppelen},
+  {id:'sc_onderlat',        prod:'Screen',   label:'Hoge verzwaarde onderlat',          get:()=>DATA.opties.screen_extras.hoge_verzwaarde_onderlat},
+  {id:'sc_bereikbaarheid',  prod:'Screen',   label:'Bereikbaarheid',                    get:()=>DATA.opties.screen_extras.bereikbaarheid},
+  // Knikarm
+  {id:'ka_verdieping',      prod:'Knikarm',  label:'Verdieping (verhuislift)',          get:()=>DATA.opties.knikarm_extras.verdieping, field:'prijs'},
+  {id:'ka_muursteun',       prod:'Knikarm',  label:'Muursteun',                         get:()=>DATA.opties.knikarm_extras.muursteun},
+  {id:'ka_doek',            prod:'Knikarm',  label:'Doek',                              get:()=>DATA.opties.knikarm_extras.doek},
+  {id:'ka_verlichting',     prod:'Knikarm',  label:'LED verlichting',                   get:()=>DATA.opties.knikarm_extras.verlichting},
+  {id:'ka_type_gevel',      prod:'Knikarm',  label:'Type gevel',                        get:()=>DATA.opties.knikarm_extras.type_gevel},
+  {id:'ka_bereikbaarheid',  prod:'Knikarm',  label:'Bereikbaarheid',                    get:()=>DATA.opties.knikarm_extras.bereikbaarheid},
+  // Veranda
+  {id:'vr_options',         prod:'Veranda',  label:'Extra opties',                      get:()=>DATA.veranda.options, field:'prijs'},
+];
+
+function applyPriceOverrides(){
+  let p={}; try{ p=JSON.parse(localStorage.getItem('bkfix_prices')||'{}'); }catch(e){ return; }
+  // Legacy formaat (achterwaarts compatibel)
+  if(p.rolluik_geleiders) Object.assign(DATA.opties.rolluik_extras.geleiders, p.rolluik_geleiders);
+  if(p.rolluik_motoren)   Object.assign(DATA.opties.rolluik_extras.motoren,   p.rolluik_motoren);
+  if(p.bediening)         Object.assign(DATA.opties.algemene.bediening,        p.bediening);
+  // Generieke groepen
+  if(p.groups){
+    PRICE_GROUPS.forEach(g=>{
+      const ov=p.groups[g.id]; if(!ov) return;
+      const obj=g.get(); if(!obj) return;
+      Object.entries(ov).forEach(([k,v])=>{
+        if(typeof v!=='number') return;
+        if(g.field){ if(obj[k] && typeof obj[k]==='object') obj[k][g.field]=v; }
+        else if(k in obj) obj[k]=v;
+      });
+    });
+  }
+}
+
+function renderPriceGroups(){
+  const byProd={};
+  PRICE_GROUPS.forEach(g=>{ (byProd[g.prod]=byProd[g.prod]||[]).push(g); });
+  let h='';
+  Object.entries(byProd).forEach(([prod,groups])=>{
+    h+=`<h4 style="font-size:13px;font-weight:700;margin:16px 0 8px;color:#2c3e50">${prod}</h4>`;
+    groups.forEach(g=>{
+      const obj=g.get()||{};
+      h+=`<details style="margin-bottom:6px"><summary style="cursor:pointer;font-size:12px;font-weight:600;color:#475569;padding:4px 0">${g.label}</summary>`;
+      h+=`<table class="admin-table" style="max-width:520px;margin:6px 0 10px"><tr><th>Optie</th><th>Prijs (€)</th></tr>`;
+      Object.entries(obj).forEach(([k,v],idx)=>{
+        const val=g.field?(v&&typeof v==='object'?v[g.field]:undefined):v;
+        if(typeof val==='number'){
+          h+=`<tr><td>${k}</td><td><input type="number" step="0.01" id="op_${g.id}_${idx}" value="${val}" style="width:110px"></td></tr>`;
+        } else {
+          h+=`<tr><td>${k}</td><td style="color:#94a3b8;font-size:12px">${(val===null||val===undefined)?'—':val}</td></tr>`;
+        }
+      });
+      h+='</table></details>';
+    });
+  });
+  return h;
+}
+
+function savePriceGroups(){
+  let p={}; try{ p=JSON.parse(localStorage.getItem('bkfix_prices')||'{}'); }catch(e){}
+  p.groups=p.groups||{};
+  PRICE_GROUPS.forEach(g=>{
+    const obj=g.get()||{}; const ov={};
+    Object.entries(obj).forEach(([k,v],idx)=>{
+      const val=g.field?(v&&typeof v==='object'?v[g.field]:undefined):v;
+      if(typeof val!=='number') return;
+      const el=$(`op_${g.id}_${idx}`); if(!el) return;
+      const nv=parseFloat(el.value);
+      if(!isNaN(nv)){
+        ov[k]=nv;
+        if(g.field){ if(obj[k]&&typeof obj[k]==='object') obj[k][g.field]=nv; }
+        else obj[k]=nv;
+      }
+    });
+    if(Object.keys(ov).length) p.groups[g.id]=ov;
+  });
+  // Houd legacy-sleutels in sync
+  p.rolluik_geleiders={...DATA.opties.rolluik_extras.geleiders};
+  p.rolluik_motoren={...DATA.opties.rolluik_extras.motoren};
+  p.bediening={...DATA.opties.algemene.bediening};
+  localStorage.setItem('bkfix_prices',JSON.stringify(p));
+  window.fbSave?.('prices',p);
+}
+
 // Init — apply persisted price overrides before first render
-(function(){
-  const saved = localStorage.getItem('bkfix_prices');
-  if(!saved) return;
-  try {
-    const p = JSON.parse(saved);
-    if(p.rolluik_geleiders) Object.assign(DATA.opties.rolluik_extras.geleiders, p.rolluik_geleiders);
-    if(p.rolluik_motoren)   Object.assign(DATA.opties.rolluik_extras.motoren,   p.rolluik_motoren);
-    if(p.bediening)         Object.assign(DATA.opties.algemene.bediening,        p.bediening);
-  } catch(e) {}
-})();
+applyPriceOverrides();
 renderRolluik();
 renderOffer();
 tlInit();
@@ -3636,9 +3730,6 @@ function renderConfigParamsHtml(c){
 
 function renderInstellingen(el){
   const s=ADMIN.settings;
-  const motors=DATA.opties?.rolluik_extras?.motoren||{};
-  const gels=DATA.opties?.rolluik_extras?.geleiders||{};
-  const beds=DATA.opties?.algemene?.bediening||{};
   let html=`<div class="beheer-section">
     <div class="sect-hdr"><span class="sect-title">Instellingen & prijzen</span></div>
     <h4 style="font-size:13px;font-weight:700;margin-bottom:10px">Standaard marges</h4>
@@ -3646,17 +3737,10 @@ function renderInstellingen(el){
       <div class="field"><label>Allround korting % (standaard)</label><input type="number" id="set-marge" value="${s.defaultMarge||50}" min="0" max="100"></div>
       <div class="field"><label>BKfix marge % (standaard)</label><input type="number" id="set-bkfix" value="${s.defaultBkfix||20}" min="0" max="100"></div>
     </div>
-    <h4 style="font-size:13px;font-weight:700;margin:16px 0 10px">Motorprijzen rolluik (€)</h4>
-    <table class="admin-table" style="max-width:500px"><tr><th>Motor</th><th>Prijs</th></tr>
-      ${Object.entries(motors).map(([k,v])=>`<tr><td>${k}</td><td><input type="number" id="mp_${k.replace(/\W/g,'_')}" value="${v}" step="0.01" style="width:100px"></td></tr>`).join('')}
-    </table>
-    <h4 style="font-size:13px;font-weight:700;margin:16px 0 10px">Geleiderprijzen rolluik (€/m)</h4>
-    <table class="admin-table" style="max-width:500px"><tr><th>Geleider</th><th>Prijs/m</th></tr>
-      ${Object.entries(gels).map(([k,v])=>`<tr><td>${k}</td><td><input type="number" id="gp_${k.replace(/\W/g,'_')}" value="${v}" step="0.01" style="width:100px"></td></tr>`).join('')}
-    </table>
-    <h4 style="font-size:13px;font-weight:700;margin:16px 0 10px">Bedieningsprijzen (€)</h4>
-    <table class="admin-table" style="max-width:500px"><tr><th>Bediening</th><th>Prijs</th></tr>
-      ${Object.entries(beds).map(([k,v])=>`<tr><td>${k}</td><td><input type="number" id="bp_${k.replace(/\W/g,'_')}" value="${v}" step="0.01" style="width:100px"></td></tr>`).join('')}
+    <h4 style="font-size:13px;font-weight:700;margin:18px 0 6px">Optieprijzen per product</h4>
+    <p style="font-size:12px;color:#64748b;margin-bottom:6px">Klik een groep open om de meerprijzen aan te passen. Tekstwaarden ('op aanvraag', 'incl') zijn vast. Wijzigingen worden gesynct via Firebase.</p>
+    <div class="info-box" style="font-size:12px;margin-bottom:8px">⚠ Let op — doekgroep: de catalogus hanteert voor <strong>screens</strong> €70/110/350 en voor <strong>pergola's</strong> €110/220/360. De tool gebruikt nu één gedeelde "Doekgroep"-tabel (110/220/360) voor beide. Pas aan indien gewenst.</p>
+    ${renderPriceGroups()}
     </table>
     <h4 style="font-size:13px;font-weight:700;margin:20px 0 10px">Verplaatsingskosten</h4>
     <div class="row" style="max-width:500px;flex-wrap:wrap;gap:12px">
@@ -3689,25 +3773,14 @@ function saveInstellingen(){
   s.verplaatsing_magazijn=($('set-verpl-magazijn')?.value||'').trim()||'Hoogkamerstraat 272, Temse';
   s.verplaatsing_retour=$('set-verpl-retour')?.checked!==false;
   ADMIN.settings=s;
-  const motors=DATA.opties?.rolluik_extras?.motoren||{};
-  Object.keys(motors).forEach(k=>{const el=$('mp_'+k.replace(/\W/g,'_'));if(el) motors[k]=parseFloat(el.value)||motors[k];});
-  const gels=DATA.opties?.rolluik_extras?.geleiders||{};
-  Object.keys(gels).forEach(k=>{const el=$('gp_'+k.replace(/\W/g,'_'));if(el) gels[k]=parseFloat(el.value)||gels[k];});
-  const beds=DATA.opties?.algemene?.bediening||{};
-  Object.keys(beds).forEach(k=>{const el=$('bp_'+k.replace(/\W/g,'_'));if(el) beds[k]=parseFloat(el.value)||beds[k];});
   const cfgUpdates={};
   Object.keys(DEFAULT_CONFIG).forEach(k=>{
     if(typeof DEFAULT_CONFIG[k]==='object') return;
     const el=$('cfg_'+k); if(el) cfgUpdates[k]=parseFloat(el.value);
   });
   if(Object.keys(cfgUpdates).length) CONFIG.save(cfgUpdates);
-  const _prices = {
-    rolluik_geleiders: {...DATA.opties.rolluik_extras.geleiders},
-    rolluik_motoren:   {...DATA.opties.rolluik_extras.motoren},
-    bediening:         {...DATA.opties.algemene.bediening},
-  };
-  localStorage.setItem('bkfix_prices', JSON.stringify(_prices));
-  window.fbSave?.('prices', _prices);
+  // Optieprijzen (alle groepen) opslaan + syncen
+  savePriceGroups();
   alert('Instellingen opgeslagen!');
 }
 
