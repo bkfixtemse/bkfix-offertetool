@@ -194,6 +194,7 @@ details[open] summary{margin-bottom:8px}
 <button class="tab" data-prod="screen">Screen</button>
 <button class="tab" data-prod="knikarm">Knikarmscherm</button>
 <button class="tab" data-prod="veranda">Veranda/Pergola</button>
+<button class="tab" data-prod="afstandsbediening">📱 Afstandsbediening</button>
 <button class="tab" data-prod="historie" style="margin-left:auto;color:#64748b">📜 Historie</button>
 <button class="tab" data-prod="beheer" style="color:#64748b">⚙ Beheer</button>
 </div>
@@ -250,9 +251,7 @@ details[open] summary{margin-bottom:8px}
   </div>
 </div>
 <div id="werkuren-block"></div>
-<div style="margin-top:8px">
-  <button class="secondary" onclick="addWerkurenToOffer()" style="width:100%">+ Werkuren toevoegen aan offerte</button>
-</div>
+<div class="info-box" style="font-size:12px;margin-top:8px">De werkuren worden onzichtbaar verrekend in de productprijzen — ze verschijnen niet als aparte lijn op de offerte.</div>
 </div>
 
 <!-- Verplaatsingskosten sectie -->
@@ -1592,6 +1591,58 @@ function addItemToOffer(){
   alert('Toegevoegd aan offerte!');
 }
 
+// ======= AFSTANDSBEDIENING (losse zenders) =======
+function renderAfstandsbediening(){
+  const c = $('form-container');
+  const beds = Object.keys(DATA.opties.algemene.bediening);
+  const s = ADMIN.settings;
+  c.innerHTML = `
+  <h2>Afstandsbediening / zender toevoegen</h2>
+  <div class="info-box">Voeg losse afstandsbedieningen of zenders toe als apart artikel op de offerte (bv. extra Situo, Smoove, Keygo …).</div>
+  <div id="ab-errors"></div>
+  <div class="row">
+    <div class="field"><label>Type afstandsbediening *</label><select id="ab-type"></select></div>
+    <div class="field"><label>Aantal</label><input type="number" id="ab-aantal" value="1" min="1"></div>
+  </div>
+  <div class="row-3">
+    <div class="field"><label>Eenmalige korting (€)</label><input type="number" id="ab-korting" value="0" step="0.01"></div>
+    <div class="field"><label>Allround korting %</label><input type="number" id="ab-marge" value="${s.defaultMarge||50}" step="1"></div>
+    <div class="field"><label>BKfix marge %</label><input type="number" id="ab-bkfix-marge" value="${s.defaultBkfix||20}" step="1"></div>
+  </div>
+  <div class="field"><label>Opmerkingen</label><input type="text" id="ab-opm" placeholder="optioneel"></div>
+  <div class="btn-group"><button onclick="addItemToOffer()">+ Toevoegen aan offerte</button></div>
+  `;
+  beds.forEach(b=>$('ab-type').appendChild(opt(b, `${b} (€${fmt(DATA.opties.algemene.bediening[b]||0,0)})`)));
+  ['ab-type','ab-aantal','ab-korting','ab-marge','ab-bkfix-marge'].forEach(id=>{
+    const el=$(id); if(el) ['change','input'].forEach(ev=>el.addEventListener(ev,calcAfstandsbediening));
+  });
+  calcAfstandsbediening();
+}
+
+function calcAfstandsbediening(){
+  const type = $('ab-type')?.value || '';
+  const aantal = parseInt($('ab-aantal')?.value)||1;
+  const basePrice = DATA.opties.algemene.bediening[type] || 0;
+  const korting = parseFloat($('ab-korting')?.value)||0;
+  const marge = parseFloat($('ab-marge')?.value)/100 || 0.5;
+  const bkfixMarge = parseFloat($('ab-bkfix-marge')?.value)/100 || 0.2;
+  const productSubtotal = basePrice * aantal;
+  const aankoop = productSubtotal * (1 - marge);
+  const verkoop = aankoop / (1 - bkfixMarge);
+  const uwVerkoop = verkoop - korting;
+  const item = {
+    product:'Afstandsbediening', type, aantal,
+    basePrice, productSubtotal,
+    options:[ `Type: ${type}`, korting>0 && `Korting: €${fmt(korting)}` ].filter(Boolean),
+    opmerkingen: $('ab-opm')?.value || '',
+    plaatsingTotaal:0, bereikPrice:0, bed1Price:0, bed2Price:0,
+    korting, marge, bkfixMarge, aankoop, verkoop, uwVerkoop,
+    errors: type ? [] : ['Kies een type afstandsbediening'], warnings:[]
+  };
+  state.currentItem = item;
+  showResult(item);
+}
+
 function renderOffer(){
   const list = $('offer-list');
   if(state.offer.length === 0){
@@ -2666,7 +2717,9 @@ async function tlExportQuotation(e){
   const lineItems = [];
   const amyItems = [];
   const _hiddenCost = parseFloat($('hidden-cost')?.value) || 0;
-  const _hiddenPerItem = state.offer.length > 0 ? _hiddenCost / state.offer.length : 0;
+  // Werkuren worden NIET als zichtbare lijn toegevoegd, maar onzichtbaar verdeeld over de producten
+  const _werkurenKost = tarief * uren * personen;
+  const _hiddenPerItem = state.offer.length > 0 ? (_hiddenCost + _werkurenKost) / state.offer.length : 0;
 
   state.offer.forEach(item=>{
     // Amy io as separate line items – subtract from main price to avoid double-counting
@@ -2711,15 +2764,7 @@ async function tlExportQuotation(e){
 
   lineItems.push(...amyItems);
 
-  if(uren>0){
-    lineItems.push({
-      quantity: uren*personen,
-      description:`Werkuren plaatsing (${personen} persoon/personen @ €${tarief}/u)`,
-      extended_description:`${personen} monteur(s) × ${uren} uren`,
-      unit_price:{ amount: parseFloat(tarief.toFixed(2)), tax:'excluding' },
-      tax_rate_id: taxRateId
-    });
-  }
+  // Werkuren plaatsing zijn onzichtbaar verdeeld over de productprijzen (geen aparte lijn op de offerte)
 
   const layoutId = $('tl-layout')?.value || localStorage.getItem('tl_layout_id') || '';
   const payload = {
@@ -2768,6 +2813,7 @@ function activateTab(prodKey){
   verandaExtraCount = 0;
   if(prodKey === 'beheer'){ renderBeheer(); return; }
   if(prodKey === 'historie'){ renderHistorieTab(); return; }
+  if(prodKey === 'afstandsbediening'){ renderAfstandsbediening(); return; }
   if(prodKey.startsWith('custom_')){
     const cpId = prodKey.replace('custom_','');
     const cp = ADMIN.products.find(p=>p.id===cpId);
@@ -3802,8 +3848,8 @@ function importAdminConfig(input){
       if(cfg.tlTemplates) ADMIN.tlTemplates=cfg.tlTemplates;
       if(cfg.settings) ADMIN.settings=cfg.settings;
       if(cfg.config) CONFIG.save(cfg.config);
-      if(cfg.fieldVis) localStorage.setItem('bkfix_field_vis',JSON.stringify(cfg.fieldVis));
-      if(cfg.prices) localStorage.setItem('bkfix_prices',JSON.stringify(cfg.prices));
+      if(cfg.fieldVis){ localStorage.setItem('bkfix_field_vis',JSON.stringify(cfg.fieldVis)); window.fbSave?.('field_vis',cfg.fieldVis); }
+      if(cfg.prices){ localStorage.setItem('bkfix_prices',JSON.stringify(cfg.prices)); window.fbSave?.('prices',cfg.prices); applyPriceOverrides(); }
       renderCustomProductTabs();
       if(state.currentProduct==='beheer') renderBeheer();
       alert('Configuratie geïmporteerd!');
