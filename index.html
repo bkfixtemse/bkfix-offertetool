@@ -434,6 +434,17 @@ function recalcCurrentProduct(){
 
 // ======= Shared option builders =======
 const BEDIENINGEN = Object.keys(DATA.opties.algemene.bediening);
+// Bedieningen worden aan 40% Allround korting gerekend (aankoop = catalogusprijs × 0,6).
+// De bediening-waarde in DATA = de VERKOOPprijs. Waar de cataloguskostprijs afwijkt van de
+// verkoopprijs (bv. Tahoma: vaste verkoop €375 maar catalogus €260), staat dat hier:
+const BEDIENING_KORTING = 0.40;
+const BEDIENING_CATALOG = { 'tahoma switch (incl koppelen)': 260 };
+function bedieningAankoop(name, aantal=1){
+  if(!name) return 0;
+  const sell = DATA.opties.algemene.bediening[name] || 0;
+  const basis = (name in BEDIENING_CATALOG) ? BEDIENING_CATALOG[name] : sell;
+  return basis * (1 - BEDIENING_KORTING) * aantal;
+}
 const BEREIKBAARHEID_ALL = Object.keys(DATA.opties.algemene.bereikbaarheid);
 const TYPE_GEVEL = Object.keys(DATA.opties.algemene.type_gevel);
 const DOEKGROEPEN = Object.keys(DATA.opties.algemene.doekgroep);
@@ -784,8 +795,9 @@ function calcRolluik(){
   // Verkoop = productSubtotal + plaatsingTotaal + bediening
   const marge = parseFloat($('r-marge').value)/100 || 0.5;
   const bkfixMarge = parseFloat($('r-bkfix-marge').value)/100 || 0.2;
-  const aankoop = productSubtotal * (1 - marge);
-  const verkoop = aankoop / (1 - bkfixMarge);
+  const aankoopProduct = productSubtotal * (1 - marge);
+  const verkoop = aankoopProduct / (1 - bkfixMarge);
+  const aankoop = aankoopProduct + bedieningAankoop(bed1) + bedieningAankoop(bed2); // bedieningen @ 40% korting
   const uwVerkoop = verkoop - korting + plaatsingTotaal + bedTotal;
 
   const onderlat = $('r-onderlat').value || 'Design onderlat';
@@ -1021,8 +1033,9 @@ function calcScreen(){
 
   const marge = parseFloat($('s-marge').value)/100 || 0.5;
   const bkfixMarge = parseFloat($('s-bkfix-marge').value)/100 || 0.2;
-  const aankoop = productSubtotal * (1-marge);
-  const verkoop = aankoop / (1-bkfixMarge);
+  const aankoopProduct = productSubtotal * (1-marge);
+  const verkoop = aankoopProduct / (1-bkfixMarge);
+  const aankoop = aankoopProduct + bedieningAankoop(bed1) + bedieningAankoop(bed2); // bedieningen @ 40% korting
   const uwVerkoop = verkoop - korting + plaatsingTotaal + bedTotal;
 
   const item = {
@@ -1246,8 +1259,9 @@ function calcKnikarm(){
 
   const marge = parseFloat($('k-marge').value)/100 || 0.5;
   const bkfixMarge = parseFloat($('k-bkfix-marge').value)/100 || 0.2;
-  const aankoop = productSubtotal * (1-marge);
-  const verkoop = aankoop / (1-bkfixMarge);
+  const aankoopProduct = productSubtotal * (1-marge);
+  const verkoop = aankoopProduct / (1-bkfixMarge);
+  const aankoop = aankoopProduct + bedieningAankoop(bed1) + bedieningAankoop(bed2); // bedieningen @ 40% korting
   const uwVerkoop = verkoop - korting + plaatsingTotaal + bedTotal;
 
   const item = {
@@ -1533,8 +1547,9 @@ function calcVeranda(){
 
   const marge = parseFloat($('v-marge').value)/100 || 0.4;
   const bkfixMarge = parseFloat($('v-bkfix-marge').value)/100 || 0.2;
-  const aankoop = productSubtotal * (1-marge);
-  const verkoop = aankoop / (1-bkfixMarge);
+  const aankoopProduct = productSubtotal * (1-marge);
+  const verkoop = aankoopProduct / (1-bkfixMarge);
+  const aankoop = aankoopProduct + bedieningAankoop(bed1) + bedieningAankoop(bed2); // bedieningen @ 40% korting
   const uwVerkoop = verkoop - korting + plaatsingTotaal + bedTotal;
 
   const item = {
@@ -1680,22 +1695,21 @@ function renderAfstandsbediening(){
   const s = ADMIN.settings;
   c.innerHTML = `
   <h2>Afstandsbediening / zender toevoegen</h2>
-  <div class="info-box">Voeg losse afstandsbedieningen of zenders toe als apart artikel op de offerte (bv. extra Situo, Smoove, Keygo …).</div>
+  <div class="info-box">Voeg losse afstandsbedieningen of zenders toe als apart artikel op de offerte. Verkoop = vaste lijstprijs; aankoop wordt aan 40% Allround korting gerekend.</div>
   <div id="ab-errors"></div>
   <div class="row">
     <div class="field"><label>Type afstandsbediening *</label><select id="ab-type"></select></div>
     <div class="field"><label>Aantal</label><input type="number" id="ab-aantal" value="1" min="1"></div>
   </div>
-  <div class="row-3">
+  <div class="row">
     <div class="field"><label>Eenmalige korting (€)</label><input type="number" id="ab-korting" value="0" step="0.01"></div>
-    <div class="field"><label>Allround korting %</label><input type="number" id="ab-marge" value="${s.defaultMarge||50}" step="1"></div>
-    <div class="field"><label>BKfix marge %</label><input type="number" id="ab-bkfix-marge" value="${s.defaultBkfix||20}" step="1"></div>
+    <div class="field"></div>
   </div>
   <div class="field"><label>Opmerkingen</label><input type="text" id="ab-opm" placeholder="optioneel"></div>
   <div class="btn-group"><button onclick="addItemToOffer()">+ Toevoegen aan offerte</button></div>
   `;
   beds.forEach(b=>$('ab-type').appendChild(opt(b, `${b} (€${fmt(DATA.opties.algemene.bediening[b]||0,0)})`)));
-  ['ab-type','ab-aantal','ab-korting','ab-marge','ab-bkfix-marge'].forEach(id=>{
+  ['ab-type','ab-aantal','ab-korting'].forEach(id=>{
     const el=$(id); if(el) ['change','input'].forEach(ev=>el.addEventListener(ev,calcAfstandsbediening));
   });
   calcAfstandsbediening();
@@ -1704,17 +1718,17 @@ function renderAfstandsbediening(){
 function calcAfstandsbediening(){
   const type = $('ab-type')?.value || '';
   const aantal = parseInt($('ab-aantal')?.value)||1;
-  const basePrice = DATA.opties.algemene.bediening[type] || 0;
-  const korting = parseFloat($('ab-korting')?.value)||0;
-  const marge = parseFloat($('ab-marge')?.value)/100 || 0.5;
-  const bkfixMarge = parseFloat($('ab-bkfix-marge')?.value)/100 || 0.2;
-  const productSubtotal = basePrice * aantal;
-  const aankoop = productSubtotal * (1 - marge);
-  const verkoop = aankoop / (1 - bkfixMarge);
-  const uwVerkoop = verkoop - korting;
+  const sellEach = DATA.opties.algemene.bediening[type] || 0; // verkoopprijs (vast, bv. Tahoma €375)
+  const eenmKorting = parseFloat($('ab-korting')?.value)||0;
+  const productSubtotal = sellEach * aantal;
+  const aankoop = bedieningAankoop(type, aantal); // cataloguskostprijs × 0,6 (40% korting)
+  const verkoop = productSubtotal;
+  const uwVerkoop = productSubtotal - eenmKorting;
+  const korting = eenmKorting;
+  const marge = BEDIENING_KORTING, bkfixMarge = 0;
   const item = {
     product:'Afstandsbediening', type, aantal,
-    basePrice, productSubtotal,
+    basePrice: sellEach, productSubtotal,
     options:[ `Type: ${type}`, korting>0 && `Korting: €${fmt(korting)}` ].filter(Boolean),
     opmerkingen: $('ab-opm')?.value || '',
     plaatsingTotaal:0, bereikPrice:0, bed1Price:0, bed2Price:0,
