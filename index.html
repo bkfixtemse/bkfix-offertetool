@@ -598,7 +598,7 @@ function renderRolluik(){
   </div>
   <div data-vis-grp="korting_marge" class="row">
     <div class="field"><label>Eenmalige korting (€)</label><input type="number" id="r-korting" value="0" step="0.01"></div>
-    <div class="field"><label>Allround korting %</label><input type="number" id="r-marge" value="40" step="1"></div>
+    <div class="field"><label>Allround korting %</label><input type="number" id="r-marge" value="50" step="1"></div>
     <div class="field"><label>BKfix marge %</label><input type="number" id="r-bkfix-marge" value="20" step="1"></div>
   </div>
   <div data-vis-grp="opmerkingen" class="field"><label>Opmerkingen</label><input type="text" id="r-opm" placeholder="optioneel"></div>
@@ -782,7 +782,7 @@ function calcRolluik(){
   const bedTotal = bed1Price + bed2Price;
 
   // Verkoop = productSubtotal + plaatsingTotaal + bediening
-  const marge = parseFloat($('r-marge').value)/100 || 0.4;
+  const marge = parseFloat($('r-marge').value)/100 || 0.5;
   const bkfixMarge = parseFloat($('r-bkfix-marge').value)/100 || 0.2;
   const aankoop = productSubtotal * (1 - marge);
   const verkoop = aankoop / (1 - bkfixMarge);
@@ -879,7 +879,7 @@ function renderScreen(){
   </div>
   <div data-vis-grp="korting_marge" class="row">
     <div class="field"><label>Eenmalige korting (€)</label><input type="number" id="s-korting" value="0" step="0.01"></div>
-    <div class="field"><label>Allround korting %</label><input type="number" id="s-marge" value="40" step="1"></div>
+    <div class="field"><label>Allround korting %</label><input type="number" id="s-marge" value="50" step="1"></div>
     <div class="field"><label>BKfix marge %</label><input type="number" id="s-bkfix-marge" value="20" step="1"></div>
   </div>
   <div data-vis-grp="opmerkingen" class="field"><label>Opmerkingen</label><input type="text" id="s-opm" placeholder="optioneel"></div>
@@ -1019,7 +1019,7 @@ function calcScreen(){
   const korting = parseFloat($('s-korting').value) || 0;
   const bedTotal = bed1Price + bed2Price;
 
-  const marge = parseFloat($('s-marge').value)/100 || 0.4;
+  const marge = parseFloat($('s-marge').value)/100 || 0.5;
   const bkfixMarge = parseFloat($('s-bkfix-marge').value)/100 || 0.2;
   const aankoop = productSubtotal * (1-marge);
   const verkoop = aankoop / (1-bkfixMarge);
@@ -1114,7 +1114,7 @@ function renderKnikarm(){
   </div>
   <div data-vis-grp="korting_marge" class="row">
     <div class="field"><label>Eenmalige korting (€)</label><input type="number" id="k-korting" value="0" step="0.01"></div>
-    <div class="field"><label>Allround korting %</label><input type="number" id="k-marge" value="40" step="1"></div>
+    <div class="field"><label>Allround korting %</label><input type="number" id="k-marge" value="50" step="1"></div>
     <div class="field"><label>BKfix marge %</label><input type="number" id="k-bkfix-marge" value="20" step="1"></div>
   </div>
   <div data-vis-grp="opmerkingen" class="field"><label>Opmerkingen</label><input type="text" id="k-opm"></div>
@@ -1244,7 +1244,7 @@ function calcKnikarm(){
   const korting = parseFloat($('k-korting').value) || 0;
   const bedTotal = bed1Price + bed2Price;
 
-  const marge = parseFloat($('k-marge').value)/100 || 0.4;
+  const marge = parseFloat($('k-marge').value)/100 || 0.5;
   const bkfixMarge = parseFloat($('k-bkfix-marge').value)/100 || 0.2;
   const aankoop = productSubtotal * (1-marge);
   const verkoop = aankoop / (1-bkfixMarge);
@@ -1688,7 +1688,7 @@ function renderAfstandsbediening(){
   </div>
   <div class="row-3">
     <div class="field"><label>Eenmalige korting (€)</label><input type="number" id="ab-korting" value="0" step="0.01"></div>
-    <div class="field"><label>Allround korting %</label><input type="number" id="ab-marge" value="${s.defaultMarge||40}" step="1"></div>
+    <div class="field"><label>Allround korting %</label><input type="number" id="ab-marge" value="${s.defaultMarge||50}" step="1"></div>
     <div class="field"><label>BKfix marge %</label><input type="number" id="ab-bkfix-marge" value="${s.defaultBkfix||20}" step="1"></div>
   </div>
   <div class="field"><label>Opmerkingen</label><input type="text" id="ab-opm" placeholder="optioneel"></div>
@@ -3402,7 +3402,7 @@ function renderCustomProductForm(prod){
   });
   html+=`<div class="row">
     <div class="field"><label>Aantal</label><input type="number" id="cp_${prod.id}_aantal" value="1" min="1" oninput="calcCustomProduct('${prod.id}')"></div>
-    <div class="field"><label>Allround korting %</label><input type="number" id="cp_${prod.id}_marge" value="${prod.marge||s.defaultMarge||40}" oninput="calcCustomProduct('${prod.id}')"></div>
+    <div class="field"><label>Allround korting %</label><input type="number" id="cp_${prod.id}_marge" value="${prod.marge||s.defaultMarge||50}" oninput="calcCustomProduct('${prod.id}')"></div>
   </div>
   <div class="row">
     <div class="field"><label>BKfix marge %</label><input type="number" id="cp_${prod.id}_bkfix" value="${prod.bkfixMarge||s.defaultBkfix||20}" oninput="calcCustomProduct('${prod.id}')"></div>
@@ -3867,7 +3867,7 @@ function renderInstellingen(el){
     <div class="sect-hdr"><span class="sect-title">Instellingen & prijzen</span></div>
     <h4 style="font-size:13px;font-weight:700;margin-bottom:10px">Standaard marges</h4>
     <div class="row" style="max-width:400px">
-      <div class="field"><label>Allround korting % (standaard)</label><input type="number" id="set-marge" value="${s.defaultMarge||40}" min="0" max="100"></div>
+      <div class="field"><label>Allround korting % (standaard)</label><input type="number" id="set-marge" value="${s.defaultMarge||50}" min="0" max="100"></div>
       <div class="field"><label>BKfix marge % (standaard)</label><input type="number" id="set-bkfix" value="${s.defaultBkfix||20}" min="0" max="100"></div>
     </div>
     <h4 style="font-size:13px;font-weight:700;margin:18px 0 6px">Optieprijzen per product</h4>
