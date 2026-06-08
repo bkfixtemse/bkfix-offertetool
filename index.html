@@ -472,6 +472,7 @@ function buildKleurSelect(id, onchangeCall){
 
 // Pisano 230 heeft 3 inbegrepen standaardkleuren; alle overige kleuren = meerprijs
 const PISANO_STD_KLEUREN = ['RAL 9001','RAL 9010','RAL 7016 SL'];
+const PISANO_RAL_MEERPRIJS = 140; // Pisano: meerprijs voor kleur uit Allround RAL-collectie
 
 function buildKleurSelectKnikarm(id, onchangeCall, type){
   const ral = r => r.startsWith('DB') ? r : `RAL ${r}`;
@@ -483,14 +484,14 @@ function buildKleurSelectKnikarm(id, onchangeCall, type){
     h += '<optgroup label="STANDAARD (inbegrepen)">';
     PISANO_STD_KLEUREN.forEach(k=>{ h+=`<option value="${k}">${k}</option>`; });
     h += '</optgroup>';
-    // Alle overige Allround-kleuren = meerprijs
-    h += `<optgroup label="GLAD (+€${KLEUR_MEERPRIJS})">`;
+    // Alle overige Allround RAL-kleuren = meerprijs €140
+    h += `<optgroup label="GLAD (+€${PISANO_RAL_MEERPRIJS})">`;
     KLEURENCOLLECTIE.glad.filter(r=>!PISANO_STD_KLEUREN.includes(`RAL ${r}`)).forEach(r=>{ h+=`<option value="${ral(r)}" data-meerprijs="1">${ral(r)}</option>`; });
     h += '</optgroup>';
-    h += `<optgroup label="FIJN STRUCTUUR SL (+€${KLEUR_MEERPRIJS})">`;
+    h += `<optgroup label="FIJN STRUCTUUR SL (+€${PISANO_RAL_MEERPRIJS})">`;
     KLEURENCOLLECTIE.structuur.filter(r=>!PISANO_STD_KLEUREN.includes(`RAL ${r} SL`)).forEach(r=>{ h+=`<option value="${ral(r)} SL" data-meerprijs="1">${ral(r)} SL</option>`; });
     h += '</optgroup>';
-    h += `<optgroup label="METALLIC SM (+€${KLEUR_MEERPRIJS})">`;
+    h += `<optgroup label="METALLIC SM (+€${PISANO_RAL_MEERPRIJS})">`;
     KLEURENCOLLECTIE.metallic.forEach(r=>{ h+=`<option value="${ral(r)} SM" data-meerprijs="1">${ral(r)} SM</option>`; });
     h += '</optgroup>';
   } else {
@@ -1167,7 +1168,8 @@ function calcKnikarm(){
   const kleurSelectVal = kleurSelectEl?.value || '';
   const kleurCustom = kleurSelectVal === 'andere' ? ($('k-kleur-custom')?.value.trim() || '') : '';
   const isPisanoNonStd = type === 'Pisano 230' && kleurSelectVal && kleurSelectVal !== 'andere' && !PISANO_STD_KLEUREN.includes(kleurSelectVal);
-  const kleurMeerprijs = (kleurSelectVal === 'andere' || isPisanoNonStd) ? KLEUR_MEERPRIJS : 0;
+  // 'andere' (poedercoating) = €675; Pisano Allround RAL-kleur = €140
+  const kleurMeerprijs = kleurSelectVal === 'andere' ? KLEUR_MEERPRIJS : (isPisanoNonStd ? PISANO_RAL_MEERPRIJS : 0);
   const kleurLabel = kleurSelectVal === 'andere' ? (kleurCustom || 'Andere kleur (+€'+KLEUR_MEERPRIJS+')') : kleurSelectVal;
 
   // Plaatsing: (breedte_ceil/1000)*100 + 250 (per stuk)
@@ -1241,8 +1243,8 @@ function renderVeranda(){
   <div data-vis-grp="mkabel">
   <h3>Opties</h3>
   <div class="row">
+    <div class="field"><label>Motor</label><select id="v-motor"><option value="Sunea io">Sunea io (standaard)</option><option value="Orea WT">Orea WT (−60€)</option></select></div>
     <div class="field"><label>Afwijkende motorkabel</label><select id="v-mkabel"></select></div>
-    <div class="field"></div>
   </div>
   </div>
   <div data-vis-grp="gevel_doek" class="row">
@@ -1291,7 +1293,7 @@ function renderVeranda(){
   [''].concat(BEDIENINGEN).forEach(b=>$('v-bed1').appendChild(opt(b,b||'(geen)')));
   [''].concat(BEDIENINGEN).forEach(b=>$('v-bed2').appendChild(opt(b,b||'(geen)')));
 
-  ['v-type','v-aantal','v-breedte','v-uitval','v-mkabel','v-gevel','v-doek','v-bereik','v-led','v-verdieping','v-kleur-select','v-kleur-custom','v-bed1','v-bed2','v-korting','v-marge','v-bkfix-marge'].forEach(id=>{
+  ['v-type','v-aantal','v-breedte','v-uitval','v-motor','v-mkabel','v-gevel','v-doek','v-bereik','v-led','v-verdieping','v-kleur-select','v-kleur-custom','v-bed1','v-bed2','v-korting','v-marge','v-bkfix-marge'].forEach(id=>{
     const el=$(id); if(el) ['change','input'].forEach(ev=>el.addEventListener(ev,calcVeranda));
   });
   $('v-type').addEventListener('change',()=>{syncVerandaAccessoryChoices();calcVeranda();});
@@ -1394,6 +1396,10 @@ function calcVeranda(){
   }
 
   // Options
+  // Motor: Sunea io standaard (0), Orea WT minderprijs -60
+  const vMotor = $('v-motor')?.value || 'Sunea io';
+  const vMotorPrice = vMotor === 'Orea WT' ? -60 : 0;
+
   const mkabel = $('v-mkabel').value;
   const mkabelRaw = mkabel ? DATA.opties.algemene.motorkabel[mkabel] : 0;
   const mkabelPrice = (typeof mkabelRaw==='number') ? mkabelRaw : 0;
@@ -1405,11 +1411,10 @@ function calcVeranda(){
 
   const doek = $('v-doek').value;
   const doekRaw = DATA.opties.algemene.doekgroep[doek];
-  // For veranda: doek groep per m² - (breedte*uitval/1000000)*value
+  // Pergola/serrezonwering: doekgroep is een VAST bedrag (B110/C220/D360), niet per m²
   let doekPrice = 0;
   if(typeof doekRaw === 'number'){
-    const m2 = breedte * uitval / 1000000;
-    doekPrice = doekRaw * m2;
+    doekPrice = doekRaw;
   }
 
   const bereik = $('v-bereik').value;
@@ -1447,7 +1452,7 @@ function calcVeranda(){
   const plaatsingPerStuk = cv.veranda_plaatsing_flat;
   const plaatsingTotaal = (plaatsingPerStuk + bereikPrice) * aantal + gevelPrice;
 
-  const productSubtotal = (basePrice + smallSurcharge + mkabelPrice + doekPrice + ledPrice + kleurMeerprijs) * aantal + extrasPrice + manualOptionsPrice;
+  const productSubtotal = (basePrice + smallSurcharge + vMotorPrice + mkabelPrice + doekPrice + ledPrice + kleurMeerprijs) * aantal + extrasPrice + manualOptionsPrice;
   const korting = parseFloat($('v-korting').value) || 0;
   const bedTotal = bed1Price + bed2Price;
 
@@ -1460,12 +1465,13 @@ function calcVeranda(){
   const item = {
     product:'Veranda',
     type,aantal,breedte,uitval,
-    mkabel,gevel,doek,bereik,led,extrasList,
+    vMotor,mkabel,gevel,doek,bereik,led,extrasList,
     kleurSelectVal,kleurCustom,kleurLabel,
     bestelBreedte: bCeil, bestelHoogte: uCeil,
     bestelmaat:`${bCeil}×${uCeil}`,
     options:[
       smallSurcharge>0 && `Kleine breedte toeslag +€${smallSurcharge}`,
+      `Motor: ${vMotor}`,
       mkabel && `Afw. motorkabel: ${mkabel}`,
       gevel && `Gevel: ${gevel}`,
       doek && `Doek: ${doek}`,
@@ -2304,7 +2310,7 @@ function tlVerandaDescription(item){
   h += '</ul></li>';
   // Motor
   h += `<li>Motor:<ul style="margin:2px 0;padding-left:16px">`;
-  h += `<li>${item.motor || info.motor}</li>`;
+  h += `<li>Somfy ${item.vMotor || item.motor || info.motor}</li>`;
   if(item.mkabel) h += `<li>Afwijkende motorkabel: <strong>${item.mkabel}</strong></li>`;
   h += '</ul></li>';
   // Doek
