@@ -1306,7 +1306,7 @@ function renderVeranda(){
   const c = $('form-container');
   c.innerHTML = `
   <h2>Veranda / Pergola configureren</h2>
-  <div class="info-box">Breedte en uitval worden afgerond op 250mm. LED enkel mogelijk op Vinci 250+ volant.</div>
+  <div class="info-box">Vinci: afronding 500mm (min. 1500×2000mm) · Stilo: afronding 250mm (min. 1000×1500mm). LED enkel mogelijk op Vinci 250+ volant.</div>
 
   <div class="row">
     <div class="field"><label>Type *</label><select id="v-type"></select></div>
@@ -1448,10 +1448,17 @@ function calcVeranda(){
   }
 
   const cv = CONFIG.data;
-  const verandaMinB = cv.veranda_min_breedte; // 1500mm — data begint bij 1500
-  if(breedte < verandaMinB) warnings.push(`Breedte ${breedte}mm < ${verandaMinB}mm: prijs van ${verandaMinB}mm gebruikt`);
-  const bCeil = Math.max(verandaMinB, ceil(breedte, cv.veranda_breedte_rounding));
-  const uCeil = Math.max(2000, ceil(uitval, cv.veranda_uitval_rounding)); // uitval min 2000mm
+  // Maatraster per type — structureel vastgelegd door de Allround prijstabel
+  // (bewust NIET via CONFIG: een oude opgeslagen instelling mag de opzoeking nooit breken).
+  // Vinci: 500mm-stappen, min 1500×2000 · Stilo: 250mm-stappen, min 1000×1500.
+  const VERANDA_GRID = {
+    'Stilo 103 onderliggend': {minB:1000, stepB:250, minU:1500, stepU:250},
+    'Stilo 123 onderliggend': {minB:1000, stepB:250, minU:1500, stepU:250},
+  };
+  const grid = VERANDA_GRID[type] || {minB:1500, stepB:500, minU:2000, stepU:500};
+  if(breedte < grid.minB) warnings.push(`Breedte ${breedte}mm < ${grid.minB}mm: prijs van ${grid.minB}mm gebruikt`);
+  const bCeil = Math.max(grid.minB, ceil(breedte, grid.stepB));
+  const uCeil = Math.max(grid.minU, ceil(uitval, grid.stepU));
 
   const uitvalKey = `${typeData.prefix_U}${uCeil}`;
   const breedteKey = `${typeData.prefix_B}${bCeil}`;
@@ -3865,9 +3872,6 @@ function renderConfigParamsHtml(c){
     inp('knikarm_breedte_rounding',c.knikarm_breedte_rounding,'Breedte afronding (mm)')+
     inp('knikarm_uitval_rounding',c.knikarm_uitval_rounding,'Uitval afronding (mm)')
   )+grp('Veranda / Pergola',
-    inp('veranda_min_breedte',c.veranda_min_breedte,'Min. breedte (mm)')+
-    inp('veranda_breedte_rounding',c.veranda_breedte_rounding,'Breedte afronding (mm)')+
-    inp('veranda_uitval_rounding',c.veranda_uitval_rounding,'Uitval afronding (mm)')+
     inp('veranda_plaatsing_flat',c.veranda_plaatsing_flat,'Plaatsing prijs (€)')+
     inp('veranda_small_surcharge',c.veranda_small_surcharge,'Kleine breedte toeslag (€)')+
     inp('veranda_small_surcharge_max_breedte',c.veranda_small_surcharge_max_breedte,'Toeslag max. breedte (mm)')+
