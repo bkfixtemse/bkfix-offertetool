@@ -1,0 +1,332 @@
+{
+ "algemene": {
+  "bediening": {
+   "situo 1 pure": 37,
+   "situo 5 pure": 67,
+   "situo 1 variation": 98,
+   "situo 5 variation": 130,
+   "keygo": 118,
+   "tahoma switch (incl koppelen)": 375,
+   "Amy 1 io": 37,
+   "Amy 4 io": 67,
+   "Amy 1 RS100 io": 80,
+   "eolis 3D windsensor": 165,
+   "Eolis Wirefree io windsensor": 175,
+   "Sunteis zon+temp sensor": 180
+  },
+  "bereikbaarheid": {
+   "Goed": 0,
+   "gemiddeld": 50,
+   "moeilijk 3pers": 100,
+   "hoogtewerker": 350,
+   "met aanhangwagen": null,
+   "grote ladder": null,
+   "kraan": null,
+   "liftje": 25
+  },
+  "type_gevel": {
+   "baksteen": 0,
+   "crepi": 150,
+   "hout": 0,
+   "beton": 0,
+   "leien": "op aanvraag",
+   "sidings": "op aanvraag",
+   "sandwich panelen": "op aanvraag"
+  },
+  "motorkabel": {
+   "ja": 35,
+   "nee": 0
+  },
+  "doekgroep": {
+   "standaard": "incl",
+   "groep B": 110,
+   "groep C": 220,
+   "groep D": 360
+  }
+ },
+ "rolluik_extras": {
+  "geleiders": {
+   "HTF": 0,
+   "LHTF": 0,
+   "HF": 0,
+   "LHF": 0,
+   "B-LHTF": 25,
+   "M-HTF": 25,
+   "F-HTF-12": 30,
+   "F-HTF-20": 30,
+   "HTF-67": 30,
+   "LHTF-67": 40,
+   "MSPF-12": 40
+  },
+  "kast_types": {
+   "afgeschuind 45°": 0,
+   "ronde of rechte omkasting": 65
+  },
+  "koppelen": {
+   "2 rolluiken 1 motor": -140,
+   "2 rolluiken 2 motoren": 70
+  },
+  "afwijkende_motorkabel": {
+   "ja": 35,
+   "nee": 0
+  },
+  "motoren": {
+   "RS100 io (standaard)": 0,
+   "Somfy LT-12": -130,
+   "Somfy Ilmo WT": -95,
+   "Somfy Ilmo short WT": -65,
+   "Somfy Oximo io": 0,
+   "Somfy Oximo short io": 45,
+   "Somfy LT50 CSI": 45,
+   "RS100 Solar io": 180,
+   "RS100 Solar io 15Nm": 415
+  },
+  "plaatsing_extra_per_type": {
+   "Ecoroll_L": 100,
+   "Rollex_L": 100,
+   "Ecoroll_M": 100,
+   "Rollex_M": 100,
+   "Ecoroll_L_Solar": 50
+  },
+  "lamel_colors": {
+   "wit_01": {
+    "L_lamel_42": "ja",
+    "hardschuim": "ja",
+    "M_lamel_37": "ja",
+    "prijs_hardschuim": 119
+   },
+   "grijs_02": {
+    "L_lamel_42": "ja",
+    "hardschuim": "ja",
+    "M_lamel_37": "ja",
+    "prijs_hardschuim": 119
+   },
+   "bruin_03": {
+    "L_lamel_42": "ja",
+    "hardschuim": "ja",
+    "M_lamel_37": "ja",
+    "prijs_hardschuim": 119
+   },
+   "lichtbeige_04": {
+    "L_lamel_42": "ja",
+    "hardschuim": "ja",
+    "M_lamel_37": "ja",
+    "prijs_hardschuim": 119
+   },
+   "naturel_07": {
+    "L_lamel_42": "ja",
+    "hardschuim": "ja",
+    "M_lamel_37": "ja",
+    "prijs_hardschuim": 119
+   },
+   "lichtgrijs_23": {
+    "L_lamel_42": "ja",
+    "hardschuim": "nee",
+    "M_lamel_37": "ja",
+    "prijs_hardschuim": 0
+   },
+   "creme_wit_27": {
+    "L_lamel_42": "ja",
+    "hardschuim": "ja",
+    "M_lamel_37": "ja",
+    "prijs_hardschuim": 119
+   },
+   "creme_84": {
+    "L_lamel_42": "ja",
+    "hardschuim": "ja",
+    "M_lamel_37": "ja",
+    "prijs_hardschuim": 119
+   },
+   "antracietgrijs_38": {
+    "L_lamel_42": "ja",
+    "hardschuim": "nee",
+    "M_lamel_37": "ja",
+    "prijs_hardschuim": 0
+   },
+   "grijsaluminium_85": {
+    "L_lamel_42": "ja",
+    "hardschuim": "nee",
+    "M_lamel_37": "ja",
+    "prijs_hardschuim": 0
+   },
+   "teak_12": {
+    "L_lamel_42": "ja",
+    "hardschuim": "nee",
+    "M_lamel_37": "ja",
+    "prijs_hardschuim": 0
+   },
+   "donker_eiken_22": {
+    "L_lamel_42": "ja",
+    "hardschuim": "nee",
+    "M_lamel_37": "ja",
+    "prijs_hardschuim": 0
+   },
+   "zwartgrijs_46": {
+    "L_lamel_42": "ja",
+    "hardschuim": "nee",
+    "M_lamel_37": "ja",
+    "prijs_hardschuim": 0
+   },
+   "dennengroen_28": {
+    "L_lamel_42": "ja",
+    "hardschuim": "nee",
+    "M_lamel_37": "nee",
+    "prijs_hardschuim": 0
+   },
+   "jamaicabruin_30": {
+    "L_lamel_42": "ja",
+    "hardschuim": "nee",
+    "M_lamel_37": "nee",
+    "prijs_hardschuim": 0
+   },
+   "staalblauw_39": {
+    "L_lamel_42": "ja",
+    "hardschuim": "nee",
+    "M_lamel_37": "nee",
+    "prijs_hardschuim": 0
+   }
+  }
+ },
+ "screen_extras": {
+  "hoge_verzwaarde_onderlat": {
+   "ja": 15,
+   "nee": 0
+  },
+  "geleiders": {
+   "standaard": 0,
+   "Nova zip +20": 0,
+   "Nova zip + lip": 0,
+   "Nova zip koppelgeleider": 50,
+   "klikprofiel 12mm": 10
+  },
+  "doek_groep": {
+   "standaard": 0,
+   "groep B": 70,
+   "groep C": 110,
+   "groep D": 350
+  },
+  "koppelen": {
+   "ja": 90,
+   "nee": 0
+  },
+  "plaatsing_types": {
+   "Nova 83": {
+    "hoogte_add_odd": 110,
+    "breedte_add_odd": 80
+   },
+   "Nova 103": {
+    "hoogte_add_odd": 120,
+    "breedte_add_odd": 80
+   },
+   "Nova 123": {
+    "hoogte_add_odd": 140,
+    "breedte_add_odd": 80
+   },
+   "Nova solar 103": {
+    "hoogte_add_odd": 126,
+    "breedte_add_odd": 80
+   }
+  },
+  "bereikbaarheid": {
+   "Goed": 0,
+   "gemiddeld": 50,
+   "moeilijk 3pers": 100,
+   "hoogtewerker": "op aanvraag",
+   "met aanhangwagen": 0,
+   "grote ladder": 0,
+   "kraan": 0
+  },
+  "motoren": {
+   "Maestria io": 0,
+   "LT-12": -145,
+   "Maestria WT": -65,
+   "LS-40": -10,
+   "Sunea-40 io": 50,
+   "RS100 Solar io": 0
+  }
+ },
+ "knikarm_extras": {
+  "verdieping": {
+   "0": {
+    "lift": "lift",
+    "prijs": "incl"
+   },
+   "1": {
+    "lift": "lift",
+    "prijs": "incl"
+   },
+   "2": {
+    "lift": "verhuislift",
+    "prijs": 350
+   },
+   "3": {
+    "lift": "verhuislift",
+    "prijs": 350
+   },
+   "4": {
+    "lift": "verhuislift",
+    "prijs": 350
+   },
+   "5": {
+    "lift": "verhuislift",
+    "prijs": 350
+   },
+   "6": {
+    "lift": "verhuislift",
+    "prijs": 350
+   },
+   "7": {
+    "lift": "verhuislift",
+    "prijs": 350
+   },
+   "8": {
+    "lift": "verhuislift",
+    "prijs": 350
+   },
+   "9": {
+    "lift": "verhuislift",
+    "prijs": 350
+   },
+   "kraan": {
+    "lift": "op aanvraag",
+    "prijs": "x"
+   }
+  },
+  "bereikbaarheid": {
+   "Goed": 0,
+   "gemiddeld": 130,
+   "moeilijk 3pers": 200,
+   "hoogtewerker": "op aanvraag",
+   "met aanhangwagen": 0,
+   "grote ladder": 0,
+   "kraan": "op aanvraag"
+  },
+  "type_gevel": {
+   "baksteen": 0,
+   "crepi": 150,
+   "hout": 0,
+   "beton": 0,
+   "leien": "op aanvraag",
+   "sidings": "op aanvraag",
+   "sandwich panelen": "op aanvraag"
+  },
+  "doek": {
+   "standaard": 0,
+   "groep B": 110,
+   "groep C": 220,
+   "groep D": 360
+  },
+  "verlichting": {
+   "Nee": 0,
+   "LED verlichting": 840
+  },
+  "muursteun": {
+   "Moneo 400_18cm": 44,
+   "Moneo 400_30cm": 80,
+   "Moneo 400_plafond": 180,
+   "Pisano 230_enkel mogelijk op 2 steunen": 0,
+   "Gaudi 300_18cm/stel-niet met led mogelijk": 80,
+   "Gaudi 400_plafond": 180
+  }
+ }
+}
