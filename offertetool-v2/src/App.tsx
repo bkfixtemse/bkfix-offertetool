@@ -8,6 +8,8 @@ import { BedieningForm } from './features/calculators/BedieningForm';
 import { OfferPanel } from './features/offer/OfferPanel';
 import { HistoryTab } from './features/history/HistoryTab';
 import { useAuth, opstellerNaam } from './store/authStore';
+import { startSettingsSync } from './store/settingsStore';
+import { SettingsTab } from './features/settings/SettingsTab';
 import { tlHandleCallback } from './teamleader/oauth';
 
 const TABS = [
@@ -17,6 +19,7 @@ const TABS = [
   { k: 'veranda', t: 'Veranda/Pergola' },
   { k: 'bediening', t: '📱 Afstandsbediening' },
   { k: 'historie', t: '📜 Historie', right: true },
+  { k: 'instellingen', t: '⚙ Instellingen' },
 ] as const;
 type TabKey = typeof TABS[number]['k'];
 
@@ -30,6 +33,8 @@ export default function App() {
       .then((ok) => { if (ok) setTlMsg('✓ Verbonden met Teamleader'); })
       .catch((e) => setTlMsg(`Teamleader-koppeling mislukt: ${e.message}`));
   }, []);
+
+  useEffect(() => { if (user) startSettingsSync(); }, [user]);
 
   return (
     <LoginGate>
@@ -50,6 +55,8 @@ export default function App() {
         </div>
         {tab === 'historie' ? (
           <HistoryTab goToOffer={() => setTab('rolluik')} />
+        ) : tab === 'instellingen' ? (
+          <SettingsTab />
         ) : (
           <div className="layout">
             <div>

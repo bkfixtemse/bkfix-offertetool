@@ -1,5 +1,5 @@
 import opties from '../../data/opties.json';
-import { KORTING_PERGOLA, KORTING_STANDAARD } from '../../data/constants';
+import { useSettings } from '../../store/settingsStore';
 import type { Marges } from '../../calc/types';
 
 const o = opties as any;
@@ -24,8 +24,12 @@ export const KA_LED = Object.keys(o.knikarm_extras.verlichting);
 export const VR_GEVEL = ['', ...Object.keys(o.algemene.type_gevel)];
 export const VR_DOEK = ['', ...Object.keys(o.algemene.doekgroep)];
 
-export const margesVoor = (product: 'pergola' | 'standaard', korting = 0): Marges => ({
-  allroundKorting: product === 'pergola' ? KORTING_PERGOLA : KORTING_STANDAARD,
-  bkfixMarge: 0.2,
-  eenmaligeKorting: korting,
-});
+/** Marges uit de gedeelde instellingen (Instellingen-tab, gesynct via Firestore). */
+export const margesVoor = (product: 'pergola' | 'standaard', korting = 0): Marges => {
+  const s = useSettings.getState().s;
+  return {
+    allroundKorting: (product === 'pergola' ? s.kortingPergola : s.kortingStandaard) / 100,
+    bkfixMarge: s.bkfixMarge / 100,
+    eenmaligeKorting: korting,
+  };
+};
