@@ -55,7 +55,8 @@ export function HistoryTab({ goToOffer }: { goToOffer: () => void }) {
                   <td className="r" style={{ color: 'var(--amber)' }}>€{fmt(i.aankoop)}</td>
                   <td className="r">€{fmt(i.plaatsingTotaal)}</td>
                   <td className="r" style={{ color: 'var(--green)', fontWeight: 600 }}>€{fmt(i.uwVerkoop)}</td>
-                  <td className="r">€{fmt(i.uwVerkoop - i.aankoop - i.plaatsingTotaal)}</td>
+                  <td className="r">€{fmt(i.uwVerkoop - i.aankoop - i.plaatsingTotaal)}
+                    <span style={{ color: 'var(--tx3)', fontSize: 11 }}> ({i.uwVerkoop > 0 ? fmt((i.uwVerkoop - i.aankoop - i.plaatsingTotaal) / i.uwVerkoop * 100, 1) : 0}%)</span></td>
                 </tr>
               );
             })}
