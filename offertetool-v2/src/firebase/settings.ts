@@ -13,10 +13,13 @@ export interface GlobalSettings {
   kortingPergola: number;     // Allround korting pergola/serre (*-producten)
   bkfixMarge: number;         // BKfix marge %
   uurtarief: number;          // standaard werkuren-uurtarief €
+  plaatsingSerre: number;     // vaste plaatsing serrezonwering (Stilo, Vinci 150/250/300)
+  plaatsingPergola: number;   // vaste plaatsing pergola met staanders (zip/volant/450)
 }
 
 export const DEFAULT_GLOBAL: GlobalSettings = {
   kortingStandaard: 50, kortingPergola: 40, bkfixMarge: 20, uurtarief: 230,
+  plaatsingSerre: 350, plaatsingPergola: 850,
 };
 
 const GLOBAL_DOC = doc(db, 'settings', 'global');

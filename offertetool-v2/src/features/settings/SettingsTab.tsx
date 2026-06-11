@@ -29,6 +29,14 @@ export function SettingsTab() {
           Formule: aankoop = subtotaal × (1 − korting) · verkoop = aankoop ÷ (1 − BKfix-marge).
         </div>
       </Sec>
+      <Sec title="Plaatsing veranda/pergola">
+        <div className="grid2">
+          <Num label="Serrezonwering (€ vast) — Stilo, Vinci 150/250/300" value={form.plaatsingSerre}
+            onChange={(plaatsingSerre) => u({ plaatsingSerre })} />
+          <Num label="Pergola met staanders (€ vast) — met zip, + volant, 450" value={form.plaatsingPergola}
+            onChange={(plaatsingPergola) => u({ plaatsingPergola })} />
+        </div>
+      </Sec>
       <Sec title="Werkuren">
         <div className="grid3">
           <Num label="Standaard uurtarief (€/u)" value={form.uurtarief} onChange={(uurtarief) => u({ uurtarief })} />
