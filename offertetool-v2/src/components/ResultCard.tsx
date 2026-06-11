@@ -5,6 +5,8 @@ import { fmt } from './fields';
 /** Resultaatkaart onder elk formulier: fouten, KPI's, prijsopbouw, toevoegen-knop. */
 export function ResultCard({ r }: { r: CalcResult }) {
   const add = useOffer((s) => s.add);
+  const marge = r.uwVerkoop - r.aankoop - r.plaatsingTotaal;
+  const margePct = r.uwVerkoop > 0 ? (marge / r.uwVerkoop) * 100 : 0;
   return (
     <div className="panel" style={{ marginTop: 12 }}>
       {r.errors.length > 0 && (
@@ -19,7 +21,7 @@ export function ResultCard({ r }: { r: CalcResult }) {
             <div className="kpi"><div className="l">Adviesprijs</div><div className="v">€{fmt(r.productSubtotal)}</div></div>
             <div className="kpi g"><div className="l">Uw verkoop</div><div className="v">€{fmt(r.uwVerkoop)}</div></div>
             <div className="kpi a"><div className="l">Aankoop</div><div className="v">€{fmt(r.aankoop)}</div></div>
-            <div className="kpi"><div className="l">Marge</div><div className="v">€{fmt(r.uwVerkoop - r.aankoop - r.plaatsingTotaal)}</div></div>
+            <div className="kpi"><div className="l">Marge</div><div className="v">€{fmt(marge)} <span style={{ fontSize: 12, color: 'var(--tx3)', fontWeight: 600 }}>({fmt(margePct, 1)}%)</span></div></div>
           </div>
           {r.bestelmaat && (
             <div className="pline"><span>Bestelmaat (fabrikant)</span><b>{r.bestelmaat.b}×{r.bestelmaat.h}mm</b></div>
