@@ -100,13 +100,27 @@ describe('golden: veranda', () => {
     gevel: '', doek: '', bereik: '', led: '', extras: [], kleur: wit,
     bediening: geen, opmerkingen: '', vrijeOpties: [], marges: M40,
   };
-  it('Vinci 250 met zip 4250×3000 → raster 4500×3000 = €4572 (de gemelde bug)', () => {
+  it('Vinci 250 met zip 4250×3000 → raster 4500×3000 = €4572, pergola-plaatsing €850', () => {
     const r = calcVeranda(baseVinci);
     expect(r.ok).toBe(true);
     expect(r.calculatiemaat).toEqual({ b: 4500, h: 3000 });
     expect(r.productSubtotal).toBe(4572);
     expect(r.aankoop).toBeCloseTo(4572 * 0.6, 2);
-    expect(r.uwVerkoop).toBeCloseTo(4572 * 0.6 / 0.8 + 350, 2);
+    expect(r.uwVerkoop).toBeCloseTo(4572 * 0.6 / 0.8 + 850, 2);
+  });
+  it('Kevins case: met zip 4140×2840, RAL 9005 SL, hout, situo 1 → €4.316', () => {
+    const r = calcVeranda({
+      ...baseVinci, breedte: 4140, uitval: 2840, gevel: 'hout',
+      kleur: { select: 'RAL 9005 SL', custom: '' },
+      bediening: { bed1: 'situo 1 pure', bed2: '' },
+    });
+    expect(r.calculatiemaat).toEqual({ b: 4500, h: 3000 });
+    expect(r.productSubtotal).toBe(4572);           // kleur in collectie, hout €0
+    expect(r.uwVerkoop).toBeCloseTo(4572 * 0.75 + 850 + 37, 2); // = 4316
+  });
+  it('serrezonwering (Vinci 150) houdt €350 plaatsing', () => {
+    const r = calcVeranda({ ...baseVinci, type: 'Vinci 150 onderliggend', breedte: 4000, uitval: 3000 });
+    expect(r.plaatsingTotaal).toBe(350);
   });
   it('Stilo 103 1000×1500 = €1596 (eigen 250mm-raster)', () => {
     const r = calcVeranda({ ...baseVinci, type: 'Stilo 103 onderliggend', breedte: 1000, uitval: 1500 });

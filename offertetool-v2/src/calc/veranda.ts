@@ -9,7 +9,7 @@
  */
 import verandaData from '../data/veranda.json';
 import opties from '../data/opties.json';
-import { PLAATSING, UITVAL_KLEIN_TOESLAG, VERANDA_MOTOR_OREA_WT, VERANDA_STEUNEN } from '../data/constants';
+import { PERGOLA_TYPES, PLAATSING, UITVAL_KLEIN_TOESLAG, VERANDA_MOTOR_OREA_WT, VERANDA_STEUNEN } from '../data/constants';
 import { lookupPrice, verandaGrid } from './grid';
 import { berekenTotalen, bereikbaarheid, kleurLabel, kleurMeerprijs } from './shared';
 import type { BedieningKeuze, CalcResult, KleurKeuze, Marges, PriceGrid, VrijeOptie } from './types';
@@ -35,6 +35,8 @@ export interface VerandaInput {
   opmerkingen: string;
   vrijeOpties: VrijeOptie[];
   marges: Marges;
+  /** Vaste plaatsingskost; default: pergola €850, serrezonwering €350 (instelbaar). */
+  plaatsingVast?: number;
 }
 
 export function calcVeranda(inp: VerandaInput): CalcResult {
@@ -111,7 +113,10 @@ export function calcVeranda(inp: VerandaInput): CalcResult {
   if (typeof gevelRaw === 'string' && gevelRaw) warnings.push(`Gevel "${inp.gevel}": ${gevelRaw}`);
   const ber = bereikbaarheid(inp.bereik);
   if (ber.warning) warnings.push(ber.warning);
-  const plaatsingTotaal = (PLAATSING.verandaVast + ber.prijs) * aantal + gevelPrice;
+  // Pergola (vrijstaand, met staanders) = zwaardere montage dan serrezonwering
+  const plaatsingVast = inp.plaatsingVast
+    ?? (PERGOLA_TYPES.includes(type) ? PLAATSING.pergolaVast : PLAATSING.serreVast);
+  const plaatsingTotaal = (plaatsingVast + ber.prijs) * aantal + gevelPrice;
 
   const vrijeSom = inp.vrijeOpties.reduce((s, o) => s + o.amount, 0) + extrasSom;
   const tot = berekenTotalen(regels, aantal, vrijeSom, plaatsingTotaal, inp.bediening, inp.marges);

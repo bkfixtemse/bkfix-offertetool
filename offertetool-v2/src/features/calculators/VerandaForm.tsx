@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { calcVeranda, VERANDA_TYPES } from '../../calc/veranda';
-import { VERANDA_STEUNEN } from '../../data/constants';
+import { PERGOLA_TYPES, VERANDA_STEUNEN } from '../../data/constants';
+import { useSettings } from '../../store/settingsStore';
 import verandaData from '../../data/veranda.json';
 import { Num, Sec, Sel, Txt } from '../../components/fields';
 import { KleurSelect } from '../../components/KleurSelect';
@@ -17,10 +18,12 @@ export function VerandaForm() {
   const u = (p: Partial<typeof s>) => set({ ...s, ...p });
   const meta = (verandaData as any).meta[s.type];
   const isVolant = s.type === 'Vinci 250+ volant';
+  const inst = useSettings((st) => st.s);
 
   const r = calcVeranda({
     ...s, extras: [], bediening: { bed1: s.bed1, bed2: s.bed2 },
     vrijeOpties: [], marges: margesVoor('pergola', s.korting),
+    plaatsingVast: PERGOLA_TYPES.includes(s.type) ? inst.plaatsingPergola : inst.plaatsingSerre,
   });
 
   return (

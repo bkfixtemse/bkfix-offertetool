@@ -59,8 +59,12 @@ export const PLAATSING = {
   screenNovaExtra: { 'Nova 83': 100, 'Nova 103': 100, 'Nova 123': 100, 'Nova solar 103': 50 } as Record<string, number>,
   knikarmPerMeter: 100,             // (bCeil/1000) × 100
   knikarmVast: 250,
-  verandaVast: 350,
+  serreVast: 350,                   // serrezonwering (op bestaande structuur)
+  pergolaVast: 850,                 // pergola mét staanders (zwaardere montage)
 };
+
+/** Types uit het catalogus-hoofdstuk "pergolazonwering" (vrijstaand, met staanders). */
+export const PERGOLA_TYPES = ['Vinci 250 met zip', 'Vinci 250+ volant', 'vinci 450 waterdicht'];
 
 /** Knikarm type-info voor TL-omschrijvingen. */
 export const KNIKARM_TYPE_INFO: Record<string, { title: string; sub?: string; motor: string; doekLabel: string; muurOpties: boolean }> = {
