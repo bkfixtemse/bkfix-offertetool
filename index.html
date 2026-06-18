@@ -445,6 +445,27 @@ function bedieningAankoop(name, aantal=1){
   const basis = (name in BEDIENING_CATALOG) ? BEDIENING_CATALOG[name] : sell;
   return basis * (1 - BEDIENING_KORTING) * aantal;
 }
+// Minimale (dagmaat-)breedte per motor — de motor/kast past niet onder deze maat (Allround catalogus).
+// Geldt voor rolluiken en screens die dezelfde motor gebruiken. Sleutel = exacte motorkeuze.
+const MOTOR_MIN_BREEDTE = {
+  // Rolluik-motoren
+  'RS100 io (standaard)': 650,   // Somfy S&SO RS100 io
+  'Somfy LT-12':          720,
+  'Somfy Ilmo WT':        700,   // Somfy ilmo
+  'Somfy Ilmo short WT':  550,
+  'Somfy Oximo io':       850,
+  'Somfy Oximo short io': 550,
+  'Somfy LT50 CSI':       740,
+  'RS100 Solar io':       650,   // ook gebruikt door Nova solar 103 screen
+  'RS100 Solar io 15Nm':  650,
+  // Screen-motoren (zelfde fysieke motor)
+  'LT-12':                720,   // Somfy LT-12 op screens
+};
+// Effectieve motor bepalen wanneer de lege ('standaard') keuze gekozen is
+function motorMinBreedte(motor, defaultMotor){
+  const eff = motor || defaultMotor;
+  return MOTOR_MIN_BREEDTE[eff] || 0;
+}
 const BEREIKBAARHEID_ALL = Object.keys(DATA.opties.algemene.bereikbaarheid);
 const TYPE_GEVEL = Object.keys(DATA.opties.algemene.type_gevel);
 const DOEKGROEPEN = Object.keys(DATA.opties.algemene.doekgroep);
@@ -734,6 +755,12 @@ function calcRolluik(){
   const motor = $('r-motor').value;
   const motorPrice = motor ? (DATA.opties.rolluik_extras.motoren[motor] || 0) : 0;
 
+  // Minimale kastbreedte voor de gekozen motor (standaard = RS100 io)
+  const motorMinB = motorMinBreedte(motor, 'RS100 io (standaard)');
+  if(motorMinB && breedte < motorMinB){
+    errors.push(`Breedte ${breedte}mm te smal voor motor ${motor||'RS100 io'} (min. ${motorMinB}mm) — kies een bredere maat of andere motor`);
+  }
+
   // Afwijkende motorkabel
   const mkabel = $('r-mkabel').value;
   const mkabelPrice = mkabel ? (DATA.opties.rolluik_extras.afwijkende_motorkabel[mkabel] || 0) : 0;
@@ -996,6 +1023,12 @@ function calcScreen(){
   }
   const motor = $('s-motor').value;
   const motorPrice = motor ? (DATA.opties.screen_extras.motoren[motor] || 0) : 0;
+
+  // Minimale kastbreedte voor de gekozen motor (standaard = Maestria io, niet in tabel)
+  const motorMinB = motorMinBreedte(motor, 'Maestria io');
+  if(motorMinB && breedte < motorMinB){
+    errors.push(`Breedte ${breedte}mm te smal voor motor ${motor||'Maestria io'} (min. ${motorMinB}mm) — kies een bredere maat of andere motor`);
+  }
 
   const bereik = $('s-bereik').value;
   const bereikRaw = DATA.opties.screen_extras.bereikbaarheid[bereik];
