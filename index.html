@@ -208,10 +208,10 @@ details[open] summary{margin-bottom:8px}
 <h2>Huidige berekening</h2>
 <div id="live-calc"></div>
 
-<h2 style="margin-top:20px">Offerte</h2>
+<h2 style="margin-top:20px;display:flex;align-items:center;gap:8px">Offerte <span id="autosave-indicator" style="font-size:10px;font-weight:400;color:#16a34a;opacity:0;transition:opacity .3s">✓ automatisch bewaard</span></h2>
 <div class="field" style="margin-bottom:12px">
 <label>Klant</label>
-<input type="text" id="klant-naam" placeholder="Naam klant">
+<input type="text" id="klant-naam" placeholder="Naam klant" oninput="autoSaveOffer()">
 </div>
 
 <div id="offer-list" class="offer-list"></div>
@@ -367,6 +367,7 @@ const state = {
   offer: [],
   tlSelectedDeal: null,
   editIndex: null,   // index van het offerte-item dat bewerkt wordt (null = nieuw)
+  draftId: null,     // id van de huidige (automatisch bewaarde) offerte in de historie
 };
 
 // ======= Utilities =======
@@ -1977,6 +1978,9 @@ function renderOffer(){
   const total = subtotalInclWerkuren + btw;
   const marge = subtotal - aankoop - plaatsing;
   const margePct = subtotal>0 ? (marge/subtotal*100) : 0;
+  // Werkelijke winst = omzet producten - aankoop - werkelijke arbeidskost (werkuren)
+  const werkelijkeWinst = subtotal - aankoop - werkurenKost;
+  const winstPct = subtotal>0 ? (werkelijkeWinst/subtotal*100) : 0;
 
   $('totals-block').innerHTML = `
     <div class="price-line"><span>Producten (excl. BTW)</span><span>€${fmt(subtotal)}</span></div>
@@ -1986,7 +1990,12 @@ function renderOffer(){
     <div class="price-line"><span>BTW 6%</span><span>€${fmt(btw)}</span></div>
     <div class="price-total"><span>Totaal incl. BTW</span><span>€${fmt(total)}</span></div>
     <div class="price-line" style="color:#059669;margin-top:8px"><span>Bruto marge producten (incl. plaatsing)</span><span>€${fmt(marge)} (${margePct.toFixed(1)}%)</span></div>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 12px;margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-weight:700;color:#166534;font-size:12px">💰 Werkelijke winst<br><span style="font-weight:400;font-size:10px;color:#15803d">na aankoop &amp; arbeid (werkuren)</span></span>
+      <span style="font-weight:700;font-size:16px;color:${werkelijkeWinst>=0?'#059669':'#dc2626'}">€${fmt(werkelijkeWinst)}<br><span style="font-size:11px;font-weight:600">${winstPct.toFixed(1)}%</span></span>
+    </div>
   `;
+  autoSaveOffer();
 }
 
 function removeOfferItem(idx){
@@ -2028,6 +2037,9 @@ function clearOffer(){
   if(state.offer.length===0)return;
   if(confirm('Weet je zeker dat je de volledige offerte wilt wissen?')){
     state.offer = [];
+    state.draftId = null;     // volgende offerte = nieuwe historie-entry
+    state.editIndex = null;
+    clearTimeout(_autoSaveTimer);
     renderOffer();
   }
 }
@@ -2099,36 +2111,74 @@ function onHiddenCostChange(){
 function getOpsteller(){ return localStorage.getItem('bkfix_user_name') || ''; }
 function setOpsteller(naam){ localStorage.setItem('bkfix_user_name', naam||''); }
 
+// Bouwt het historie-entry-object uit de huidige offerte-staat
+function buildOfferEntry(id, tlQuotationId, auto){
+  const hidden = parseFloat($('hidden-cost')?.value)||0;
+  const entry = {
+    id,
+    date: new Date().toISOString(),
+    createdBy: getOpsteller() || 'Onbekend',
+    dealId: state.tlSelectedDeal?.id || null,
+    dealTitle: state.tlSelectedDeal?.title || '—',
+    clientName: $('klant-naam')?.value || '',
+    tlQuotationId: tlQuotationId || null,
+    auto: !!auto,
+    items: JSON.parse(JSON.stringify(state.offer)),
+    hiddenCost: hidden,
+    werkuren: {
+      tarief: parseFloat($('w-tarief')?.value) || 230,
+      uren: parseFloat($('w-uren')?.value) || 0,
+      personen: parseInt($('w-personen')?.value) || 2
+    },
+    totaalVerkoop: state.offer.reduce((s,i)=>s+(i.uwVerkoop||0),0) + hidden,
+    totaalAankoop: state.offer.reduce((s,i)=>s+(i.aankoop||0),0)
+  };
+  entry.effectiveTotal = entry.totaalVerkoop; // backwards compat
+  return entry;
+}
+// Voegt toe of werkt bij op basis van id (zelfde offerte = zelfde entry)
+function upsertHistory(entry){
+  let history = getHistory();
+  const idx = history.findIndex(e=>e.id===entry.id);
+  if(idx>=0){
+    if(history[idx].date) entry.date = history[idx].date; // bewaar aanmaakdatum
+    history[idx] = entry;
+  } else {
+    history.unshift(entry);
+    if(history.length > 300) history.pop();
+  }
+  localStorage.setItem('bkfix_offer_history', JSON.stringify(history));
+  window.fbSaveOffer?.(entry);
+}
+
+// Handmatig / definitief opslaan (knop of TL-export)
 function saveOfferToHistory(tlQuotationId){
   try {
     if(!state.offer.length) return null;
-    const history = JSON.parse(localStorage.getItem('bkfix_offer_history') || '[]');
-    const entry = {
-      id: genId(),
-      date: new Date().toISOString(),
-      createdBy: getOpsteller() || 'Onbekend',
-      dealId: state.tlSelectedDeal?.id || null,
-      dealTitle: state.tlSelectedDeal?.title || '—',
-      clientName: $('klant-naam')?.value || '',
-      tlQuotationId: tlQuotationId || null,
-      items: JSON.parse(JSON.stringify(state.offer)),
-      hiddenCost: parseFloat($('hidden-cost')?.value) || 0,
-      werkuren: {
-        tarief: parseFloat($('w-tarief')?.value) || 230,
-        uren: parseFloat($('w-uren')?.value) || 0,
-        personen: parseInt($('w-personen')?.value) || 2
-      },
-      totaalVerkoop: state.offer.reduce((s,i)=>s+(i.uwVerkoop||0),0) + (parseFloat($('hidden-cost')?.value)||0),
-      totaalAankoop: state.offer.reduce((s,i)=>s+(i.aankoop||0),0)
-    };
-    entry.effectiveTotal = entry.totaalVerkoop; // backwards compat
-    history.unshift(entry);
-    if(history.length > 300) history.pop();
-    localStorage.setItem('bkfix_offer_history', JSON.stringify(history));
-    // Schrijf als eigen Firestore-document (voorkomt overschrijven van andere PC's)
-    window.fbSaveOffer?.(entry);
-    return entry.id;
+    if(!state.draftId) state.draftId = genId();
+    const entry = buildOfferEntry(state.draftId, tlQuotationId, false); // definitief
+    upsertHistory(entry);
+    return state.draftId;
   } catch(e) { console.error('Historie opslaan mislukt:', e); return null; }
+}
+
+// Automatisch bewaren (debounced) — ook als er niet handmatig wordt opgeslagen
+let _autoSaveTimer = null;
+function autoSaveOffer(){
+  if(!state.offer.length) return;
+  clearTimeout(_autoSaveTimer);
+  _autoSaveTimer = setTimeout(()=>{
+    try{
+      if(!state.offer.length) return;
+      if(!state.draftId) state.draftId = genId();
+      const existing = getHistory().find(e=>e.id===state.draftId);
+      // Bestaande definitieve offerte niet terug naar 'concept' zetten
+      const entry = buildOfferEntry(state.draftId, existing?.tlQuotationId||null, existing ? !!existing.auto : true);
+      upsertHistory(entry);
+      const ind = $('autosave-indicator');
+      if(ind){ ind.textContent='✓ automatisch bewaard'; ind.style.opacity='1'; setTimeout(()=>{ if(ind) ind.style.opacity='0.5'; }, 1500); }
+    }catch(e){ console.warn('auto-save mislukt:', e); }
+  }, 1500);
 }
 
 // State voor historie-tab (lijst vs detail)
@@ -2199,6 +2249,7 @@ function renderHistorieList(el){
             <span>🕗 ${fmtHistDate(e.date)}</span>
             <span>✍ ${e.createdBy||'Onbekend'}</span>
             ${e.tlQuotationId?`<span class="hist-tl">TL ✓</span>`:''}
+            ${e.auto&&!e.tlQuotationId?`<span style="color:#d97706;font-weight:600">● concept (auto)</span>`:''}
           </div>
           <div class="hist-card-prev">${aantal} artikel(s): ${preview||'—'}</div>
         </div>
@@ -2302,6 +2353,8 @@ function loadHistoryEntry(id){
   if(state.offer.length > 0 && !confirm(`Huidige offerte vervangen door "${entry.dealTitle}"?`)) return;
 
   state.offer = JSON.parse(JSON.stringify(entry.items || []));
+  state.draftId = entry.id;   // verder bewerken werkt dezelfde historie-entry bij
+  state.editIndex = null;
   if($('hidden-cost')) $('hidden-cost').value = entry.hiddenCost || 0;
   if($('w-tarief'))   $('w-tarief').value   = entry.werkuren?.tarief   || 230;
   if($('w-uren'))     $('w-uren').value     = entry.werkuren?.uren     || 0;
