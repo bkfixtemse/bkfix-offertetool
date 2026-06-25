@@ -4,7 +4,7 @@ import { Chk, Num, Sec, Sel, Txt } from '../../components/fields';
 import { KleurSelect } from '../../components/KleurSelect';
 import { ResultCard } from '../../components/ResultCard';
 import { useOffer } from '../../store/offerStore';
-import { BEDIENINGEN, BEREIK_ALG, margesVoor, RL_GELEIDERS, RL_KASTTYPES, RL_KOPPELEN, RL_LAMELKLEUREN, RL_MOTOREN } from './common';
+import { BEREIK_ALG, margesVoor, RL_GELEIDERS, RL_KASTTYPES, RL_KOPPELEN, RL_LAMELKLEUREN, RL_MOTOREN } from './common';
 
 /** "diepzwart_90" → "Diepzwart 90", "db703_18" → "DB703 18". */
 const lamelLabel = (k: string) =>
@@ -17,7 +17,7 @@ const DEFAULT = {
   koppelen: '', bereik: 'Goed', onderlat: 'Design onderlat',
   borenJa: false, zonnepaneelJa: false,
   kleur: { select: '', custom: '' }, kleurOmkasting: '',
-  bed1: '', bed2: '', korting: 0, opmerkingen: '',
+  korting: 0, opmerkingen: '',
 };
 type State = typeof DEFAULT;
 
@@ -30,7 +30,7 @@ export function RolluikForm() {
   const isSolar = s.motor.toLowerCase().includes('solar');
 
   const r = calcRolluik({
-    ...s, kleur: s.kleur, bediening: { bed1: s.bed1, bed2: s.bed2 },
+    ...s, kleur: s.kleur, bediening: { bed1: '', bed2: '' },
     vrijeOpties: [], marges: margesVoor('standaard', s.korting),
   });
 
@@ -82,12 +82,8 @@ export function RolluikForm() {
             <KleurSelect label="RAL-kleur (omkasting/geleiders/onderlat)" value={s.kleur} onChange={(kleur) => u({ kleur })} />
           </div>
         </Sec>
-        <Sec title="Bediening & korting">
-          <div className="grid3">
-            <Sel label="Bediening 1" value={s.bed1} onChange={(bed1) => u({ bed1 })}
-              options={BEDIENINGEN.map((b) => ({ v: b, t: b || '(geen)' }))} />
-            <Sel label="Bediening 2" value={s.bed2} onChange={(bed2) => u({ bed2 })}
-              options={BEDIENINGEN.map((b) => ({ v: b, t: b || '(geen)' }))} />
+        <Sec title="Korting & opmerkingen">
+          <div className="grid2">
             <Num label="Eenmalige korting (€)" value={s.korting} onChange={(korting) => u({ korting })} />
           </div>
           <div style={{ marginTop: 10 }}>

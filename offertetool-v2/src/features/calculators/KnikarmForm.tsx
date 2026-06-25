@@ -4,13 +4,13 @@ import { Chk, Num, Sec, Sel, Txt } from '../../components/fields';
 import { KleurSelect } from '../../components/KleurSelect';
 import { ResultCard } from '../../components/ResultCard';
 import { useOffer } from '../../store/offerStore';
-import { BEDIENINGEN, KA_BEREIK, KA_DOEK, KA_GEVEL, KA_LED, KA_MUURSTEUN, KA_VERDIEPING, margesVoor } from './common';
+import { KA_BEREIK, KA_DOEK, KA_GEVEL, KA_LED, KA_MUURSTEUN, KA_VERDIEPING, margesVoor } from './common';
 
 const DEFAULT = {
   type: 'Pisano 230', aantal: 1, breedte: 0, uitval: 0,
   verdieping: '0', bereik: 'Goed', gevel: 'baksteen', muursteun: '', muurstripJa: false,
   doek: 'standaard', led: 'Nee', kleur: { select: '', custom: '' },
-  bed1: '', bed2: '', korting: 0, opmerkingen: '',
+  korting: 0, opmerkingen: '',
 };
 type State = typeof DEFAULT;
 
@@ -23,7 +23,7 @@ export function KnikarmForm() {
   const stripKan = s.type === 'Pisano 230' || s.type.startsWith('Gaudi');
 
   const r = calcKnikarm({
-    ...s, bediening: { bed1: s.bed1, bed2: s.bed2 },
+    ...s, bediening: { bed1: '', bed2: '' },
     vrijeOpties: [], marges: margesVoor('standaard', s.korting),
   });
 
@@ -52,16 +52,12 @@ export function KnikarmForm() {
             {stripKan && <Chk label="Universele muurstrip (€125/m)" value={s.muurstripJa} onChange={(muurstripJa) => u({ muurstripJa })} />}
           </div>
         </Sec>
-        <Sec title="Kleur, bediening & korting">
+        <Sec title="Kleur & korting">
           <div className="grid2">
             <KleurSelect label="Kleur frame" value={s.kleur} onChange={(kleur) => u({ kleur })}
               pisano={s.type === 'Pisano 230'} />
           </div>
-          <div className="grid3" style={{ marginTop: 10 }}>
-            <Sel label="Bediening 1" value={s.bed1} onChange={(bed1) => u({ bed1 })}
-              options={BEDIENINGEN.map((b) => ({ v: b, t: b || '(geen)' }))} />
-            <Sel label="Bediening 2" value={s.bed2} onChange={(bed2) => u({ bed2 })}
-              options={BEDIENINGEN.map((b) => ({ v: b, t: b || '(geen)' }))} />
+          <div className="grid2" style={{ marginTop: 10 }}>
             <Num label="Eenmalige korting (€)" value={s.korting} onChange={(korting) => u({ korting })} />
           </div>
           <div style={{ marginTop: 10 }}>
