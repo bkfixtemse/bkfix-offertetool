@@ -3,19 +3,30 @@ import { calcRolluik, ROLLUIK_TYPES } from '../../calc/rolluik';
 import { Chk, Num, Sec, Sel, Txt } from '../../components/fields';
 import { KleurSelect } from '../../components/KleurSelect';
 import { ResultCard } from '../../components/ResultCard';
+import { useOffer } from '../../store/offerStore';
 import { BEDIENINGEN, BEREIK_ALG, margesVoor, RL_GELEIDERS, RL_KASTTYPES, RL_KOPPELEN, RL_LAMELKLEUREN, RL_MOTOREN } from './common';
 
+/** "diepzwart_90" → "Diepzwart 90", "db703_18" → "DB703 18". */
+const lamelLabel = (k: string) =>
+  k.replace(/_(\d+)$/, ' $1').replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase()).replace(/^Db703/, 'DB703');
+
+const DEFAULT = {
+  type: 'Ecoroll_L', aantal: 1, breedte: 0, hoogte: 0, plaatsing: 'idd' as 'idd' | 'odd',
+  geleider: '', kasttype: 'afgeschuind 45°', motor: '', mkabel: '' as '' | 'ja' | 'nee',
+  lamel: 'standaard' as 'standaard' | 'hardschuim', lamelKleur: RL_LAMELKLEUREN[0] ?? '',
+  koppelen: '', bereik: 'Goed', onderlat: 'Design onderlat',
+  borenJa: false, zonnepaneelJa: false,
+  kleur: { select: '', custom: '' }, kleurOmkasting: '',
+  bed1: '', bed2: '', korting: 0, opmerkingen: '',
+};
+type State = typeof DEFAULT;
+
 export function RolluikForm() {
-  const [s, set] = useState({
-    type: 'Ecoroll_L', aantal: 1, breedte: 0, hoogte: 0, plaatsing: 'idd' as 'idd' | 'odd',
-    geleider: '', kasttype: 'afgeschuind 45°', motor: '', mkabel: '' as '' | 'ja' | 'nee',
-    lamel: 'standaard' as 'standaard' | 'hardschuim', lamelKleur: RL_LAMELKLEUREN[0] ?? '',
-    koppelen: '', bereik: 'Goed', onderlat: 'Design onderlat',
-    borenJa: false, zonnepaneelJa: false,
-    kleur: { select: '', custom: '' }, kleurOmkasting: '',
-    bed1: '', bed2: '', korting: 0, opmerkingen: '',
+  const [s, set] = useState<State>(() => {
+    const et = useOffer.getState().editTarget;
+    return et?.kind === 'rolluik' ? { ...DEFAULT, ...(et.input as Partial<State>) } : DEFAULT;
   });
-  const u = (p: Partial<typeof s>) => set({ ...s, ...p });
+  const u = (p: Partial<State>) => set({ ...s, ...p });
   const isSolar = s.motor.toLowerCase().includes('solar');
 
   const r = calcRolluik({
@@ -60,7 +71,8 @@ export function RolluikForm() {
           <div className="grid2">
             <Sel label="Soort lamel" value={s.lamel} onChange={(l) => u({ lamel: l as any })}
               options={[{ v: 'standaard', t: 'Standaard' }, { v: 'hardschuim', t: 'Hardschuim (€119/m²)' }]} />
-            <Sel label="Kleur lamel" value={s.lamelKleur} onChange={(lamelKleur) => u({ lamelKleur })} options={RL_LAMELKLEUREN} />
+            <Sel label="Kleur lamel" value={s.lamelKleur} onChange={(lamelKleur) => u({ lamelKleur })}
+              options={RL_LAMELKLEUREN.map((k) => ({ v: k, t: lamelLabel(k) }))} />
             <Sel label="Onderlat" value={s.onderlat} onChange={(onderlat) => u({ onderlat })}
               options={['Design onderlat', 'Vlakke onderlat']} />
             <Txt label="Kleur omkasting (vrij)" value={s.kleurOmkasting} placeholder="bv. RAL 9016"
@@ -83,7 +95,7 @@ export function RolluikForm() {
           </div>
         </Sec>
       </div>
-      {(s.breedte > 0 && s.hoogte > 0) && <ResultCard r={r} />}
+      {(s.breedte > 0 && s.hoogte > 0) && <ResultCard r={r} kind="rolluik" input={s} />}
     </>
   );
 }

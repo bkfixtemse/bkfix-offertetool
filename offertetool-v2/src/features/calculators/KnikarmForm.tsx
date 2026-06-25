@@ -3,14 +3,21 @@ import { calcKnikarm, KNIKARM_TYPES } from '../../calc/knikarm';
 import { Chk, Num, Sec, Sel, Txt } from '../../components/fields';
 import { KleurSelect } from '../../components/KleurSelect';
 import { ResultCard } from '../../components/ResultCard';
+import { useOffer } from '../../store/offerStore';
 import { BEDIENINGEN, KA_BEREIK, KA_DOEK, KA_GEVEL, KA_LED, KA_MUURSTEUN, KA_VERDIEPING, margesVoor } from './common';
 
+const DEFAULT = {
+  type: 'Pisano 230', aantal: 1, breedte: 0, uitval: 0,
+  verdieping: '0', bereik: 'Goed', gevel: 'baksteen', muursteun: '', muurstripJa: false,
+  doek: 'standaard', led: 'Nee', kleur: { select: '', custom: '' },
+  bed1: '', bed2: '', korting: 0, opmerkingen: '',
+};
+type State = typeof DEFAULT;
+
 export function KnikarmForm() {
-  const [s, set] = useState({
-    type: 'Pisano 230', aantal: 1, breedte: 0, uitval: 0,
-    verdieping: '0', bereik: 'Goed', gevel: 'baksteen', muursteun: '', muurstripJa: false,
-    doek: 'standaard', led: 'Nee', kleur: { select: '', custom: '' },
-    bed1: '', bed2: '', korting: 0, opmerkingen: '',
+  const [s, set] = useState<State>(() => {
+    const et = useOffer.getState().editTarget;
+    return et?.kind === 'knikarm' ? { ...DEFAULT, ...(et.input as Partial<State>) } : DEFAULT;
   });
   const u = (p: Partial<typeof s>) => set({ ...s, ...p });
   const stripKan = s.type === 'Pisano 230' || s.type.startsWith('Gaudi');
@@ -62,7 +69,7 @@ export function KnikarmForm() {
           </div>
         </Sec>
       </div>
-      {(s.breedte > 0 && s.uitval > 0) && <ResultCard r={r} />}
+      {(s.breedte > 0 && s.uitval > 0) && <ResultCard r={r} kind="knikarm" input={s} />}
     </>
   );
 }

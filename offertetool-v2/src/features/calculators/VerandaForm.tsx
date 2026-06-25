@@ -6,16 +6,23 @@ import verandaData from '../../data/veranda.json';
 import { Num, Sec, Sel, Txt } from '../../components/fields';
 import { KleurSelect } from '../../components/KleurSelect';
 import { ResultCard } from '../../components/ResultCard';
+import { useOffer } from '../../store/offerStore';
 import { BEDIENINGEN, BEREIK_ALG, margesVoor, VR_DOEK, VR_GEVEL } from './common';
 
+const DEFAULT = {
+  type: VERANDA_TYPES[0], aantal: 1, breedte: 0, uitval: 0,
+  motor: 'Sunea io' as 'Sunea io' | 'Orea WT', steun: 'Geen', steunAantal: 0,
+  mkabel: '' as '' | 'ja' | 'nee', gevel: '', doek: '', bereik: '', led: '',
+  kleur: { select: '', custom: '' }, bed1: '', bed2: '', korting: 0, opmerkingen: '',
+};
+type State = typeof DEFAULT;
+
 export function VerandaForm() {
-  const [s, set] = useState({
-    type: VERANDA_TYPES[0], aantal: 1, breedte: 0, uitval: 0,
-    motor: 'Sunea io' as 'Sunea io' | 'Orea WT', steun: 'Geen', steunAantal: 0,
-    mkabel: '' as '' | 'ja' | 'nee', gevel: '', doek: '', bereik: '', led: '',
-    kleur: { select: '', custom: '' }, bed1: '', bed2: '', korting: 0, opmerkingen: '',
+  const [s, set] = useState<State>(() => {
+    const et = useOffer.getState().editTarget;
+    return et?.kind === 'veranda' ? { ...DEFAULT, ...(et.input as Partial<State>) } : DEFAULT;
   });
-  const u = (p: Partial<typeof s>) => set({ ...s, ...p });
+  const u = (p: Partial<State>) => set({ ...s, ...p });
   const meta = (verandaData as any).meta[s.type];
   const isVolant = s.type === 'Vinci 250+ volant';
   const inst = useSettings((st) => st.s);
@@ -79,7 +86,7 @@ export function VerandaForm() {
           </div>
         </Sec>
       </div>
-      {(s.breedte > 0 && s.uitval > 0) && <ResultCard r={r} />}
+      {(s.breedte > 0 && s.uitval > 0) && <ResultCard r={r} kind="veranda" input={s} />}
     </>
   );
 }

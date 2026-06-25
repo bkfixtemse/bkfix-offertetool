@@ -1,14 +1,26 @@
-import type { CalcResult } from '../calc/types';
+import type { CalcResult, ProductKind } from '../calc/types';
 import { useOffer } from '../store/offerStore';
 import { fmt } from './fields';
 
-/** Resultaatkaart onder elk formulier: fouten, KPI's, prijsopbouw, toevoegen-knop. */
-export function ResultCard({ r }: { r: CalcResult }) {
+/** Resultaatkaart onder elk formulier: fouten, KPI's, prijsopbouw, toevoegen/opslaan-knop. */
+export function ResultCard({ r, kind, input }: { r: CalcResult; kind: ProductKind; input: unknown }) {
   const add = useOffer((s) => s.add);
+  const replace = useOffer((s) => s.replace);
+  const editTarget = useOffer((s) => s.editTarget);
+  const cancelEdit = useOffer((s) => s.cancelEdit);
+  const editing = editTarget?.kind === kind;
+
   const marge = r.uwVerkoop - r.aankoop - r.plaatsingTotaal;
   const margePct = r.uwVerkoop > 0 ? (marge / r.uwVerkoop) * 100 : 0;
+
+  const opslaan = () => {
+    if (editing && editTarget) replace(editTarget.id, r, kind, input);
+    else add(r, kind, input);
+  };
+
   return (
     <div className="panel" style={{ marginTop: 12 }}>
+      {editing && <div className="alert info">✎ Je bewerkt een bestaand item. Klik "Wijzigingen opslaan" om te vervangen.</div>}
       {r.errors.length > 0 && (
         <div className="alert err"><b>Fout:</b><ul style={{ paddingLeft: 18 }}>{r.errors.map((e) => <li key={e}>{e}</li>)}</ul></div>
       )}
@@ -34,9 +46,14 @@ export function ResultCard({ r }: { r: CalcResult }) {
           ))}
           <div className="pline"><span>Plaatsing</span><b>€{fmt(r.plaatsingTotaal)}</b></div>
           {r.bedieningTotaal > 0 && <div className="pline"><span>Bediening</span><b>€{fmt(r.bedieningTotaal)}</b></div>}
-          <button className="btn" style={{ width: '100%', marginTop: 10 }} onClick={() => add(r)}>
-            + Toevoegen aan offerte
-          </button>
+          {editing ? (
+            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <button className="btn" style={{ flex: 1 }} onClick={opslaan}>✓ Wijzigingen opslaan</button>
+              <button className="btn sec2" onClick={cancelEdit}>Annuleren</button>
+            </div>
+          ) : (
+            <button className="btn" style={{ width: '100%', marginTop: 10 }} onClick={opslaan}>+ Toevoegen aan offerte</button>
+          )}
         </>
       )}
     </div>

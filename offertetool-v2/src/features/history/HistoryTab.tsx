@@ -5,12 +5,15 @@ import { fmt } from '../../components/fields';
 
 export function HistoryTab({ goToOffer }: { goToOffer: () => void }) {
   const [offers, setOffers] = useState<SavedOffer[]>([]);
-  const [detail, setDetail] = useState<SavedOffer | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
   const [zoek, setZoek] = useState('');
   const [err, setErr] = useState('');
   const load = useOffer((s) => s.load);
 
   useEffect(() => watchOffers(setOffers, (e) => setErr(e.message)), []);
+
+  // Detail wordt live uit de realtime lijst afgeleid → volgt auto-bewaarde updates
+  const detail = offers.find((o) => o.id === detailId) ?? null;
 
   const list = offers.filter((o) => {
     const q = zoek.toLowerCase();
@@ -26,13 +29,11 @@ export function HistoryTab({ goToOffer }: { goToOffer: () => void }) {
     return (
       <div className="panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-          <button className="btn sec2 sm" onClick={() => setDetail(null)}>‹ Terug</button>
+          <button className="btn sec2 sm" onClick={() => setDetailId(null)}>‹ Terug</button>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn sm" onClick={() => {
-              load(d.items, d.klantNaam, d.hiddenCost, d.werkuren); goToOffer();
-            }}>✏ Laden & bewerken</button>
+            <button className="btn sm" onClick={() => { load(d); goToOffer(); }}>✏ Laden & bewerken</button>
             <button className="btn danger sm" onClick={() => {
-              if (confirm('Offerte verwijderen?')) { deleteOffer(d.id); setDetail(null); }
+              if (confirm('Offerte verwijderen?')) { deleteOffer(d.id); setDetailId(null); }
             }}>🗑 Verwijderen</button>
           </div>
         </div>
@@ -84,9 +85,11 @@ export function HistoryTab({ goToOffer }: { goToOffer: () => void }) {
       {list.length === 0 && <div style={{ color: 'var(--tx3)', textAlign: 'center', padding: 30 }}>
         {zoek ? 'Geen resultaten.' : 'Nog geen offertes opgeslagen.'}</div>}
       {list.map((o) => (
-        <div className="hist-card" key={o.id} onClick={() => setDetail(o)}>
+        <div className="hist-card" key={o.id} onClick={() => setDetailId(o.id)}>
           <div>
-            <div className="t">{o.klantNaam}</div>
+            <div className="t">{o.klantNaam}
+              {o.status === 'concept' && <span style={{ fontSize: 11, color: 'var(--amber)', fontWeight: 600, marginLeft: 8 }}>● concept (auto)</span>}
+            </div>
             <div className="s">{dt(o.date)} · ✍ {o.opsteller} · {o.items.length} artikel(s)
               {o.tlQuotationId ? ' · TL ✓' : ''}</div>
             <div className="s">{o.items.slice(0, 4).map((i) => `${i.product} ${i.type}`).join(' · ')}{o.items.length > 4 ? ' …' : ''}</div>
