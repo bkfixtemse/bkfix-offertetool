@@ -3,14 +3,21 @@ import { calcScreen, SCREEN_TYPES } from '../../calc/screen';
 import { Chk, Num, Sec, Sel, Txt } from '../../components/fields';
 import { KleurSelect } from '../../components/KleurSelect';
 import { ResultCard } from '../../components/ResultCard';
+import { useOffer } from '../../store/offerStore';
 import { BEDIENINGEN, margesVoor, SC_BEREIK, SC_DOEK, SC_GELEIDERS, SC_MOTOREN } from './common';
 
+const DEFAULT = {
+  type: 'Nova 83', aantal: 1, breedte: 0, hoogte: 0, plaatsing: 'idd' as 'idd' | 'odd',
+  geleider: '', onderlatHoog: false, borenJa: false, omkasting: 'recht' as 'recht' | 'afgerond',
+  motor: '', zonnepaneelJa: false, bereik: 'Goed', doek: 'standaard', koppelen: '' as '' | 'ja' | 'nee',
+  kleur: { select: '', custom: '' }, bed1: '', bed2: '', korting: 0, opmerkingen: '',
+};
+type State = typeof DEFAULT;
+
 export function ScreenForm() {
-  const [s, set] = useState({
-    type: 'Nova 83', aantal: 1, breedte: 0, hoogte: 0, plaatsing: 'idd' as 'idd' | 'odd',
-    geleider: '', onderlatHoog: false, borenJa: false, omkasting: 'recht' as 'recht' | 'afgerond',
-    motor: '', zonnepaneelJa: false, bereik: 'Goed', doek: 'standaard', koppelen: '' as '' | 'ja' | 'nee',
-    kleur: { select: '', custom: '' }, bed1: '', bed2: '', korting: 0, opmerkingen: '',
+  const [s, set] = useState<State>(() => {
+    const et = useOffer.getState().editTarget;
+    return et?.kind === 'screen' ? { ...DEFAULT, ...(et.input as Partial<State>) } : DEFAULT;
   });
   const u = (p: Partial<typeof s>) => set({ ...s, ...p });
   const isSolar = s.type === 'Nova solar 103';
@@ -71,7 +78,7 @@ export function ScreenForm() {
           </div>
         </Sec>
       </div>
-      {(s.breedte > 0 && s.hoogte > 0) && <ResultCard r={r} />}
+      {(s.breedte > 0 && s.hoogte > 0) && <ResultCard r={r} kind="screen" input={s} />}
     </>
   );
 }

@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react';
-import { genId, offerTotals, useOffer } from '../../store/offerStore';
+import { offerTotals, useOffer } from '../../store/offerStore';
 import { useAuth, opstellerNaam } from '../../store/authStore';
 import { fmt, Num } from '../../components/fields';
+import { LooseArticle } from './LooseArticle';
 import { listTaxRates, searchDeals, tlCall, type TlDeal, type TlTaxRate } from '../../teamleader/api';
 import { tlClientId, tlDisconnect, tlIsConnected, tlStartAuth } from '../../teamleader/oauth';
 import { buildQuotationPayload } from '../../teamleader/payload';
 import { downloadBestelbon } from '../../excel/bestelbon';
-import { saveOffer, type SavedOffer } from '../../firebase/offers';
 import { saveTlSettings, watchTlSettings, type TlSettings } from '../../firebase/settings';
 
 export function OfferPanel() {
-  const { items, klantNaam, hiddenCost, werkuren, remove, clear, setKlant, setHidden, setWerkuren } = useOffer();
+  const { items, klantNaam, hiddenCost, werkuren, draftId, remove, clear, setKlant, setHidden, setWerkuren, startEdit, persist } = useOffer();
   const user = useAuth((s) => s.user);
+  const opsteller = opstellerNaam(user);
   const t = offerTotals(items, hiddenCost, werkuren);
 
-  // Teamleader-staat
   const [connected, setConnected] = useState(tlIsConnected());
   const [clientId, setClientId] = useState(tlClientId());
   const [clientSecret, setClientSecret] = useState('');
@@ -34,25 +34,13 @@ export function OfferPanel() {
     if (s.defaultTaxRateId && !taxRateId) setTaxRateId(s.defaultTaxRateId);
   }), []);
 
-  useEffect(() => {
-    if (connected) listTaxRates().then(setTaxRates).catch(() => {});
-  }, [connected]);
+  useEffect(() => { if (connected) listTaxRates().then(setTaxRates).catch(() => {}); }, [connected]);
 
   useEffect(() => {
     if (!connected || dealTerm.length < 2) { setDeals([]); return; }
     const h = setTimeout(() => searchDeals(dealTerm).then(setDeals).catch(() => {}), 350);
     return () => clearTimeout(h);
   }, [dealTerm, connected]);
-
-  async function bewaarOfferte(tlQuotationId: string | null) {
-    const o: SavedOffer = {
-      id: genId(), date: new Date().toISOString(), opsteller: opstellerNaam(user),
-      klantNaam: klantNaam || deal?.title || '—', tlQuotationId,
-      items, hiddenCost, werkuren,
-      totaalVerkoop: t.verkoop, totaalAankoop: t.aankoop,
-    };
-    await saveOffer(o);
-  }
 
   async function exporteer() {
     if (!deal) { setMsg('Selecteer eerst een deal'); return; }
@@ -62,7 +50,7 @@ export function OfferPanel() {
       const payload = buildQuotationPayload(items, deal.id, taxRateId, layoutId, hiddenCost, werkuren);
       const res = await tlCall('quotations.create', payload);
       const qid = res.data?.id ?? null;
-      await bewaarOfferte(qid);
+      await persist(opsteller, { finalize: true, tlQuotationId: qid });
       downloadBestelbon(items, klantNaam || deal.title);
       await saveTlSettings({ ...tlSet, defaultTaxRateId: taxRateId });
       setMsg(`✓ Offerte aangemaakt in Teamleader (${deal.title})`);
@@ -73,7 +61,10 @@ export function OfferPanel() {
 
   return (
     <div className="panel">
-      <h2>Offerte</h2>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+        <h2>Offerte</h2>
+        {draftId && items.length > 0 && <span style={{ fontSize: 11, color: 'var(--green)' }}>✓ automatisch bewaard</span>}
+      </div>
       <div className="fld" style={{ marginBottom: 10 }}>
         <label>Klant</label>
         <input value={klantNaam} placeholder="Naam klant" onChange={(e) => setKlant(e.target.value)} />
@@ -88,11 +79,16 @@ export function OfferPanel() {
               <span className="pr">€{fmt(it.uwVerkoop)}</span>
             </div>
             <div className="meta">
-              {it.aantal}× · {it.breedte}×{it.hoogte ?? it.uitval}mm · aankoop €{fmt(it.aankoop)}
+              {it.aantal}×{it.breedte ? ` · ${it.breedte}×${it.hoogte ?? it.uitval}mm` : ''} · aankoop €{fmt(it.aankoop)}
             </div>
-            <button className="btn sm danger" style={{ marginTop: 6 }} onClick={() => remove(it.id)}>Verwijder</button>
+            <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+              <button className="btn sec2 sm" onClick={() => startEdit(it)}>✎ Bewerken</button>
+              <button className="btn danger sm" onClick={() => remove(it.id)}>Verwijder</button>
+            </div>
           </div>
         ))}
+
+      <LooseArticle />
 
       <div className="sec" style={{ marginTop: 12 }}>
         <h3>Verborgen kost & werkuren</h3>
@@ -113,10 +109,21 @@ export function OfferPanel() {
           <div className="pline"><span>BTW 6%</span><b>€{fmt(t.btw)}</b></div>
           <div className="pline" style={{ color: 'var(--amber)' }}><span>Totale aankoop</span><b>€{fmt(t.aankoop)}</b></div>
           <div className="grand"><span>Totaal incl. BTW</span><span>€{fmt(t.totaal)}</span></div>
+
+          <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 8, padding: '10px 12px', marginTop: 10 }}>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', color: '#047857', letterSpacing: '.4px', fontWeight: 700 }}>
+              Totale marge (product + plaatsing)
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--green)' }}>
+              €{fmt(t.werkelijkeWinst)} <span style={{ fontSize: 13, fontWeight: 700 }}>({fmt(t.winstPct, 1)}%)</span>
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--tx3)' }}>omzet − aankoop · werkuren worden apart aangerekend (aan kostprijs)</div>
+          </div>
+
           <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-            <button className="btn sec2 sm" onClick={() => bewaarOfferte(null).then(() => setMsg('✓ Bewaard in historie'))}>💾 Bewaren</button>
+            <button className="btn sec2 sm" onClick={() => persist(opsteller, { finalize: true }).then(() => setMsg('✓ Definitief bewaard'))}>💾 Bewaren</button>
             <button className="btn sec2 sm" onClick={() => downloadBestelbon(items, klantNaam)}>📄 Bestelbon</button>
-            <button className="btn danger sm" onClick={() => { if (confirm('Offerte wissen?')) clear(); }}>Wissen</button>
+            <button className="btn danger sm" onClick={() => { if (confirm('Offerte wissen? (de auto-bewaarde versie blijft in de historie)')) clear(); }}>Nieuw</button>
           </div>
         </div>
       )}

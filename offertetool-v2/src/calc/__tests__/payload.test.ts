@@ -13,7 +13,7 @@ const mk = (over: Partial<Parameters<typeof calcRolluik>[0]> = {}): OfferItem =>
     borenJa: false, zonnepaneelJa: false, kleur: { select: '', custom: '' }, kleurOmkasting: '',
     bediening: { bed1: '', bed2: '' }, opmerkingen: '', vrijeOpties: [], marges: M50, ...over,
   }),
-  id: 'x1',
+  id: 'x1', kind: 'rolluik' as const, input: {},
 });
 
 describe('TL payload', () => {

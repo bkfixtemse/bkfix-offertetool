@@ -84,9 +84,15 @@ export interface CalcResult {
   kleur: KleurKeuze;
 }
 
-/** Eén regel op de offerte (= CalcResult + id). */
+/** Welk formulier/tab een offerte-item hoort — bepaalt waar het bewerkt wordt. */
+export type ProductKind = 'rolluik' | 'screen' | 'knikarm' | 'veranda' | 'bediening' | 'artikel';
+
+/** Eén regel op de offerte (= CalcResult + id + herkomst + ruwe invoer voor bewerken). */
 export interface OfferItem extends CalcResult {
   id: string;
+  kind: ProductKind;
+  /** Ruwe formulier-invoer, zodat het item terug in zijn formulier geladen kan worden. */
+  input: unknown;
 }
 
 export interface VrijeOptie {

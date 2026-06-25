@@ -9,6 +9,8 @@ import { OfferPanel } from './features/offer/OfferPanel';
 import { HistoryTab } from './features/history/HistoryTab';
 import { useAuth, opstellerNaam } from './store/authStore';
 import { startSettingsSync } from './store/settingsStore';
+import { startArticlesSync } from './store/articlesStore';
+import { useOffer } from './store/offerStore';
 import { SettingsTab } from './features/settings/SettingsTab';
 import { tlHandleCallback } from './teamleader/oauth';
 
@@ -28,13 +30,40 @@ export default function App() {
   const [tlMsg, setTlMsg] = useState('');
   const { user, logout } = useAuth();
 
+  const editTarget = useOffer((s) => s.editTarget);
+  const cancelEdit = useOffer((s) => s.cancelEdit);
+  const persist = useOffer((s) => s.persist);
+  const items = useOffer((s) => s.items);
+  const klantNaam = useOffer((s) => s.klantNaam);
+  const hiddenCost = useOffer((s) => s.hiddenCost);
+  const werkuren = useOffer((s) => s.werkuren);
+  const draftFinalized = useOffer((s) => s.draftFinalized);
+
   useEffect(() => {
     tlHandleCallback()
       .then((ok) => { if (ok) setTlMsg('✓ Verbonden met Teamleader'); })
       .catch((e) => setTlMsg(`Teamleader-koppeling mislukt: ${e.message}`));
   }, []);
 
-  useEffect(() => { if (user) startSettingsSync(); }, [user]);
+  useEffect(() => { if (user) { startSettingsSync(); startArticlesSync(); } }, [user]);
+
+  // Item bewerken → spring naar zijn tab (los artikel blijft in het offertepaneel)
+  useEffect(() => {
+    if (editTarget && editTarget.kind !== 'artikel') setTab(editTarget.kind);
+  }, [editTarget?.id]);
+
+  // Auto-bewaren: 1,5s na de laatste wijziging, zolang er items zijn en de offerte
+  // nog niet definitief is (definitief bewaard/geëxporteerd = bevroren, niet stil overschrijven)
+  useEffect(() => {
+    if (!user || items.length === 0 || draftFinalized) return;
+    const h = setTimeout(() => { persist(opstellerNaam(user)).catch(() => {}); }, 1500);
+    return () => clearTimeout(h);
+  }, [items, klantNaam, hiddenCost, werkuren, user, draftFinalized]);
+
+  // Van tab wisselen annuleert een lopende bewerking
+  const onTab = (k: TabKey) => { cancelEdit(); setTab(k); };
+
+  const editKey = editTarget?.id ?? 'new';
 
   return (
     <LoginGate>
@@ -48,9 +77,9 @@ export default function App() {
         </div>
         {tlMsg && <div className={`alert ${tlMsg.startsWith('✓') ? 'info' : 'err'}`}>{tlMsg}</div>}
         <div className="tabs">
-          {TABS.map((t) => (
-            <button key={t.k} className={`tab ${tab === t.k ? 'active' : ''} ${'right' in t && t.right ? 'right' : ''}`}
-              onClick={() => setTab(t.k)}>{t.t}</button>
+          {TABS.map((tb) => (
+            <button key={tb.k} className={`tab ${tab === tb.k ? 'active' : ''} ${'right' in tb && tb.right ? 'right' : ''}`}
+              onClick={() => onTab(tb.k)}>{tb.t}</button>
           ))}
         </div>
         {tab === 'historie' ? (
@@ -60,11 +89,11 @@ export default function App() {
         ) : (
           <div className="layout">
             <div>
-              {tab === 'rolluik' && <RolluikForm />}
-              {tab === 'screen' && <ScreenForm />}
-              {tab === 'knikarm' && <KnikarmForm />}
-              {tab === 'veranda' && <VerandaForm />}
-              {tab === 'bediening' && <BedieningForm />}
+              {tab === 'rolluik' && <RolluikForm key={`rolluik-${editKey}`} />}
+              {tab === 'screen' && <ScreenForm key={`screen-${editKey}`} />}
+              {tab === 'knikarm' && <KnikarmForm key={`knikarm-${editKey}`} />}
+              {tab === 'veranda' && <VerandaForm key={`veranda-${editKey}`} />}
+              {tab === 'bediening' && <BedieningForm key={`bediening-${editKey}`} />}
             </div>
             <OfferPanel />
           </div>

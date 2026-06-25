@@ -8,7 +8,7 @@ import type { Werkuren } from '../store/offerStore';
 
 export interface SavedOffer {
   id: string;
-  date: string;          // ISO
+  date: string;          // ISO (laatst bijgewerkt)
   opsteller: string;
   klantNaam: string;
   tlQuotationId: string | null;
@@ -17,6 +17,8 @@ export interface SavedOffer {
   werkuren: Werkuren;
   totaalVerkoop: number;
   totaalAankoop: number;
+  /** 'concept' = automatisch bewaard tijdens opbouw · 'definitief' = handmatig bewaard/geëxporteerd. */
+  status: 'concept' | 'definitief';
 }
 
 export async function saveOffer(offer: SavedOffer): Promise<void> {

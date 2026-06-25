@@ -3,9 +3,16 @@ import { BEDIENING_TYPES, calcAfstandsbediening } from '../../calc/afstandsbedie
 import opties from '../../data/opties.json';
 import { Num, Sec, Sel, Txt } from '../../components/fields';
 import { ResultCard } from '../../components/ResultCard';
+import { useOffer } from '../../store/offerStore';
+
+const DEFAULT = { type: BEDIENING_TYPES[0], aantal: 1, korting: 0, opmerkingen: '' };
+type State = typeof DEFAULT;
 
 export function BedieningForm() {
-  const [s, set] = useState({ type: BEDIENING_TYPES[0], aantal: 1, korting: 0, opmerkingen: '' });
+  const [s, set] = useState<State>(() => {
+    const et = useOffer.getState().editTarget;
+    return et?.kind === 'bediening' ? { ...DEFAULT, ...(et.input as Partial<State>) } : DEFAULT;
+  });
   const u = (p: Partial<typeof s>) => set({ ...s, ...p });
   const prijzen = (opties as any).algemene.bediening as Record<string, number>;
 
@@ -28,7 +35,7 @@ export function BedieningForm() {
           </div>
         </Sec>
       </div>
-      <ResultCard r={r} />
+      <ResultCard r={r} kind="bediening" input={s} />
     </>
   );
 }
