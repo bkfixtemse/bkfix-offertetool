@@ -7,13 +7,13 @@ import { Num, Sec, Sel, Txt } from '../../components/fields';
 import { KleurSelect } from '../../components/KleurSelect';
 import { ResultCard } from '../../components/ResultCard';
 import { useOffer } from '../../store/offerStore';
-import { BEDIENINGEN, BEREIK_ALG, margesVoor, VR_DOEK, VR_GEVEL } from './common';
+import { BEREIK_ALG, margesVoor, VR_DOEK, VR_GEVEL } from './common';
 
 const DEFAULT = {
   type: VERANDA_TYPES[0], aantal: 1, breedte: 0, uitval: 0,
   motor: 'Sunea io' as 'Sunea io' | 'Orea WT', steun: 'Geen', steunAantal: 0,
   mkabel: '' as '' | 'ja' | 'nee', gevel: '', doek: '', bereik: '', led: '',
-  kleur: { select: '', custom: '' }, bed1: '', bed2: '', korting: 0, opmerkingen: '',
+  kleur: { select: '', custom: '' }, korting: 0, opmerkingen: '',
 };
 type State = typeof DEFAULT;
 
@@ -28,7 +28,7 @@ export function VerandaForm() {
   const inst = useSettings((st) => st.s);
 
   const r = calcVeranda({
-    ...s, extras: [], bediening: { bed1: s.bed1, bed2: s.bed2 },
+    ...s, extras: [], bediening: { bed1: '', bed2: '' },
     vrijeOpties: [], marges: margesVoor('pergola', s.korting),
     plaatsingVast: PERGOLA_TYPES.includes(s.type) ? inst.plaatsingPergola : inst.plaatsingSerre,
   });
@@ -70,15 +70,11 @@ export function VerandaForm() {
             )}
           </div>
         </Sec>
-        <Sec title="Kleur, bediening & korting">
+        <Sec title="Kleur & korting">
           <div className="grid2">
             <KleurSelect label="Kleur frame" value={s.kleur} onChange={(kleur) => u({ kleur })} />
           </div>
-          <div className="grid3" style={{ marginTop: 10 }}>
-            <Sel label="Bediening 1" value={s.bed1} onChange={(bed1) => u({ bed1 })}
-              options={BEDIENINGEN.map((b) => ({ v: b, t: b || '(geen)' }))} />
-            <Sel label="Bediening 2" value={s.bed2} onChange={(bed2) => u({ bed2 })}
-              options={BEDIENINGEN.map((b) => ({ v: b, t: b || '(geen)' }))} />
+          <div className="grid2" style={{ marginTop: 10 }}>
             <Num label="Eenmalige korting (€)" value={s.korting} onChange={(korting) => u({ korting })} />
           </div>
           <div style={{ marginTop: 10 }}>

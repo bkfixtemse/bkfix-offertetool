@@ -4,13 +4,13 @@ import { Chk, Num, Sec, Sel, Txt } from '../../components/fields';
 import { KleurSelect } from '../../components/KleurSelect';
 import { ResultCard } from '../../components/ResultCard';
 import { useOffer } from '../../store/offerStore';
-import { BEDIENINGEN, margesVoor, SC_BEREIK, SC_DOEK, SC_GELEIDERS, SC_MOTOREN } from './common';
+import { margesVoor, SC_BEREIK, SC_DOEK, SC_GELEIDERS, SC_MOTOREN } from './common';
 
 const DEFAULT = {
   type: 'Nova 83', aantal: 1, breedte: 0, hoogte: 0, plaatsing: 'idd' as 'idd' | 'odd',
   geleider: '', onderlatHoog: false, borenJa: false, omkasting: 'recht' as 'recht' | 'afgerond',
   motor: '', zonnepaneelJa: false, bereik: 'Goed', doek: 'standaard', koppelen: '' as '' | 'ja' | 'nee',
-  kleur: { select: '', custom: '' }, bed1: '', bed2: '', korting: 0, opmerkingen: '',
+  kleur: { select: '', custom: '' }, korting: 0, opmerkingen: '',
 };
 type State = typeof DEFAULT;
 
@@ -23,7 +23,7 @@ export function ScreenForm() {
   const isSolar = s.type === 'Nova solar 103';
 
   const r = calcScreen({
-    ...s, bediening: { bed1: s.bed1, bed2: s.bed2 },
+    ...s, bediening: { bed1: '', bed2: '' },
     vrijeOpties: [], marges: margesVoor('standaard', s.korting),
   });
 
@@ -62,15 +62,11 @@ export function ScreenForm() {
             {isSolar && <Chk label="Extern zonnepaneel (+€70)" value={s.zonnepaneelJa} onChange={(zonnepaneelJa) => u({ zonnepaneelJa })} />}
           </div>
         </Sec>
-        <Sec title="Kleur, bediening & korting">
+        <Sec title="Kleur & korting">
           <div className="grid2">
             <KleurSelect label="RAL-kleur" value={s.kleur} onChange={(kleur) => u({ kleur })} />
           </div>
-          <div className="grid3" style={{ marginTop: 10 }}>
-            <Sel label="Bediening 1" value={s.bed1} onChange={(bed1) => u({ bed1 })}
-              options={BEDIENINGEN.map((b) => ({ v: b, t: b || '(geen)' }))} />
-            <Sel label="Bediening 2" value={s.bed2} onChange={(bed2) => u({ bed2 })}
-              options={BEDIENINGEN.map((b) => ({ v: b, t: b || '(geen)' }))} />
+          <div className="grid2" style={{ marginTop: 10 }}>
             <Num label="Eenmalige korting (€)" value={s.korting} onChange={(korting) => u({ korting })} />
           </div>
           <div style={{ marginTop: 10 }}>
