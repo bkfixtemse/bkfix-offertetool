@@ -27,6 +27,17 @@ export interface KnikarmInput {
   opmerkingen: string;
   vrijeOpties: VrijeOptie[];
   marges: Marges;
+  // Bestelspecificaties (geen prijsimpact — enkel voor de bestelbon)
+  typeBediening?: string;
+  motorkabelUitvoering?: string;
+  bedieningskant?: string;
+  volantType?: string;
+  doekAfwerking?: string;
+  volantHoogte?: string;
+  varioVolant?: boolean;
+  ledUitvoering?: string;
+  verlengdeSteunen?: string;
+  doekCode?: string;
 }
 
 export function calcKnikarm(inp: KnikarmInput): CalcResult {
@@ -132,6 +143,16 @@ export function calcKnikarm(inp: KnikarmInput): CalcResult {
       muurstripJa: inp.muurstripJa && muurstripBeschikbaar,
       doek: inp.doek,
       led: inp.led,
+      typeBediening: inp.typeBediening ?? '',
+      motorkabelUitvoering: inp.motorkabelUitvoering ?? '',
+      bedieningskant: inp.bedieningskant ?? '',
+      volantType: inp.volantType ?? '',
+      doekAfwerking: inp.doekAfwerking ?? '',
+      volantHoogte: inp.volantHoogte ?? '',
+      varioVolant: inp.varioVolant ?? false,
+      ledUitvoering: inp.ledUitvoering ?? '',
+      verlengdeSteunen: inp.verlengdeSteunen ?? '',
+      doekCode: inp.doekCode ?? '',
     },
     bediening: inp.bediening,
     kleur: inp.kleur,

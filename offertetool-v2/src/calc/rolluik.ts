@@ -58,6 +58,13 @@ export interface RolluikInput {
   opmerkingen: string;
   vrijeOpties: VrijeOptie[];
   marges: Marges;
+  // Bestelspecificaties (geen prijsimpact — enkel voor de bestelbon)
+  bedieningskant?: string;
+  handBediening?: string;
+  motorkabelUitvoering?: string;
+  kabeluitvoer?: string;
+  geleiderRechts?: string;
+  voorborenZijde?: string;
 }
 
 export function calcRolluik(inp: RolluikInput): CalcResult {
@@ -190,6 +197,12 @@ export function calcRolluik(inp: RolluikInput): CalcResult {
       kleurOmkasting: inp.kleurOmkasting,
       kasthoogte,
       isSolar,
+      bedieningskant: inp.bedieningskant ?? '',
+      handBediening: inp.handBediening ?? '',
+      motorkabelUitvoering: inp.motorkabelUitvoering ?? '',
+      kabeluitvoer: inp.kabeluitvoer ?? '',
+      geleiderRechts: inp.geleiderRechts ?? '',
+      voorborenZijde: inp.voorborenZijde ?? '',
     },
     bediening: inp.bediening,
     kleur: inp.kleur,

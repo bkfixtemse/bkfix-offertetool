@@ -10,7 +10,10 @@ const DEFAULT = {
   type: 'Nova 83', aantal: 1, breedte: 0, hoogte: 0, plaatsing: 'idd' as 'idd' | 'odd',
   geleider: '', onderlatHoog: false, borenJa: false, omkasting: 'recht' as 'recht' | 'afgerond',
   motor: '', zonnepaneelJa: false, bereik: 'Goed', doek: 'standaard', koppelen: '' as '' | 'ja' | 'nee',
-  kleur: { select: '', custom: '' }, korting: 0, opmerkingen: '',
+  kleur: { select: '', custom: '' },
+  standaardZip: 'Zip', motorkabelUitvoering: '', kabeluitvoer: '', motorzijde: '', voorzijdeDoek: '',
+  doekCode: '', geleiderRechts: '', voorborenZijde: '', raamvlakType: '', raamvlakA: '', raamvlakB: '',
+  korting: 0, opmerkingen: '',
 };
 type State = typeof DEFAULT;
 
@@ -60,6 +63,30 @@ export function ScreenForm() {
             <Chk label="Hoge verzwaarde onderlat (+€15)" value={s.onderlatHoog} onChange={(onderlatHoog) => u({ onderlatHoog })} />
             <Chk label="Geleiders boren (+€12)" value={s.borenJa} onChange={(borenJa) => u({ borenJa })} />
             {isSolar && <Chk label="Extern zonnepaneel (+€70)" value={s.zonnepaneelJa} onChange={(zonnepaneelJa) => u({ zonnepaneelJa })} />}
+          </div>
+        </Sec>
+        <Sec title="Bestelspecificaties (Allround-bestelbon)">
+          <div className="grid3">
+            <Sel label="Uitvoering" value={s.standaardZip} onChange={(standaardZip) => u({ standaardZip })}
+              options={['Standaard', 'Zip'].map((v) => ({ v, t: v }))} />
+            <Sel label="Motorkabel uitvoering" value={s.motorkabelUitvoering} onChange={(motorkabelUitvoering) => u({ motorkabelUitvoering })}
+              options={['', 'Standaard', 'Werkstekker', '5m1 wit', '10m1 wit', '5m1 zwart'].map((v) => ({ v, t: v || '(n.v.t.)' }))} />
+            <Sel label="Kabeluitvoer" value={s.kabeluitvoer} onChange={(kabeluitvoer) => u({ kabeluitvoer })}
+              options={['', 'Standaard', 'Kapsteun', 'Geleider', 'Bovenuit', 'Voorkap', 'Geen'].map((v) => ({ v, t: v || '(n.v.t.)' }))} />
+            <Sel label="Motorzijde" value={s.motorzijde} onChange={(motorzijde) => u({ motorzijde })}
+              options={['', 'Links', 'Rechts'].map((v) => ({ v, t: v || '(n.v.t.)' }))} />
+            <Sel label="Voorzijde doek" value={s.voorzijdeDoek} onChange={(voorzijdeDoek) => u({ voorzijdeDoek })}
+              options={['', 'A', 'B'].map((v) => ({ v, t: v || '(n.v.t.)' }))} />
+            <Sel label="Voorboren zijde" value={s.voorborenZijde} onChange={(voorborenZijde) => u({ voorborenZijde })}
+              options={['', 'Beide', 'Links', 'Rechts'].map((v) => ({ v, t: v || '(n.v.t.)' }))} />
+            <Txt label="Kleurcode doek" value={s.doekCode} placeholder="bv. 0202" onChange={(doekCode) => u({ doekCode })} />
+            <Txt label="Geleider rechts (afwijkend)" value={s.geleiderRechts} onChange={(geleiderRechts) => u({ geleiderRechts })} />
+          </div>
+          <div className="grid3" style={{ marginTop: 10 }}>
+            <Sel label="Raamvlak" value={s.raamvlakType} onChange={(raamvlakType) => u({ raamvlakType })}
+              options={['', 'Nova 103', 'Nova 123'].map((v) => ({ v, t: v || '(geen)' }))} />
+            <Txt label="Raamvlak afm. A (mm)" value={s.raamvlakA} onChange={(raamvlakA) => u({ raamvlakA })} />
+            <Txt label="Raamvlak afm. B (mm)" value={s.raamvlakB} onChange={(raamvlakB) => u({ raamvlakB })} />
           </div>
         </Sec>
         <Sec title="Kleur & korting">
