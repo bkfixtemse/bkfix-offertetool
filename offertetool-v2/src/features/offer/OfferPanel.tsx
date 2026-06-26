@@ -7,6 +7,7 @@ import { listTaxRates, searchDeals, tlCall, type TlDeal, type TlTaxRate } from '
 import { tlClientId, tlDisconnect, tlIsConnected, tlStartAuth } from '../../teamleader/oauth';
 import { buildQuotationPayload } from '../../teamleader/payload';
 import { downloadBestelbon } from '../../excel/bestelbon';
+import { genAllroundBestelbonnen, SJABLONEN } from '../../excel/allroundBestelbon';
 import { saveTlSettings, watchTlSettings, type TlSettings } from '../../firebase/settings';
 
 export function OfferPanel() {
@@ -57,6 +58,20 @@ export function OfferPanel() {
     } catch (e: any) {
       setMsg(`Export mislukt: ${e.message}`);
     } finally { setBusy(false); }
+  }
+
+  async function genBestelbonnen() {
+    setMsg('');
+    try {
+      const namen = await genAllroundBestelbonnen(items, klantNaam);
+      const rest = items.filter((it) => !SJABLONEN[it.product]); // veranda/bediening/artikel
+      if (rest.length) downloadBestelbon(rest, klantNaam);
+      setMsg(namen.length
+        ? `✓ ${namen.length} Allround-bestelbon(nen) gedownload${rest.length ? ' + 1 algemene' : ''}`
+        : '✓ Bestelbon gedownload');
+    } catch (e: any) {
+      setMsg(`Bestelbon mislukt: ${e.message}`);
+    }
   }
 
   return (
@@ -122,7 +137,7 @@ export function OfferPanel() {
 
           <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
             <button className="btn sec2 sm" onClick={() => persist(opsteller, { finalize: true }).then(() => setMsg('✓ Definitief bewaard'))}>💾 Bewaren</button>
-            <button className="btn sec2 sm" onClick={() => downloadBestelbon(items, klantNaam)}>📄 Bestelbon</button>
+            <button className="btn sec2 sm" onClick={genBestelbonnen}>📄 Bestelbon</button>
             <button className="btn danger sm" onClick={() => { if (confirm('Offerte wissen? (de auto-bewaarde versie blijft in de historie)')) clear(); }}>Nieuw</button>
           </div>
         </div>
