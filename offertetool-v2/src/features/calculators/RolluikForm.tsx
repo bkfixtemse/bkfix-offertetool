@@ -17,6 +17,8 @@ const DEFAULT = {
   koppelen: '', bereik: 'Goed', onderlat: 'Design onderlat',
   borenJa: false, zonnepaneelJa: false,
   kleur: { select: '', custom: '' }, kleurOmkasting: '',
+  bedieningskant: '', handBediening: '', motorkabelUitvoering: '', kabeluitvoer: '',
+  geleiderRechts: '', voorborenZijde: '',
   korting: 0, opmerkingen: '',
 };
 type State = typeof DEFAULT;
@@ -80,6 +82,22 @@ export function RolluikForm() {
           </div>
           <div className="grid2" style={{ marginTop: 10 }}>
             <KleurSelect label="RAL-kleur (omkasting/geleiders/onderlat)" value={s.kleur} onChange={(kleur) => u({ kleur })} />
+          </div>
+        </Sec>
+        <Sec title="Bestelspecificaties (Allround-bestelbon)">
+          <div className="grid3">
+            <Sel label="Bedieningskant" value={s.bedieningskant} onChange={(bedieningskant) => u({ bedieningskant })}
+              options={['', 'Rechts', 'Links'].map((v) => ({ v, t: v || '(n.v.t.)' }))} />
+            <Sel label="Handmatige bediening" value={s.handBediening} onChange={(handBediening) => u({ handBediening })}
+              options={['', 'Band binnen', 'Mono binnen', 'Band buiten', 'Oogwindwerk buiten'].map((v) => ({ v, t: v || '(geen)' }))} />
+            <Sel label="Motorkabel uitvoering" value={s.motorkabelUitvoering} onChange={(motorkabelUitvoering) => u({ motorkabelUitvoering })}
+              options={['', 'Standaard', 'Werkstekker', '5m1 wit', '10m1 wit', '5m1 zwart'].map((v) => ({ v, t: v || '(n.v.t.)' }))} />
+            <Sel label="Kabeluitvoer" value={s.kabeluitvoer} onChange={(kabeluitvoer) => u({ kabeluitvoer })}
+              options={['', 'Standaard', 'Kapsteun', 'Geleider', 'Bovenuit', 'Voorkap', 'Niet uitvoeren'].map((v) => ({ v, t: v || '(n.v.t.)' }))} />
+            <Sel label="Voorboren zijde" value={s.voorborenZijde} onChange={(voorborenZijde) => u({ voorborenZijde })}
+              options={['', 'Beide', 'Links', 'Rechts'].map((v) => ({ v, t: v || '(n.v.t.)' }))} />
+            <Txt label="Geleider rechts (indien afwijkend)" value={s.geleiderRechts} placeholder="bv. HTF-67"
+              onChange={(geleiderRechts) => u({ geleiderRechts })} />
           </div>
         </Sec>
         <Sec title="Korting & opmerkingen">

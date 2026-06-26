@@ -35,6 +35,18 @@ export interface ScreenInput {
   opmerkingen: string;
   vrijeOpties: VrijeOptie[];
   marges: Marges;
+  // Bestelspecificaties (geen prijsimpact — enkel voor de bestelbon)
+  standaardZip?: string;
+  motorkabelUitvoering?: string;
+  kabeluitvoer?: string;
+  motorzijde?: string;
+  voorzijdeDoek?: string;
+  doekCode?: string;
+  geleiderRechts?: string;
+  voorborenZijde?: string;
+  raamvlakType?: string;
+  raamvlakA?: string;
+  raamvlakB?: string;
 }
 
 export function calcScreen(inp: ScreenInput): CalcResult {
@@ -148,6 +160,17 @@ export function calcScreen(inp: ScreenInput): CalcResult {
       motor,
       doek: inp.doek,
       isSolar,
+      standaardZip: inp.standaardZip ?? '',
+      motorkabelUitvoering: inp.motorkabelUitvoering ?? '',
+      kabeluitvoer: inp.kabeluitvoer ?? '',
+      motorzijde: inp.motorzijde ?? '',
+      voorzijdeDoek: inp.voorzijdeDoek ?? '',
+      doekCode: inp.doekCode ?? '',
+      geleiderRechts: inp.geleiderRechts ?? '',
+      voorborenZijde: inp.voorborenZijde ?? '',
+      raamvlakType: inp.raamvlakType ?? '',
+      raamvlakA: inp.raamvlakA ?? '',
+      raamvlakB: inp.raamvlakB ?? '',
     },
     bediening: inp.bediening,
     kleur: inp.kleur,
