@@ -117,6 +117,42 @@ function verandaDesc(it: OfferItem): string {
   return h + '</ul>';
 }
 
+/**
+ * Glazen schuifwand (ES75 / Deponti Fiano). Stramien overgenomen uit offerte 2026/3953:
+ * glassoort, onderrail, meenemers/borstels, aantal sporen, kleur profielen en deurgreep.
+ */
+function glaswandDesc(it: OfferItem): string {
+  const d = it.detail;
+  const kleur = kleurLabel(it.kleur);
+  const merk = String(d.merk || '');
+  const titel = merk === 'Deponti' ? "Glazen schuifwand 'Deponti Fiano'" : "Glazen schuifwand 'ES 75'";
+  const panelen = Number(d.aantalPanelen || 0);
+  let h = `<p><strong>${titel}</strong></p>`;
+  h += '<p>ESG gehard veiligheidsglas 10mm — onderrail met lage opstap.</p>';
+  h += UL;
+  h += `<li>Afmetingen (breedte × hoogte): <strong>${it.breedte}×${it.hoogte}mm</strong></li>`;
+  h += `<li>Panelen:${UL2}<li>Aantal: <strong>${panelen}</strong></li>`;
+  h += `<li>Paneelbreedte: ${d.paneelBreedte}mm</li>`;
+  if (Number(d.overlap) > 0) h += `<li>Overlap: ${d.overlap}mm</li>`;
+  h += '</ul></li>';
+  h += `<li>Glas:${UL2}<li>10mm gehard veiligheidsglas, rondom geslepen</li>`;
+  if (merk !== 'Deponti' && d.glastype) h += `<li>Glastype: <strong>${d.glastype}</strong></li>`;
+  if (d.uitvoering === 'maatwerk') h += '<li>Maatwerkglas</li>';
+  h += '</ul></li>';
+  h += `<li>Onderrail:${UL2}<li>Aantal sporen: <strong>${d.sporen || panelen}</strong></li>`;
+  if (d.raillengte) h += `<li>Raillengte: ${d.raillengte}mm</li>`;
+  h += '</ul></li>';
+  h += `<li>Kleur profielen:${UL2}<li>Gekozen kleur: <strong>${kleur || 'nader te bepalen'}</strong></li></ul></li>`;
+  if (d.steellook) h += '<li>Steel-look glasroeden</li>';
+  if (d.sluiting) h += `<li>${d.sluiting}</li>`;
+  // Uit detail.optiesTekst en niet uit it.options: die laatste bevat ook interne regels, en een
+  // filter op trefwoorden liet betaalde opties weg én kon een inkoopbedrag doorlaten.
+  const extra = String(d.optiesTekst || '').split(' · ').map((x) => x.trim()).filter(Boolean);
+  if (extra.length > 0) h += `<li>Inbegrepen:${UL2}${extra.map((e) => `<li>${e}</li>`).join('')}</ul></li>`;
+  if (it.opmerkingen) h += `<li>Opmerkingen: ${it.opmerkingen}</li>`;
+  return h + '</ul>';
+}
+
 /** Route naar de juiste omschrijving; nooit leeg (TL-API eis). */
 export function tlDescription(it: OfferItem): string {
   let desc = '';
@@ -125,6 +161,7 @@ export function tlDescription(it: OfferItem): string {
     case 'Screen': desc = screenDesc(it); break;
     case 'Knikarmscherm': desc = knikarmDesc(it); break;
     case 'Veranda': desc = verandaDesc(it); break;
+    case 'Glazen schuifwand': desc = glaswandDesc(it); break;
     case 'Afstandsbediening': desc = `${it.type} (draadloze zender)`; break;
   }
   if (!desc.trim()) {

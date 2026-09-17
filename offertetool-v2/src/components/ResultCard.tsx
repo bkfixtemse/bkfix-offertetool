@@ -36,7 +36,11 @@ export function ResultCard({ r, kind, input }: { r: CalcResult; kind: ProductKin
             <div className="kpi"><div className="l">Marge</div><div className="v">€{fmt(marge)} <span style={{ fontSize: 12, color: 'var(--tx3)', fontWeight: 600 }}>({fmt(margePct, 1)}%)</span></div></div>
           </div>
           {r.bestelmaat && (
-            <div className="pline"><span>Bestelmaat (fabrikant)</span><b>{r.bestelmaat.b}×{r.bestelmaat.h}mm</b></div>
+            <div className="pline">
+              <span>Bestelmaat (fabrikant)</span>
+              {/* Bij meerdere glasmaten in één wand zegt één maat te weinig. */}
+              <b>{String(r.detail?.glasmaat || '') || `${r.bestelmaat.b}×${r.bestelmaat.h}mm`}</b>
+            </div>
           )}
           {r.calculatiemaat && (
             <div className="pline"><span>Calculatiemaat (prijsopzoeking)</span><b>{r.calculatiemaat.b}×{r.calculatiemaat.h}mm</b></div>

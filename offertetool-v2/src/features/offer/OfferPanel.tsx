@@ -96,6 +96,15 @@ export function OfferPanel() {
             <div className="meta">
               {it.aantal}×{it.breedte ? ` · ${it.breedte}×${it.hoogte ?? it.uitval}mm` : ''} · aankoop €{fmt(it.aankoop)}
             </div>
+            {/* Waarschuwingen blijven zichtbaar zodra het item op de offerte staat: sommige zeggen
+                letterlijk dat het bedrag bevestigd moet worden bij de leverancier. */}
+            {it.warnings.length > 0 && (
+              <div className="alert warn" style={{ margin: '6px 0 0', fontSize: 12 }}>
+                <ul style={{ paddingLeft: 16, margin: 0 }}>
+                  {it.warnings.map((w) => <li key={w}>{w}</li>)}
+                </ul>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
               <button className="btn sec2 sm" onClick={() => startEdit(it)}>✎ Bewerken</button>
               <button className="btn danger sm" onClick={() => remove(it.id)}>Verwijder</button>

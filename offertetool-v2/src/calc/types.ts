@@ -32,6 +32,10 @@ export interface Marges {
 export interface PrijsRegel {
   label: string;
   bedrag: number;
+  /** true = het bedrag is al de inkoopprijs; er gaat geen leverancierskorting meer af. */
+  netto?: boolean;
+  /** true = telt één keer voor de hele regel, niet per stuk (bv. een paal die twee wanden deelt). */
+  eenmalig?: boolean;
 }
 
 /** Resultaat van elke product-calculator. */
@@ -85,7 +89,7 @@ export interface CalcResult {
 }
 
 /** Welk formulier/tab een offerte-item hoort — bepaalt waar het bewerkt wordt. */
-export type ProductKind = 'rolluik' | 'screen' | 'knikarm' | 'veranda' | 'bediening' | 'artikel';
+export type ProductKind = 'rolluik' | 'screen' | 'knikarm' | 'veranda' | 'glaswand' | 'bediening' | 'artikel';
 
 /** Eén regel op de offerte (= CalcResult + id + herkomst + ruwe invoer voor bewerken). */
 export interface OfferItem extends CalcResult {
