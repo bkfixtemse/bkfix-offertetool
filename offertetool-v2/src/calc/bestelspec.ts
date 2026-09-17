@@ -8,6 +8,21 @@ import type { OfferItem } from './types';
 
 /** [detailKey, label] per product, in weergavevolgorde. */
 const SPEC_FIELDS: Record<string, [string, string][]> = {
+  'Glazen schuifwand': [
+    ['merk', 'Merk'],
+    ['uitvoeringLabel', 'Uitvoering glas'],
+    ['aantalPanelen', 'Aantal panelen'],
+    ['paneelBreedte', 'Paneelbreedte (mm)'],
+    ['paneelVerdeling', 'Paneelverdeling'],
+    ['glasHoogte', 'Glas-/paneelhoogte (mm)'],
+    ['overlap', 'Overlap (mm)'],
+    ['wandBreedte', 'Breedte wand na kokers (mm)'],
+    ['sporen', 'Aantal sporen'],
+    ['raillengte', 'Raillengte (mm)'],
+    ['railBreedte', 'Railbreedte (mm)'],
+    ['sluiting', 'Sluiting'],
+    ['steellook', 'Steel-look'],
+  ],
   Rolluik: [
     ['bedieningskant', 'Bedieningskant'],
     ['handBediening', 'Handmatige bediening'],

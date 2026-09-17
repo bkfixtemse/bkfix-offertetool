@@ -85,3 +85,27 @@ export const VERANDA_TYPE_INFO: Record<string, { title: string; sub?: string; mo
   'Stilo 103 onderliggend': { title: "Serrezonwering 'Stilo 103'", sub: 'Onderliggende serrezonwering met zip. Kast 103mm.', motor: 'Somfy Sunea io' },
   'Stilo 123 onderliggend': { title: "Serrezonwering 'Stilo 123'", sub: 'Onderliggende serrezonwering met zip. Kast 123mm.', motor: 'Somfy Sunea io' },
 };
+
+/**
+ * Glaswanden: elk merk heeft zijn eigen inkoop- en margeregels.
+ * Korting/marge komen uit de BKfix-rekensjablonen (`Glaswand ES blanco.xltx`: korting 40%, marge 41%;
+ * `glaswand fiano1.xltx`: marge op inkoop 31%). Bij Deponti ís de dealerlijst de inkoopprijs, dus korting 0%.
+ * Bij ES geldt −40% op alle artikelen.
+ *
+ * Marge: 20% op het product (zaakvoerder, 2026-09-17), volgens dezelfde formule als de andere
+ * producten: verkoop = inkoop / (1 - marge). Plaatsing is een VAST bedrag per glaswand: of het nu 3 of 6 sporen zijn maakt
+ * niet uit. Het variabele deel zit in de voorbereidende werken (personen × uren × uurtarief), want dat is
+ * wat in de praktijk het langst duurt. Het formulier zet deze waarden bij het wisselen van merk; ze blijven
+ * per offerte aanpasbaar.
+ */
+export const GLASWAND_MERK: Record<string, {
+  korting: number;
+  marge: number;
+  plaatsingVast: number;
+}> = {
+  'ES Systems': { korting: 0.40, marge: 0.20, plaatsingVast: 800 },
+  'Deponti':    { korting: 0,    marge: 0.20, plaatsingVast: 800 },
+};
+
+/** Standaard uurtarief voor voorbereidende werken — zelfde tarief als de werkuren van de offerte. */
+export const GLASWAND_VOORBEREIDING_TARIEF = 230;

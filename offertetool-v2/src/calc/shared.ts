@@ -74,10 +74,18 @@ export function berekenTotalen(
   bed: BedieningKeuze,
   marges: Marges,
 ): Totalen {
-  const perStuk = regels.reduce((s, r) => s + r.bedrag, 0);
-  const productSubtotal = perStuk * aantal + vrijeOpties;
+  // Regels met netto:true zijn al inkoopprijzen (bv. een stuk dat niet in de prijslijst staat en
+  // waarvoor de leverancier los een prijs opgaf). Die mogen de leverancierskorting niet nog eens
+  // krijgen, en tellen dus ook niet mee in het adviesprijs-subtotaal.
+  const som = (f: (r: PrijsRegel) => boolean) => regels.filter(f).reduce((s, r) => s + r.bedrag, 0);
+  const perStuk = som((r) => !r.netto && !r.eenmalig);
+  const eenmalig = som((r) => !r.netto && !!r.eenmalig);
+  const nettoPerStuk = som((r) => !!r.netto && !r.eenmalig);
+  const nettoEenmalig = som((r) => !!r.netto && !!r.eenmalig);
+  const productSubtotal = perStuk * aantal + eenmalig + vrijeOpties;
   const bedT = bedieningTotalen(bed);
-  const productAankoop = productSubtotal * (1 - marges.allroundKorting);
+  const productAankoop = productSubtotal * (1 - marges.allroundKorting)
+    + nettoPerStuk * aantal + nettoEenmalig;
   const verkoop = productAankoop / (1 - marges.bkfixMarge);
   const aankoop = productAankoop + bedT.aankoop;
   const uwVerkoop = verkoop - marges.eenmaligeKorting + plaatsingTotaal + bedT.verkoop;

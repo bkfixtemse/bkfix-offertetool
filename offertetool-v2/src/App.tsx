@@ -4,6 +4,7 @@ import { RolluikForm } from './features/calculators/RolluikForm';
 import { ScreenForm } from './features/calculators/ScreenForm';
 import { KnikarmForm } from './features/calculators/KnikarmForm';
 import { VerandaForm } from './features/calculators/VerandaForm';
+import { GlaswandForm } from './features/calculators/GlaswandForm';
 import { BedieningForm } from './features/calculators/BedieningForm';
 import { OfferPanel } from './features/offer/OfferPanel';
 import { HistoryTab } from './features/history/HistoryTab';
@@ -19,6 +20,7 @@ const TABS = [
   { k: 'screen', t: 'Screen' },
   { k: 'knikarm', t: 'Knikarmscherm' },
   { k: 'veranda', t: 'Veranda/Pergola' },
+  { k: 'glaswand', t: 'Glaswand' },
   { k: 'bediening', t: '📱 Afstandsbediening' },
   { k: 'historie', t: '📜 Historie', right: true },
   { k: 'instellingen', t: '⚙ Instellingen' },
@@ -93,6 +95,7 @@ export default function App() {
               {tab === 'screen' && <ScreenForm key={`screen-${editKey}`} />}
               {tab === 'knikarm' && <KnikarmForm key={`knikarm-${editKey}`} />}
               {tab === 'veranda' && <VerandaForm key={`veranda-${editKey}`} />}
+              {tab === 'glaswand' && <GlaswandForm key={`glaswand-${editKey}`} />}
               {tab === 'bediening' && <BedieningForm key={`bediening-${editKey}`} />}
             </div>
             <OfferPanel />
