@@ -54,6 +54,9 @@ export function GlaswandForm() {
       plaatsingVast: cfg.plaatsingVast,
       paneelBreedte: merk === 'Deponti' ? 980 : 900,
       opties: [], extraLijnen: [], kleurSelect: '', kleurCustom: '', sporen: 0, raillengte: 0,
+      // steel-look, sluiting en maatwerkglassoort zijn Deponti-velden: bij ES zijn ze onzichtbaar,
+      // dus ze mogen niet blijven staan wanneer je van merk wisselt.
+      steellook: false, sluiting: 'geen', glassoort: 'standaard',
     });
   };
 

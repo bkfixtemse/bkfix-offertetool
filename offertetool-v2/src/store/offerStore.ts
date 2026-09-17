@@ -111,7 +111,8 @@ export interface OfferTotals {
   subtotaal: number;        // excl. BTW
   btw: number;
   totaal: number;           // incl. BTW
-  werkelijkeWinst: number;  // totale marge = omzet − aankoop (productmarge + plaatsing)
+  werkelijkeWinst: number;  // totale marge = omzet − aankoop − arbeid (productmarge + plaatsing)
+  voorbereidingKost: number; // voorbereidende werken op offerteregels (arbeid aan kostprijs)
   winstPct: number;         // totale marge / omzet × 100
 }
 
@@ -121,9 +122,16 @@ export function offerTotals(items: OfferItem[], hiddenCost: number, w: Werkuren)
   const werkurenKost = w.tarief * w.uren * w.personen;
   const subtotaal = verkoop + werkurenKost;
   const btw = subtotaal * 0.06;
+  // Voorbereidende werken (glaswand) zitten wél in uwVerkoop maar zijn arbeid aan kostprijs,
+  // net als de werkuren van de offerte. Zonder deze aftrek zou elk uur voorbereiding als 100%
+  // winst tellen en de margeteller omhoog duwen naarmate er meer werk in kruipt.
+  const voorbereidingKost = items.reduce((s, i) => s + (Number(i.detail?.voorbereidingKost) || 0), 0);
   // Totale marge = productmarge + plaatsing. Plaatsing zit al in uwVerkoop, dus omzet − aankoop.
-  // Werkuren worden apart aan de klant aangerekend (aan kostprijs) en tellen niet als marge.
-  const werkelijkeWinst = verkoop - aankoop;
+  // Arbeid (werkuren en voorbereiding) wordt aan de klant doorgerekend maar telt niet als marge.
+  const werkelijkeWinst = verkoop - aankoop - voorbereidingKost;
   const winstPct = verkoop > 0 ? (werkelijkeWinst / verkoop) * 100 : 0;
-  return { verkoop, aankoop, werkurenKost, subtotaal, btw, totaal: subtotaal + btw, werkelijkeWinst, winstPct };
+  return {
+    verkoop, aankoop, werkurenKost, voorbereidingKost, subtotaal, btw,
+    totaal: subtotaal + btw, werkelijkeWinst, winstPct,
+  };
 }

@@ -14,7 +14,7 @@
  */
 import data from '../data/glaswand.json';
 import { GLASWAND_MERK, GLASWAND_VOORBEREIDING_TARIEF } from '../data/constants';
-import { berekenTotalen, kleurLabel } from './shared';
+import { berekenTotalen } from './shared';
 import type { BedieningKeuze, CalcResult, KleurKeuze, Marges, PrijsRegel, VrijeOptie } from './types';
 
 export type GlaswandMerk = 'ES Systems' | 'Deponti';
@@ -149,8 +149,12 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
   const isES = merk !== 'Deponti';
   // Eén rij per glasmaat. Zonder eigen verdeling is dat gewoon één rij: alle panelen even breed,
   // en bij modus 'maatwerk' een rij zonder breedte, die de opening opvult.
-  const verdeling: GlaswandPaneel[] = ((inp.paneelVerdeling && inp.paneelVerdeling.length > 0)
-    ? inp.paneelVerdeling
+  // Is er uitdrukkelijk een eigen verdeling meegegeven (mix & match), dan telt alleen die - ook
+  // als ze leeg is. Anders zou een lege verdeling stil terugvallen op aantalPanelen en een prijs
+  // tonen voor een wand die de gebruiker nooit ingevuld heeft.
+  const eigenVerdeling = Array.isArray(inp.paneelVerdeling);
+  const verdeling: GlaswandPaneel[] = (eigenVerdeling
+    ? (inp.paneelVerdeling as GlaswandPaneel[])
     : [{ breedte: inp.paneelModus === 'standaard' ? inp.paneelBreedte : 0, aantal: inp.aantalPanelen }]
   ).filter((r) => r && Math.floor(r.aantal) > 0);
   const n = verdeling.reduce((t, r) => t + Math.floor(r.aantal), 0);
@@ -170,7 +174,7 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
   const wandBreedte = (inp.dagmaatBreedte || 0) - kokers - steellookAftrek - sluitingAftrek;
 
   if (!inp.dagmaatBreedte || !inp.dagmaatHoogte) errors.push('Vul de dagmaat breedte en hoogte in');
-  if (n < 1) errors.push('Vul het aantal panelen in');
+  if (n < 1) errors.push(eigenVerdeling ? 'Voeg minstens één glasmaat toe' : 'Vul het aantal panelen in');
   if (wandBreedte <= 0 && inp.dagmaatBreedte) errors.push('De kokers zijn samen breder dan de opening');
 
   // ---- Paneelbreedte en overlap ----
@@ -194,7 +198,10 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
         warnings.push(`Steel-look werkt met 30mm overlap — de ingevulde ${inp.overlap}mm is vervangen`);
       }
       const rest = wandBreedte + (n - 1) * overlap - somVast;
-      const autoBreedte = rest / autoAantal;
+      // Afronden op hele mm: het glas wordt ook op hele mm besteld. Deed je dat niet, dan besliste
+      // een honderdste millimeter of de wand aan het standaard- of het maatwerktarief gaat, terwijl
+      // er op de bestelbon exact dezelfde maat staat.
+      const autoBreedte = Math.round(rest / autoAantal);
       if (autoBreedte <= 0) {
         errors.push(
           `De vaste panelen vullen de opening van ${Math.round(wandBreedte)}mm al helemaal — `
@@ -210,14 +217,27 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
   }
   const gemengd = maten.length > 1;
 
-  // Een paneel dat smaller is dan de overlap kan niet bestaan: twee buren zouden het volledig
-  // bedekken. Dit vangt een verdeling op die net niet opgaat (bv. een restpaneel van 19mm).
-  if (n > 1 && overlap > 0) {
-    const teSmal = maten.filter((m) => m.breedte > 0 && m.breedte <= overlap);
-    for (const m of teSmal) {
+  // Twee controles op de glasbreedte, allebei los van elkaar:
+  // - smaller dan de overlap kan fysiek niet: twee buren zouden het paneel volledig bedekken;
+  // - onder minPaneelBreedte bestaat er geen schuifpaneel (eigen grens van BKfix, zie glaswand.json).
+  const minBreedte = es.minPaneelBreedte ?? 0;
+  const krapBreedte = es.krapPaneelBreedte ?? 0;
+  for (const m of maten) {
+    if (!(m.breedte > 0)) continue;
+    if (n > 1 && overlap > 0 && m.breedte <= overlap) {
       errors.push(
         `Een glaspaneel van ${Math.round(m.breedte)}mm is smaller dan de overlap van `
         + `${r1(overlap)}mm — die verdeling kan niet`,
+      );
+    } else if (m.breedte < minBreedte) {
+      errors.push(
+        `Een glaspaneel van ${Math.round(m.breedte)}mm is te smal om te schuiven `
+        + `(ondergrens ${minBreedte}mm) — controleer de verdeling`,
+      );
+    } else if (m.breedte < krapBreedte) {
+      warnings.push(
+        `Een glaspaneel van ${Math.round(m.breedte)}mm is ongewoon smal `
+        + `(het smalste op een echte bestelbon was 599mm) — bevestigen bij ES`,
       );
     }
   }
@@ -239,6 +259,18 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
     } else if (overlap > 70) {
       warnings.push(`Overlap ${r1(overlap)}mm is groter dan de gebruikelijke 70mm — panelen zitten ver over elkaar`);
     }
+  }
+
+  // ---- Kleur ----
+  // Niet via kleurLabel(): dat valt bij een lege eigen kleur terug op "Andere kleur (+€675)",
+  // de meerprijs uit de Allround-kleurencollectie. Die geldt niet voor glaswanden en zou zo in
+  // de klantofferte en op de bestelbon belanden.
+  const kl = inp.kleur.select === 'andere' ? (inp.kleur.custom || '').trim() : (inp.kleur.select || '');
+  if (inp.kleur.select === 'andere' && !kl) {
+    errors.push('Vul in welke kleur — ES rekent niet-standaardkleuren op aanvraag aan');
+  }
+  if (kl && !glaswandKleuren(merk).includes(kl)) {
+    warnings.push(`"${kl}" is geen standaardkleur — prijs op aanvraag, voeg de meerprijs als extra lijn toe`);
   }
 
   const regels: PrijsRegel[] = [];
@@ -367,7 +399,7 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
         errors.push(`Deponti levert geen rail van ${lengte}mm met ${sporen} sporen`);
       } else {
         regels.push({ label: `Onderrail ${sporen} sporen, ${lengte}mm`, bedrag: railPrijs });
-        if (dp.railNiet9005.includes(`${sporen}/${lengte}`) && /9005/.test(kleurLabel(inp.kleur))) {
+        if (dp.railNiet9005.includes(`${sporen}/${lengte}`) && /9005/.test(kl)) {
           errors.push(`Rail ${sporen} sporen × ${lengte}mm is niet beschikbaar in RAL 9005`);
         }
         detail.raillengte = lengte;
@@ -440,12 +472,6 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
     errors.push(`Meenemers vragen minimaal ${dp.minOverlapMeenemer}mm overlap (nu ${r1(overlap)}mm)`);
   }
 
-  // ---- Kleur ----
-  const kl = kleurLabel(inp.kleur);
-  if (kl && !glaswandKleuren(merk).includes(kl)) {
-    warnings.push(`"${kl}" is geen standaardkleur — prijs op aanvraag, voeg de meerprijs als vrije optie toe`);
-  }
-
   // ---- Plaatsing ----
   // Vast bedrag per wand, ongeacht het aantal sporen. Het variabele werk zit in de voorbereiding,
   // die voor de hele regel geldt (de gebruiker vult de werkelijke man-uren in, niet per wand).
@@ -490,8 +516,9 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
       !isES && inp.paneelModus === 'maatwerk' && `Maatwerkglas ${inp.glassoort}`,
       detail.sluiting && String(detail.sluiting),
       inp.steellook && 'Steel-look glasroeden',
-      voorbereiding > 0
-        && `Voorbereidende werken: ${vbPersonen} × ${vbUren}u × €${tarief} = €${voorbereiding.toFixed(2)}`,
+      // Bewust zonder bedrag: options gaat mee naar de leveranciersbestelbon, en ons uurtarief
+      // hoort daar niet op. Het bedrag staat in detail.voorbereidingKost.
+      voorbereiding > 0 && `Voorbereidende werken: ${vbPersonen} × ${vbUren}u`,
       kl && `Kleur: ${kl}`,
       ...optieLabels,
       ...(inp.vrijeOpties ?? []).map((o) => `${o.description}: €${(o.amount || 0).toFixed(2)}`),

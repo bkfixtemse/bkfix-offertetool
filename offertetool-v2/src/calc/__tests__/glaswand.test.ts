@@ -403,6 +403,84 @@ describe('ES75 - opties: reserveonderdelen, projectartikelen en glas met gat', (
   });
 });
 
+describe('ES75 - afronding, ondergrenzen en lege invoer', () => {
+  it('1mm meetverschil mag het tarief niet omgooien als het glas dezelfde maat blijft', () => {
+    // Bij overlap 35 en 3 panelen levert 2929 / 2930 / 2931 alle drie glas van 1000mm op.
+    for (const dagmaat of [2929, 2930, 2931]) {
+      const r = es({ dagmaatBreedte: dagmaat, dagmaatHoogte: 2400, aantalPanelen: 3, overlap: 35 });
+      expect(r.detail.paneelBreedte, `${dagmaat}`).toBe(1000);
+      expect(r.detail.uitvoeringLabel, `${dagmaat}`).toBe('standaard');
+      expect(r.productSubtotal, `${dagmaat}`).toBe(700);
+      expect(r.aankoop, `${dagmaat}`).toBeCloseTo(420, 2);
+      expect(r.warnings.join(' '), `${dagmaat}`).not.toMatch(/geen standaardma/);
+    }
+  });
+
+  it('glas onder de ondergrens wordt geblokkeerd, ook bij overlap 0', () => {
+    const smal = es({ dagmaatBreedte: 1200, dagmaatHoogte: 2400, aantalPanelen: 6, overlap: 30 });
+    expect(smal.ok).toBe(false);
+    expect(smal.errors.join(' ')).toMatch(/te smal om te schuiven/);
+    const nul = es({ dagmaatBreedte: 60, dagmaatHoogte: 2400, aantalPanelen: 3, overlap: 0 });
+    expect(nul.ok).toBe(false);
+    expect(nul.errors.join(' ')).toMatch(/te smal om te schuiven/);
+  });
+
+  it('een restpaneel van 160mm in een mixwand wordt ook geblokkeerd', () => {
+    const r = es({
+      dagmaatBreedte: 2100, dagmaatHoogte: 2400, overlap: 30,
+      paneelVerdeling: [{ breedte: 1000, aantal: 2 }, { breedte: 0, aantal: 1 }],
+    });
+    expect(r.ok).toBe(false);
+    expect(r.errors.join(' ')).toMatch(/te smal om te schuiven/);
+  });
+
+  it('ongewoon smal glas mag wel, met melding', () => {
+    const r = es({ dagmaatBreedte: 1590, dagmaatHoogte: 2400, aantalPanelen: 3, overlap: 30 });
+    expect(r.ok).toBe(true);
+    expect(r.detail.paneelBreedte).toBe(550);
+    expect(r.warnings.join(' ')).toMatch(/ongewoon smal/);
+  });
+
+  it('mix & match zonder rijen rekent niets door', () => {
+    const r = es({ dagmaatBreedte: 2650, dagmaatHoogte: 2400, paneelVerdeling: [] });
+    expect(r.ok).toBe(false);
+    expect(r.errors.join(' ')).toMatch(/minstens \u00e9\u00e9n glasmaat/);
+    expect(r.productSubtotal).toBe(0);
+  });
+
+  it('"andere kleur" zonder omschrijving blokkeert, en levert nooit een rolluik-meerprijs op', () => {
+    const leeg = es({
+      dagmaatBreedte: 2650, dagmaatHoogte: 2400, aantalPanelen: 3,
+      paneelModus: 'standaard', paneelBreedte: 900,
+      kleur: { select: 'andere', custom: '' },
+    });
+    expect(leeg.ok).toBe(false);
+    expect(leeg.errors.join(' ')).toMatch(/Vul in welke kleur/);
+    expect(JSON.stringify(leeg)).not.toMatch(/675/);
+    const ingevuld = es({
+      dagmaatBreedte: 2650, dagmaatHoogte: 2400, aantalPanelen: 3,
+      paneelModus: 'standaard', paneelBreedte: 900,
+      kleur: { select: 'andere', custom: 'RAL 7037 structuur' },
+    });
+    expect(ingevuld.ok).toBe(true);
+    expect(ingevuld.options.join(' ')).toMatch(/RAL 7037 structuur/);
+    expect(ingevuld.warnings.join(' ')).toMatch(/geen standaardkleur/);
+  });
+
+  it('het uurtarief van de voorbereiding komt niet in de opsomming voor de bestelbon', () => {
+    const r = es({
+      dagmaatBreedte: 2650, dagmaatHoogte: 2400, aantalPanelen: 3,
+      paneelModus: 'standaard', paneelBreedte: 900,
+      voorbereidingPersonen: 2, voorbereidingUren: 8,
+    });
+    const tekst = r.options.join(' ');
+    expect(tekst).toMatch(/Voorbereidende werken: 2 \u00d7 8u/);
+    expect(tekst).not.toMatch(/230/);
+    expect(tekst).not.toMatch(/3680/);
+    expect(r.detail.voorbereidingKost).toBe(3680);
+  });
+});
+
 describe('plaatsing & voorbereidende werken', () => {
   const wand = {
     dagmaatBreedte: 2650, dagmaatHoogte: 2400, aantalPanelen: 3,

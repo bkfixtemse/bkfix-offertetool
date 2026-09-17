@@ -33,6 +33,9 @@
       "maatwerkMax": 2700
     },
     "glasAftrek": 100,
+    "_grenzenZijnEigenControle": "minPaneelBreedte en krapPaneelBreedte staan NIET in de ES-prijslijst; het zijn plausibiliteitsgrenzen van BKfix zelf. Het smalste glas op een echte bestelbon was 599mm (BB260457). Pas gerust aan.",
+    "minPaneelBreedte": 400,
+    "krapPaneelBreedte": 600,
     "kleuren": ["RAL 7016 structuur", "RAL 9005 structuur"],
     "railBreedte": { "1": 26.2, "2": 47.6, "3": 69, "4": 90.4, "5": 111.8, "6": 133.2 },
     "opties": [
