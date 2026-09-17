@@ -68,6 +68,8 @@ export function GlaswandForm() {
   const mix = s.paneelModus === 'mix';
   const mixPanelen = s.paneelVerdeling.reduce((t, r) => t + (Math.floor(r.aantal) || 0), 0);
   const mixRest = s.paneelVerdeling.some((r) => !(r.breedte > 0));
+  /** Het aantal panelen dat de berekening echt gebruikt - in mix-modus volgt dat uit de rijen. */
+  const panelen = mix ? mixPanelen : s.aantalPanelen;
 
   const r = calcGlaswand({
     ...s,
@@ -94,9 +96,10 @@ export function GlaswandForm() {
         <h2>Glazen schuifwand configureren</h2>
         <div className="alert info">
           {isES ? (
-            <>ES75: prijs per wand volgens het <b>aantal rails</b> (1–6) — afmetingen bepalen de prijs niet.
-              Standaard glasbreedtes {ES_BREEDTES.join(' / ')}mm · dagmaat helder 2000–2700mm,
-              getint 2000–2500mm (per 50mm) · glashoogte = dagmaat − 100mm · inkoop = lijst − 40%.</>
+            <>ES75: prijs per wand volgens het <b>aantal rails</b> (1–6) — de afmetingen bepalen de prijs niet.
+              Standaard glasbreedtes {ES_BREEDTES.join(' / ')}mm, andere breedtes zijn maatwerkglas ·
+              één prijs tot dagmaat 2700mm, daarboven op aanvraag bij ES · glashoogte = dagmaat − 100mm ·
+              inkoop = lijst − 40%.</>
           ) : (
             <>Deponti Fiano: <b>stuklijst</b> = panelen × paneelprijs + rail + opties; de dealerlijst is de
               inkoopprijs. Paneelbreedtes {DEPONTI_BREEDTES.join(' / ')}mm · hoogtes {DEPONTI_HOOGTES.join(' / ')}mm ·
@@ -171,7 +174,7 @@ export function GlaswandForm() {
               <div className="alert info">
                 Eén rij per glasmaat. Laat de breedte op 0 staan om dat paneel de rest van de opening
                 te laten opvullen — zo zet je één maatwerkglas in een verder standaard wand.
-                {isES && ' Zit er één afwijkende maat in, dan gaat de hele set aan het maatwerktarief.'}
+                {isES && ' Zit er een afwijkende maat tussen, dan gaat alleen dat glas aan het maatwerktarief.'}
               </div>
               {s.paneelVerdeling.map((rij, i) => (
                 <div className="grid2" key={i} style={{ marginBottom: 6 }}>
@@ -238,8 +241,8 @@ export function GlaswandForm() {
             <button className="btn ghost" type="button"
               onClick={() => u({ opties: [...s.opties, { id: '', aantal: 1 }] })}>+ optie</button>
             <button className="btn ghost" type="button"
-              onClick={() => u({ opties: [...s.opties, { id: 'meenemer', aantal: s.aantalPanelen }] })}>
-              + meenemers ({s.aantalPanelen})
+              onClick={() => u({ opties: [...s.opties, { id: 'meenemer', aantal: panelen }] })}>
+              + meenemers ({panelen})
             </button>
             {s.opties.length > 0 && (
               <button className="btn ghost" type="button"

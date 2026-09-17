@@ -317,6 +317,16 @@ describe('ES75 — gemengde paneelmaten (mix & match)', () => {
     expect(goed.detail.overlap).toBe(30);                // (900 + 980 + 1000 - 2820) / 2
   });
 
+  it('een restpaneel smaller dan de overlap wordt geblokkeerd', () => {
+    // 2x 900 + 1x 1000 in een opening van 2729 laat bij 30mm overlap maar 19mm over
+    const r = es({
+      dagmaatBreedte: 2729, dagmaatHoogte: 2600, overlap: 30,
+      paneelVerdeling: [{ breedte: 900, aantal: 2 }, { breedte: 1000, aantal: 1 }, { breedte: 0, aantal: 1 }],
+    });
+    expect(r.ok).toBe(false);
+    expect(r.errors.join(' ')).toMatch(/19mm is smaller dan de overlap/);
+  });
+
   it('vaste panelen die de opening al vullen, geven een fout', () => {
     const r = es({
       dagmaatBreedte: 1800, dagmaatHoogte: 2400, overlap: 30,

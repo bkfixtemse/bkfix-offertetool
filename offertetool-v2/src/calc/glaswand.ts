@@ -210,6 +210,18 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
   }
   const gemengd = maten.length > 1;
 
+  // Een paneel dat smaller is dan de overlap kan niet bestaan: twee buren zouden het volledig
+  // bedekken. Dit vangt een verdeling op die net niet opgaat (bv. een restpaneel van 19mm).
+  if (n > 1 && overlap > 0) {
+    const teSmal = maten.filter((m) => m.breedte > 0 && m.breedte <= overlap);
+    for (const m of teSmal) {
+      errors.push(
+        `Een glaspaneel van ${Math.round(m.breedte)}mm is smaller dan de overlap van `
+        + `${r1(overlap)}mm — die verdeling kan niet`,
+      );
+    }
+  }
+
   if (n === 1 && paneelBreedte > 0 && wandBreedte > 0) {
     const gat = wandBreedte - paneelBreedte;
     if (gat < -5) {
