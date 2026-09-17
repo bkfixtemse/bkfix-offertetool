@@ -515,7 +515,7 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
       !isES && `Rail: ${detail.sporen} sporen${detail.raillengte ? ` × ${detail.raillengte}mm` : ''}`,
       !isES && inp.paneelModus === 'maatwerk' && `Maatwerkglas ${inp.glassoort}`,
       detail.sluiting && String(detail.sluiting),
-      inp.steellook && 'Steel-look glasroeden',
+      steellookActief && 'Steel-look glasroeden',
       // Bewust zonder bedrag: options gaat mee naar de leveranciersbestelbon, en ons uurtarief
       // hoort daar niet op. Het bedrag staat in detail.voorbereidingKost.
       voorbereiding > 0 && `Voorbereidende werken: ${vbPersonen} × ${vbUren}u`,

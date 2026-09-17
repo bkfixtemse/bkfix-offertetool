@@ -127,9 +127,15 @@ export function GlaswandForm() {
         <Sec title="Panelen">
           <div className="grid2">
             {mix ? (
-              <Num label={isES ? 'Aantal panelen = aantal rails' : 'Aantal panelen'}
-                value={mixPanelen} min={0} onChange={() => {}}
-                hint="Volgt uit de glasmaten hieronder" />
+              // Geen invoerveld: in mix & match volgt het aantal uit de rijen hieronder. Een veld dat
+              // je kan aanklikken maar dat je invoer negeert, wekt de indruk dat je het kan zetten.
+              <div className="fld">
+                <label>{isES ? 'Aantal panelen = aantal rails' : 'Aantal panelen'}</label>
+                <div style={{ padding: '8px 0', fontWeight: 700 }}>
+                  {mixPanelen} {mixPanelen === 1 ? 'paneel' : 'panelen'}
+                </div>
+                <div className="hint">Volgt uit de glasmaten hieronder</div>
+              </div>
             ) : (
               <Num label={isES ? 'Aantal panelen = aantal rails *' : 'Aantal panelen *'}
                 value={s.aantalPanelen} min={1} onChange={(v) => u({ aantalPanelen: v || 1 })} />
