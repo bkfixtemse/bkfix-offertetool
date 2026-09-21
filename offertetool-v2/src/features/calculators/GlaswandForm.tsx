@@ -102,8 +102,17 @@ export function GlaswandForm() {
     [isES, s.dagmaatBreedte, s.dagmaatHoogte, s.kokerLinks, s.kokerMidden, s.kokerRechts,
       s.overlap, s.glas, s.kortingPct, s.margePct, s.plaatsingVast],
   );
+  // Vergelijk gesorteerd: dezelfde panelen in een andere rijvolgorde zijn dezelfde indeling.
+  const huidig = String(r.detail.panelenLijst || '').split(',').filter(Boolean).map(Number).sort((a, b) => a - b);
   const inGebruik = (o: AdviesOptie) =>
-    String(r.detail.panelenLijst || '') === o.panelen.join(',') && Number(r.detail.overlap) === o.overlap;
+    huidig.join(',') === [...o.panelen].sort((a, b) => a - b).join(',') && Number(r.detail.overlap) === o.overlap;
+  /**
+   * Een voorstel toepassen. Maatwerk- en mixvoorstellen hebben geen standaardbreedte (0); die mag
+   * de gekozen standaardbreedte niet overschrijven, anders toont "Standaardbreedte" daarna 900
+   * terwijl er maatwerk gerekend wordt.
+   */
+  const pasToe = (o: AdviesOptie) =>
+    u({ ...o.instelling, paneelBreedte: o.instelling.paneelBreedte || s.paneelBreedte });
 
   const voorbereidingKost = s.voorbereidingPersonen * s.voorbereidingUren * s.voorbereidingTarief;
   const sporen = s.sporen || s.aantalPanelen;
@@ -154,19 +163,19 @@ export function GlaswandForm() {
 
             {advies.beste ? (
               <BesteOptie o={advies.beste} waarom={advies.waarom} actief={inGebruik(advies.beste)}
-                gebruik={() => u({ ...advies.beste!.instelling })} />
+                gebruik={() => pasToe(advies.beste!)} />
             ) : (
               <div className="alert warn" style={{ marginTop: 10 }}>{advies.waarom}</div>
             )}
 
             <h4 style={{ margin: '14px 0 6px' }}>Maatwerk — alle panelen even breed, op {advies.overlap}mm overlap</h4>
             <AdviesTabel opties={advies.maatwerk} inGebruik={inGebruik}
-              gebruik={(o) => u({ ...o.instelling })} />
+              gebruik={(o) => pasToe(o)} />
 
             <h4 style={{ margin: '14px 0 6px' }}>Mix &amp; match — standaardglas, eventueel met één maatwerkpaneel</h4>
             {advies.mix.length > 0 ? (
               <AdviesTabel opties={advies.mix} inGebruik={inGebruik}
-                gebruik={(o) => u({ ...o.instelling })} />
+                gebruik={(o) => pasToe(o)} />
             ) : (
               <div className="hint">
                 Geen combinatie van standaardglas mogelijk binnen {advies.overlap}mm ± 20mm overlap.
@@ -195,7 +204,12 @@ export function GlaswandForm() {
               <Num label={isES ? 'Aantal panelen = aantal rails *' : 'Aantal panelen *'}
                 value={s.aantalPanelen} min={1} onChange={(v) => u({ aantalPanelen: v || 1 })} />
             )}
-            <Sel label="Glasmaat" value={s.paneelModus} onChange={(m) => u({ paneelModus: m as any })}
+            <Sel label="Glasmaat" value={s.paneelModus}
+              onChange={(m) => u({
+                paneelModus: m as any,
+                // De keuzelijst toont altijd een maat; de berekening moet dezelfde gebruiken.
+                ...(m === 'standaard' && !breedtes.includes(s.paneelBreedte) ? { paneelBreedte: breedtes[0] } : {}),
+              })}
               options={[
                 { v: 'standaard', t: 'Standaardbreedte (overlap volgt)' },
                 { v: 'maatwerk', t: 'Maatwerk (overlap kiezen)' },
@@ -391,8 +405,9 @@ export function GlaswandForm() {
 function controleTekst(o: AdviesOptie) {
   const som = o.panelen.reduce((t, b) => t + b, 0);
   const naden = Math.max(0, o.panelen.length - 1);
-  const klopt = Math.abs(o.controle - o.wandBreedte) <= 2;
-  return `${som} − ${naden}×${o.overlap} = ${o.controle}mm ${klopt ? '✓' : '⚠'}`;
+  const exact = o.controle === o.wandBreedte;
+  const teken = !o.controleKlopt ? '⚠' : exact ? '✓' : '✓ (afronding)';
+  return `${som} − ${naden}×${o.overlap} = ${o.controle}mm ${teken}`;
 }
 
 function BesteOptie({ o, waarom, actief, gebruik }: {

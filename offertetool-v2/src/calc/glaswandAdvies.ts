@@ -3,15 +3,15 @@
  *
  * Op basis van de wandbreedte en de gewenste overlap stelt dit zelf indelingen voor:
  *  - maatwerk: drie opeenvolgende aantallen panelen, alle panelen even breed, op exact de gewenste overlap;
- *  - mix & match: standaardglas (één of twee standaardmaten, de overlap volgt) of standaardglas met
- *    één maatwerkpaneel dat de rest opvult op de gewenste overlap.
+ *  - mix & match: elke combinatie van standaardmaten (de overlap volgt), of standaardglas met één of
+ *    meer maatwerkpanelen die de rest opvullen op de gewenste overlap.
  *
  * Elke indeling wordt doorgerekend met calcGlaswand — dezelfde rekenkern als het formulier. Kies je
  * een voorstel, dan krijg je dus gegarandeerd dezelfde maten en dezelfde prijs.
  *
  * "Beste" = de goedkoopste geschikte indeling zonder ongewoon smal glas; bij gelijke prijs de overlap
- * die het dichtst bij de gewenste ligt, dan het minste aantal panelen, dan het minste aantal
- * verschillende maten.
+ * die het dichtst bij de gewenste ligt, dan het minste aantal panelen, dan het minste maatwerkglas,
+ * dan het breedste smalste paneel.
  */
 import data from '../data/glaswand.json';
 import { calcGlaswand, type GlaswandInput, type GlaswandPaneel } from './glaswand';
@@ -54,6 +54,8 @@ export interface AdviesOptie {
   wandBreedte: number;
   /** Som van de glasbreedtes min de overlappen — hoort gelijk te zijn aan de wandbreedte. */
   controle: number;
+  /** Controle klopt, op de afronding na (elk paneel hooguit 0,5mm, dus samen hooguit n/2 mm). */
+  controleKlopt: boolean;
   /** Vrije doorgang als alle panelen naar één kant geschoven zijn: wand min het breedste paneel. */
   doorgang: number;
   /** Setprijs volgens de lijst, inkoop na korting, klantprijs met plaatsing — telkens zonder opties. */
@@ -95,6 +97,23 @@ export function indelingNaarInvoer(inst: AdviesInstelling): Pick<
 
 const eur = (n: number) => Math.round(n * 100) / 100;
 
+/** Alle niet-dalende reeksen van standaardmaten met lengte m (m=3 bij 4 maten: 20 reeksen). */
+function multisets(m: number, vanaf = 0): number[][] {
+  if (m === 0) return [[]];
+  const uit: number[][] = [];
+  for (let i = vanaf; i < STANDAARD.length; i++) {
+    for (const rest of multisets(m - 1, i)) uit.push([STANDAARD[i], ...rest]);
+  }
+  return uit;
+}
+
+/** [900, 900, 980] → [{900, 2}, {980, 1}] */
+function telMaten(maten: number[]): GlaswandPaneel[] {
+  const t = new Map<number, number>();
+  for (const b of maten) t.set(b, (t.get(b) ?? 0) + 1);
+  return [...t.entries()].map(([breedte, aantal]) => ({ breedte, aantal }));
+}
+
 function reken(basis: GlaswandInput, soort: AdviesSoort, inst: AdviesInstelling): AdviesOptie {
   const r = calcGlaswand({ ...basis, ...indelingNaarInvoer(inst) });
   const panelen = String(r.detail.panelenLijst || '').split(',').filter(Boolean).map(Number);
@@ -119,6 +138,9 @@ function reken(basis: GlaswandInput, soort: AdviesSoort, inst: AdviesInstelling)
     overlap,
     wandBreedte,
     controle: Math.round(panelen.reduce((t, b) => t + b, 0) - Math.max(0, n - 1) * overlap),
+    controleKlopt: Math.abs(
+      Math.round(panelen.reduce((t, b) => t + b, 0) - Math.max(0, n - 1) * overlap) - wandBreedte,
+    ) <= Math.max(1, Math.ceil(n / 2)),
     doorgang: Math.max(0, wandBreedte - breedste),
     lijst: eur(r.productSubtotal),
     aankoop: eur(r.aankoop),
@@ -135,7 +157,21 @@ function vergelijk(gewenst: number) {
     || a.aankoop - b.aankoop
     || Math.abs(a.overlap - gewenst) - Math.abs(b.overlap - gewenst)
     || a.panelen.length - b.panelen.length
-    || new Set(a.panelen).size - new Set(b.panelen).size;
+    // daarna: minder maatwerkpanelen, dan het breedste smalste paneel (liever geen smal glas),
+    // dan minder verschillende maten, en tot slot vast op de maten zelf zodat de volgorde nooit
+    // afhangt van de volgorde waarin de combinaties gemaakt werden
+    || maatwerkAantal(a) - maatwerkAantal(b)
+    || Math.min(...b.panelen) - Math.min(...a.panelen)
+    || new Set(a.panelen).size - new Set(b.panelen).size
+    || sleutel(a).localeCompare(sleutel(b));
+}
+
+function maatwerkAantal(o: AdviesOptie) {
+  return o.panelen.filter((b) => !STANDAARD.includes(b)).length;
+}
+
+function sleutel(o: AdviesOptie) {
+  return `${[...o.panelen].sort((x, y) => x - y).join(',')}@${o.overlap}`;
 }
 
 /** Ligt een afgeleide overlap binnen wat we voorstellen? */
@@ -164,6 +200,9 @@ export function glaswandAdvies(basis: GlaswandInput): GlaswandAdvies {
     steellook: false,
     voorbereidingPersonen: 0,
     voorbereidingUren: 0,
+    // De eenmalige korting is een regelkorting, geen eigenschap van de indeling. Zonder deze regel
+    // hing de getoonde klantprijs af van de volgorde waarin je de velden invulde.
+    marges: { ...basis.marges, eenmaligeKorting: 0 },
   };
   const W = (basis.dagmaatBreedte || 0)
     - ((basis.kokerLinks || 0) + (basis.kokerMidden || 0) + (basis.kokerRechts || 0));
@@ -181,47 +220,38 @@ export function glaswandAdvies(basis: GlaswandInput): GlaswandAdvies {
     paneelModus: 'maatwerk', aantalPanelen: n, paneelBreedte: 0, paneelVerdeling: [], overlap: gewenst,
   }));
 
-  // ---- Mix & match: alle combinaties van standaardglas, en standaardglas plus één opvulpaneel.
+  // ---- Mix & match: elke combinatie van standaardmaten (ook drie of vier verschillende), met nul,
+  // één of meer maatwerkpanelen die de rest opvullen. Zonder opvulpanelen volgt de overlap uit de
+  // maten; met opvulpanelen ligt hij exact op de gewenste. "Alles maatwerk" staat al in de maatwerklijst.
   const kandidaten: AdviesOptie[] = [];
   for (let n = 1; n <= MAX_RAILS; n++) {
-    // (a) allemaal dezelfde standaardmaat; de overlap volgt
-    for (const w of STANDAARD) {
-      if (n === 1) {
-        if (W - w >= 0 && W - w <= 20) {
-          kandidaten.push(reken(neutraal, 'standaard', {
-            paneelModus: 'standaard', aantalPanelen: 1, paneelBreedte: w, paneelVerdeling: [], overlap: gewenst,
+    for (let k = 0; k < n; k++) {
+      for (const std of multisets(n - k)) {
+        const som = std.reduce((t, b) => t + b, 0);
+        const verdeling = telMaten(std);
+        if (k === 0) {
+          if (n === 1) {
+            if (W - som < 0 || W - som > 20) continue;          // één vast paneel moet de opening dekken
+          } else if (!overlapOk((som - W) / (n - 1), gewenst)) {
+            continue;
+          }
+          kandidaten.push(reken(neutraal, verdeling.length === 1 ? 'standaard' : 'mix', {
+            paneelModus: verdeling.length === 1 ? 'standaard' : 'mix',
+            aantalPanelen: n,
+            paneelBreedte: verdeling.length === 1 ? verdeling[0].breedte : 0,
+            paneelVerdeling: verdeling.length === 1 ? [] : verdeling,
+            overlap: gewenst,
           }));
+          continue;
         }
-        continue;
-      }
-      if (overlapOk((n * w - W) / (n - 1), gewenst)) {
-        kandidaten.push(reken(neutraal, 'standaard', {
-          paneelModus: 'standaard', aantalPanelen: n, paneelBreedte: w, paneelVerdeling: [], overlap: gewenst,
+        // k opvulpanelen, allemaal even breed, op de gewenste overlap (zelfde afronding als de rekenkern)
+        const opvul = Math.round((W + (n - 1) * gewenst - som) / k);
+        if (opvul < MIN_BREEDTE || opvul > cfg.maxPaneelBreedte || STANDAARD.includes(opvul)) continue;
+        kandidaten.push(reken(neutraal, 'aanvulling', {
+          paneelModus: 'mix', aantalPanelen: n, paneelBreedte: 0, overlap: gewenst,
+          paneelVerdeling: [...verdeling, { breedte: 0, aantal: k }],
         }));
       }
-    }
-    if (n < 2) continue;
-    // (b) twee verschillende standaardmaten; de overlap volgt
-    for (let i = 0; i < STANDAARD.length; i++) {
-      for (let j = i + 1; j < STANDAARD.length; j++) {
-        const [w1, w2] = [STANDAARD[i], STANDAARD[j]];
-        for (let a = 1; a < n; a++) {
-          if (!overlapOk((a * w1 + (n - a) * w2 - W) / (n - 1), gewenst)) continue;
-          kandidaten.push(reken(neutraal, 'mix', {
-            paneelModus: 'mix', aantalPanelen: n, paneelBreedte: 0, overlap: gewenst,
-            paneelVerdeling: [{ breedte: w1, aantal: a }, { breedte: w2, aantal: n - a }],
-          }));
-        }
-      }
-    }
-    // (c) standaardglas met één maatwerkpaneel dat de rest opvult, op exact de gewenste overlap
-    for (const w of STANDAARD) {
-      const opvul = Math.round(W + (n - 1) * gewenst - (n - 1) * w);
-      if (opvul < MIN_BREEDTE || opvul > cfg.maxPaneelBreedte || STANDAARD.includes(opvul)) continue;
-      kandidaten.push(reken(neutraal, 'aanvulling', {
-        paneelModus: 'mix', aantalPanelen: n, paneelBreedte: 0, overlap: gewenst,
-        paneelVerdeling: [{ breedte: w, aantal: n - 1 }, { breedte: 0, aantal: 1 }],
-      }));
     }
   }
 
@@ -229,9 +259,9 @@ export function glaswandAdvies(basis: GlaswandInput): GlaswandAdvies {
   const gezien = new Set<string>();
   const uniek = kandidaten.filter((k) => {
     if (!k.mogelijk) return false;
-    const sleutel = `${[...k.panelen].sort((a, b) => a - b).join(',')}@${k.overlap}`;
-    if (gezien.has(sleutel)) return false;
-    gezien.add(sleutel);
+    const s = sleutel(k);
+    if (gezien.has(s)) return false;
+    gezien.add(s);
     return true;
   });
   const orde = vergelijk(gewenst);

@@ -35,17 +35,50 @@ describe('advies — de echte bestelbonnen komen er als beste uit', () => {
     expect(a.beste?.aankoop).toBe(420);
   });
 
-  it('BB261030 (4091): 2138mm, overlap 50 → 3× 746mm maatwerk, €720', () => {
+});
+
+describe('advies — waar de tool goedkoper uitkomt dan wat er toen besteld werd', () => {
+  // Bij deze twee bestelde BKfix alles in maatwerk. Met standaardglas plus opvulpanelen, per paneel
+  // afgerekend, kan dezelfde opening goedkoper. De bestelde indeling blijft in de maatwerklijst staan.
+  it('BB261030 (4091): 2138mm, overlap 50 → 1× 900 + 2× 669 voor €620 i.p.v. 3× 746 voor €720', () => {
     const a = advies({ dagmaatBreedte: 2138, overlap: 50 });
-    expect(a.beste?.soort).toBe('maatwerk');
-    expect(a.beste?.panelen).toEqual([746, 746, 746]);
-    expect(a.beste?.aankoop).toBe(720);
+    expect(gesorteerd(a.beste!.panelen)).toEqual([669, 669, 900]);   // (2138 + 2×50 − 900) / 2
+    expect(a.beste?.overlap).toBe(50);
+    expect(a.beste?.aankoop).toBe(620);                               // (700 + 2×1200) / 3 × 0,6
+    const besteld = a.maatwerk.find((m) => m.panelen.length === 3);
+    expect(besteld?.panelen).toEqual([746, 746, 746]);
+    expect(besteld?.aankoop).toBe(720);
   });
 
-  it('BB260696 (3381): 3182mm, overlap 30 → 4× 818mm maatwerk (ES bestelde 817)', () => {
+  it('BB260696 (3381): 3182mm, overlap 30 → 2× 900 + 2× 736 voor €760,50 i.p.v. 4× 818 voor €960', () => {
     const a = advies({ dagmaatBreedte: 3182, overlap: 30 });
-    expect(a.beste?.panelen).toEqual([818, 818, 818, 818]);
-    expect(a.beste?.aankoop).toBe(960);
+    expect(gesorteerd(a.beste!.panelen)).toEqual([736, 736, 900, 900]);
+    expect(a.beste?.aankoop).toBe(760.5);                             // (2×935 + 2×1600) / 4 × 0,6
+    const besteld = a.maatwerk.find((m) => m.panelen.length === 4);
+    expect(besteld?.panelen).toEqual([818, 818, 818, 818]);           // ES bestelde 817
+    expect(besteld?.aankoop).toBe(960);
+  });
+});
+
+describe('advies — alle combinaties worden overwogen', () => {
+  it('twee opvulpanelen: 4061mm → 3× 900 + 2× 741 voor €900,12 i.p.v. 5× 836 maatwerk voor €1200', () => {
+    const a = advies({ dagmaatBreedte: 4061, overlap: 30 });
+    expect(gesorteerd(a.beste!.panelen)).toEqual([741, 741, 900, 900, 900]);
+    expect(a.beste?.aankoop).toBe(900.12);                            // (3×1167 + 2×2000) / 5 × 0,6
+    expect(a.beste?.krap).toBe(false);
+  });
+
+  it('drie verschillende standaardmaten: 2820mm → 900 + 980 + 1000 op exact 30mm', () => {
+    const a = advies({ dagmaatBreedte: 2820, overlap: 30 });
+    expect(gesorteerd(a.beste!.panelen)).toEqual([900, 980, 1000]);
+    expect(a.beste?.overlap).toBe(30);
+    expect(a.beste?.meldingen).toEqual([]);
+  });
+
+  it('bij gelijke prijs ligt de keuze vast, niet op de volgorde van berekenen', () => {
+    // 2× 900 + 2× 736 en 2× 980 + 2× 656 kosten allebei €760,50: het breedste smalste paneel wint
+    const a = advies({ dagmaatBreedte: 3182, overlap: 30 });
+    expect(Math.min(...a.beste!.panelen)).toBe(736);
   });
 });
 
@@ -59,9 +92,15 @@ describe('advies — maatwerk: altijd drie opties, met de paneelbreedtes', () =>
     expect(a.maatwerk[2].krap).toBe(true);                  // 584mm < 600mm
   });
 
-  it('de controle telt terug op tot de wandbreedte', () => {
-    const a = advies({ dagmaatBreedte: 2800, overlap: 30 });
-    for (const m of a.maatwerk) expect(Math.abs(m.controle - 2800)).toBeLessThanOrEqual(2);
+  it('de controle telt terug op tot de wandbreedte, op de afronding na', () => {
+    for (const breedte of [2800, 5500, 5501, 5503]) {
+      const a = advies({ dagmaatBreedte: breedte, overlap: 30 });
+      for (const m of [...a.maatwerk, ...a.mix].filter((x) => x.mogelijk)) {
+        // elk paneel wordt op hele mm afgerond (hooguit 0,5mm): samen hooguit n/2 mm
+        expect(Math.abs(m.controle - breedte), `${breedte} ${m.titel}`).toBeLessThanOrEqual(Math.ceil(m.panelen.length / 2));
+        expect(m.controleKlopt, `${breedte} ${m.titel}`).toBe(true);
+      }
+    }
   });
 
   it('niet-mogelijke aantallen blijven zichtbaar, met de reden', () => {
@@ -107,10 +146,17 @@ describe('advies — mix & match', () => {
   });
 
   it('ongewoon smal glas komt achter een indeling zonder smal glas, ook als het goedkoper is', () => {
-    // 2138mm, overlap 50: 2× 900 + 438mm is goedkoper (€520) maar ongewoon smal
+    // 2138mm, overlap 50: 2× 900 + 438mm kost €520, goedkoper dan de beste (€620), maar 438mm is ongewoon smal
+    const smal = calcGlaswand({
+      ...basis, dagmaatBreedte: 2138, ...indelingNaarInvoer({
+        paneelModus: 'mix', aantalPanelen: 3, paneelBreedte: 0, overlap: 50,
+        paneelVerdeling: [{ breedte: 900, aantal: 2 }, { breedte: 0, aantal: 1 }],
+      }),
+    });
+    expect(smal.ok).toBe(true);
+    expect(String(smal.detail.panelenLijst)).toBe('900,900,438');
     const a = advies({ dagmaatBreedte: 2138, overlap: 50 });
-    const smal = a.mix.find((m) => m.krap);
-    expect(smal?.aankoop).toBeLessThan(a.beste!.aankoop);
+    expect(smal.aankoop).toBeLessThan(a.beste!.aankoop);
     expect(a.beste?.krap).toBe(false);
   });
 
@@ -120,6 +166,12 @@ describe('advies — mix & match', () => {
       expect(m.overlap).toBeGreaterThanOrEqual(20);
       expect(m.overlap).toBeLessThanOrEqual(50);
     }
+  });
+
+  it('de eenmalige korting van de regel verandert de voorstellen niet', () => {
+    const zonder = advies({ dagmaatBreedte: 2800, overlap: 30 });
+    const met = advies({ dagmaatBreedte: 2800, overlap: 30, marges: { ...basis.marges, eenmaligeKorting: 100 } });
+    expect(met.beste?.verkoop).toBe(zonder.beste?.verkoop);
   });
 
   it('opties, kleur en voorbereiding van het formulier beïnvloeden de vergelijking niet', () => {
