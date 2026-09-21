@@ -6,8 +6,8 @@ import {
   type GlaswandPaneel,
 } from '../../calc/glaswand';
 import {
-  bepaalIndeling, glaswandAdvies, glaswandOptiesVoorAantal, indelingNaarInvoer, migreerIndeling,
-  type AdviesInstelling, type AdviesOptie, type IndelingKeuze,
+  bepaalIndeling, glaswandOptiesVoorAantal, glaswandOverzicht, indelingNaarInvoer, migreerIndeling,
+  type AdviesInstelling, type AdviesOptie, type GlaswandOverzicht, type IndelingKeuze,
 } from '../../calc/glaswandAdvies';
 import type { GlaswandInput } from '../../calc/glaswand';
 import { GLASWAND_MERK, GLASWAND_VOORBEREIDING_TARIEF } from '../../data/constants';
@@ -66,6 +66,9 @@ export function GlaswandForm() {
       // steel-look, sluiting en maatwerkglassoort zijn Deponti-velden: bij ES zijn ze onzichtbaar,
       // dus ze mogen niet blijven staan wanneer je van merk wisselt.
       steellook: false, sluiting: 'geen', glassoort: 'standaard',
+      // Ook de indeling is merkgebonden (andere standaardmaten). Een zelf gekozen of zelf ingegeven
+      // indeling van het ene merk mag niet doorlopen in het andere: begin opnieuw bij de beste.
+      keuze: 'auto', paneelModus: 'maatwerk', paneelVerdeling: [],
     });
   };
 
@@ -109,8 +112,8 @@ export function GlaswandForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [...deps, s.aantalPanelen],
   );
-  const advies = useMemo(
-    () => (isES ? glaswandAdvies(basisInvoer) : null),
+  const overzicht = useMemo(
+    () => (isES ? glaswandOverzicht(basisInvoer) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     deps,
   );
@@ -130,7 +133,18 @@ export function GlaswandForm() {
   // Vergelijk gesorteerd: dezelfde panelen in een andere rijvolgorde zijn dezelfde indeling.
   const huidig = String(r.detail.panelenLijst || '').split(',').filter(Boolean).map(Number).sort((a, b) => a - b);
   const inGebruik = (o: AdviesOptie) =>
-    huidig.join(',') === [...o.panelen].sort((a, b) => a - b).join(',') && Number(r.detail.overlap) === o.overlap;
+    huidig.join(',') === [...o.panelen].sort((a, b) => a - b).join(',')
+    && (huidig.length <= 1 || Number(r.detail.overlap) === o.overlap);
+  /** De eerste acht, plus de rij die in gebruik is als die verder in de lijst staat. */
+  const zichtbaar = (() => {
+    const alle = perAantal?.opties ?? [];
+    if (toonAlle || alle.length <= 8) return alle;
+    const eerste = alle.slice(0, 8);
+    const gebruikt = alle.find(inGebruik);
+    return gebruikt && !eerste.includes(gebruikt) ? [...eerste, gebruikt] : eerste;
+  })();
+  /** Een ander aantal panelen kiezen: de tool neemt daarvoor automatisch de beste. */
+  const kiesAantal = (n: number) => { setToonAlle(false); u({ aantalPanelen: n, keuze: 'auto' }); };
   /**
    * Een voorstel toepassen. Maatwerk- en mixvoorstellen hebben geen standaardbreedte (0); die mag
    * de gekozen standaardbreedte niet overschrijven, anders toont "Standaardbreedte" daarna 900
@@ -194,44 +208,6 @@ export function GlaswandForm() {
           </div>
         </Sec>
 
-        {isES && advies && s.dagmaatBreedte > 0 && s.dagmaatHoogte > 0 && (
-          <Sec title="Voorstellen voor de paneelindeling">
-            <div className="grid2">
-              <Num label="Gewenste overlap (mm)" value={s.overlap} min={0}
-                onChange={(v) => wijzigMaat({ overlap: v })} hint="De voorstellen rekenen met deze overlap" />
-              <div className="fld">
-                <label>Wandbreedte na kokers</label>
-                <div style={{ padding: '8px 0', fontWeight: 700 }}>{advies.wandBreedte} mm</div>
-              </div>
-            </div>
-
-            {advies.beste ? (
-              <BesteOptie o={advies.beste} waarom={advies.waarom} actief={inGebruik(advies.beste)}
-                gebruik={() => pasToe(advies.beste!)} />
-            ) : (
-              <div className="alert warn" style={{ marginTop: 10 }}>{advies.waarom}</div>
-            )}
-
-            <h4 style={{ margin: '14px 0 6px' }}>Maatwerk — alle panelen even breed, op {advies.overlap}mm overlap</h4>
-            <AdviesTabel opties={advies.maatwerk} inGebruik={inGebruik}
-              gebruik={(o) => pasToe(o)} />
-
-            <h4 style={{ margin: '14px 0 6px' }}>Mix &amp; match — standaardglas, eventueel met één maatwerkpaneel</h4>
-            {advies.mix.length > 0 ? (
-              <AdviesTabel opties={advies.mix} inGebruik={inGebruik}
-                gebruik={(o) => pasToe(o)} />
-            ) : (
-              <div className="hint">
-                Geen combinatie van standaardglas mogelijk binnen {advies.overlap}mm ± 20mm overlap.
-              </div>
-            )}
-            <div className="hint" style={{ marginTop: 8 }}>
-              {advies.criterium} Prijzen zijn voor de glasset met plaatsing, zonder opties.
-              Vrije doorgang = de wandbreedte min het breedste paneel, met alles naar één kant geschoven.
-            </div>
-          </Sec>
-        )}
-
         <Sec title="Panelen">
           <div className="grid2">
             {eigen ? (
@@ -245,7 +221,7 @@ export function GlaswandForm() {
               </div>
             ) : (
               <Num label={isES ? 'Aantal panelen = aantal rails *' : 'Aantal panelen *'}
-                value={s.aantalPanelen} min={1} onChange={(v) => wijzigMaat({ aantalPanelen: v || 1 })} />
+                value={s.aantalPanelen} min={1} onChange={(v) => wijzigMaat({ aantalPanelen: Math.max(0, Math.floor(v)) })} />
             )}
             {isES ? (
               <Num label="Gewenste overlap (mm)" value={s.overlap} min={0}
@@ -299,9 +275,22 @@ export function GlaswandForm() {
           </div>
 
           {isES && !eigen && (
-            perAantal && s.dagmaatBreedte > 0 && s.dagmaatHoogte > 0 ? (
+            perAantal && overzicht && s.dagmaatBreedte > 0 && s.dagmaatHoogte > 0 ? (
               <div style={{ marginTop: 12 }}>
-                <h4 style={{ margin: '0 0 6px' }}>
+                {overzicht.beste ? (
+                  <BesteOptie o={overzicht.beste} waarom={overzicht.waarom} actief={inGebruik(overzicht.beste)}
+                    gebruik={() => kiesAantal(overzicht.beste!.panelen.length)} />
+                ) : (
+                  <div className="alert warn">{overzicht.waarom}</div>
+                )}
+
+                <h4 style={{ margin: '14px 0 6px' }}>Beste per aantal panelen</h4>
+                <PerAantalTabel overzicht={overzicht} gekozen={s.aantalPanelen} kies={kiesAantal} />
+
+                {s.aantalPanelen < 1 ? (
+                  <div className="hint" style={{ marginTop: 10 }}>Vul het aantal panelen in.</div>
+                ) : (<>
+                <h4 style={{ margin: '14px 0 6px' }}>
                   Alle mogelijkheden met {perAantal.aantal} {perAantal.aantal === 1 ? 'paneel' : 'panelen'} op {perAantal.wandBreedte} mm
                 </h4>
                 {perAantal.opties.length === 0 ? (
@@ -319,9 +308,7 @@ export function GlaswandForm() {
                         </>
                       )}
                     </div>
-                    <AdviesTabel
-                      opties={toonAlle ? perAantal.opties : perAantal.opties.slice(0, 8)}
-                      inGebruik={inGebruik} gebruik={pasToe} beste={perAantal.beste} />
+                    <AdviesTabel opties={zichtbaar} inGebruik={inGebruik} gebruik={pasToe} beste={perAantal.beste} />
                     {perAantal.opties.length > 8 && (
                       <button className="btn ghost sm" type="button" style={{ marginTop: 6 }}
                         onClick={() => setToonAlle(!toonAlle)}>
@@ -330,10 +317,15 @@ export function GlaswandForm() {
                     )}
                   </>
                 )}
+                </>)}
                 <div style={{ marginTop: 8 }}>
                   <button className="btn ghost sm" type="button" onClick={naarEigen}>
                     Glasmaten zelf ingeven
                   </button>
+                </div>
+                <div className="hint" style={{ marginTop: 8 }}>
+                  {overzicht.criterium} Prijzen zijn voor de glasset met plaatsing, zonder opties.
+                  Vrije doorgang = de wandbreedte min het breedste paneel, met alles naar één kant geschoven.
                 </div>
               </div>
             ) : (
@@ -504,6 +496,10 @@ export function GlaswandForm() {
 
 /** Controle zoals je ze op papier zou maken: som van het glas min de overlappen = wandbreedte. */
 function controleTekst(o: AdviesOptie) {
+  if (o.panelen.length === 1) {
+    const speling = o.wandBreedte - o.panelen[0];
+    return `1 paneel van ${o.panelen[0]}mm in ${o.wandBreedte}mm (${speling}mm speling) ${o.controleKlopt ? '✓' : '⚠'}`;
+  }
   const som = o.panelen.reduce((t, b) => t + b, 0);
   const naden = Math.max(0, o.panelen.length - 1);
   const exact = o.controle === o.wandBreedte;
@@ -524,7 +520,7 @@ function BesteOptie({ o, waarom, actief, gebruik }: {
       </div>
       <div style={{ fontSize: 16, fontWeight: 700, margin: '4px 0' }}>{o.titel}</div>
       <div className="pline"><span>Paneelbreedtes</span><b>{o.panelen.join(' · ')} mm</b></div>
-      <div className="pline"><span>Overlap</span><b>{o.overlap} mm</b></div>
+      <div className="pline"><span>Overlap</span><b>{o.panelen.length > 1 ? `${o.overlap} mm` : '—'}</b></div>
       <div className="pline"><span>Controle</span><b>{controleTekst(o)}</b></div>
       <div className="pline"><span>Vrije doorgang ±</span><b>{o.doorgang} mm</b></div>
       <div className="pline"><span>Inkoop glasset</span><b>€{fmt(o.aankoop)}</b></div>
@@ -564,9 +560,11 @@ function AdviesTabel({ opties, inGebruik, gebruik, beste }: {
         <tbody>
           {opties.map((o, i) => (
             <tr key={i} style={o.mogelijk ? undefined : { color: 'var(--tx3)' }}>
-              <td>{o === beste ? '★ ' : ''}{o.titel}{o.breed ? ' ⚠' : ''}</td>
+              <td title={o.breed ? 'Breder dan de breedste standaardmaat — bevestigen bij ES' : undefined}>
+                {o === beste ? '★ ' : ''}{o.titel}{o.breed ? ' ⚠' : ''}
+              </td>
               <td>{o.panelen.join(' · ')}</td>
-              <td className="r">{o.overlap}</td>
+              <td className="r">{o.panelen.length > 1 ? o.overlap : '—'}</td>
               <td>{o.mogelijk ? controleTekst(o) : ''}</td>
               <td className="r">{o.mogelijk ? o.doorgang : ''}</td>
               <td className="r">{o.mogelijk ? `€${fmt(o.aankoop)}` : ''}</td>
@@ -592,6 +590,50 @@ function AdviesTabel({ opties, inGebruik, gebruik, beste }: {
           {opties.filter((o) => !o.mogelijk).map((o) => `${o.panelen.length} panelen: ${o.reden}`).join(' · ')}
         </div>
       )}
+    </div>
+  );
+}
+
+function PerAantalTabel({ overzicht, gekozen, kies }: {
+  overzicht: GlaswandOverzicht; gekozen: number; kies: (n: number) => void;
+}) {
+  return (
+    <div style={{ overflowX: 'auto' }}>
+      <table className="det">
+        <thead>
+          <tr>
+            <th>Panelen</th>
+            <th>Beste indeling</th>
+            <th className="r">Overlap</th>
+            <th className="r">Inkoop</th>
+            <th className="r">Klantprijs</th>
+            <th />
+          </tr>
+        </thead>
+        <tbody>
+          {overzicht.perAantal.map((p) => {
+            const o = p.beste;
+            return (
+              <tr key={p.aantal} style={o ? undefined : { color: 'var(--tx3)' }}>
+                <td>{o === overzicht.beste ? '★ ' : ''}{p.aantal}</td>
+                <td title={o?.meldingen.join(' · ') || p.reden || undefined}>
+                  {o ? <>{o.titel}{o.breed || o.krap ? ' ⚠' : ''}</> : 'niet mogelijk'}
+                </td>
+                <td className="r">{o && o.panelen.length > 1 ? o.overlap : '—'}</td>
+                <td className="r">{o ? `€${fmt(o.aankoop)}` : ''}</td>
+                <td className="r">{o ? `€${fmt(o.verkoop)}` : ''}</td>
+                <td>
+                  {p.aantal === gekozen ? (
+                    <span className="badge ok">getoond</span>
+                  ) : o ? (
+                    <button className="btn ghost sm" type="button" onClick={() => kies(p.aantal)}>Toon</button>
+                  ) : null}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }

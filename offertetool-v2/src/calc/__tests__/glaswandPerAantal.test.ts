@@ -139,11 +139,11 @@ describe('bewaarde offertes van voor deze wijziging', () => {
     },
   ];
 
-  it('openen als "zelf gekozen" en rekenen exact zoals toen', () => {
+  it('rekenen na heropenen exact zoals toen (standaard/maatwerk als "zelf gekozen", mix als "eigen")', () => {
     for (const o of oud) {
       const toen = calcGlaswand({ ...basis, dagmaatBreedte: o.breedte, ...indelingNaarInvoer(o) });
       const gemigreerd = migreerIndeling(o);
-      expect(gemigreerd.keuze).toBe('vast');
+      expect(gemigreerd.keuze).toBe(o.paneelModus === 'mix' ? 'eigen' : 'vast');
       const perAantal = glaswandOptiesVoorAantal({ ...basis, dagmaatBreedte: o.breedte }, o.aantalPanelen);
       const nu = calcGlaswand({
         ...basis, dagmaatBreedte: o.breedte, ...indelingNaarInvoer(bepaalIndeling(gemigreerd, perAantal)),
@@ -151,6 +151,24 @@ describe('bewaarde offertes van voor deze wijziging', () => {
       expect(String(nu.detail.panelenLijst), o.paneelModus).toBe(String(toen.detail.panelenLijst));
       expect(nu.aankoop, o.paneelModus).toBeCloseTo(toen.aankoop, 2);
     }
+  });
+
+  it('een oude mixwand met een verouderd aantal (3 bewaard, 4 in de rijen) opent met 4 panelen', () => {
+    // Het oude formulier paste "aantal panelen" in mix-modus niet aan: het bleef op 3 staan.
+    const o = {
+      paneelModus: 'mix' as const, paneelBreedte: 900, aantalPanelen: 3, overlap: 30,
+      paneelVerdeling: [{ breedte: 900, aantal: 2 }, { breedte: 1000, aantal: 2 }],
+    };
+    const toen = calcGlaswand({ ...basis, dagmaatBreedte: 3710, ...indelingNaarInvoer(o) });
+    expect(String(toen.detail.panelenLijst)).toBe('900,900,1000,1000');
+    const gemigreerd = migreerIndeling(o);
+    expect(gemigreerd.keuze).toBe('eigen');
+    expect(gemigreerd.aantalPanelen).toBe(4);
+    const nu = calcGlaswand({
+      ...basis, dagmaatBreedte: 3710, ...indelingNaarInvoer(bepaalIndeling(gemigreerd, null)),
+    });
+    expect(String(nu.detail.panelenLijst)).toBe('900,900,1000,1000');
+    expect(nu.aankoop).toBeCloseTo(toen.aankoop, 2);
   });
 
   it('een nieuwer item houdt zijn keuze', () => {
