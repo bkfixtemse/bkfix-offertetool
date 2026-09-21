@@ -531,6 +531,9 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
       aantalPanelen: n,
       paneelBreedte: Math.round(paneelBreedte),
       paneelVerdeling: maten.map((m) => `${m.aantal}× ${Math.round(m.breedte)}mm`).join(' + '),
+      // Elke paneelbreedte afzonderlijk, in volgorde (bv. "900,980,980"). De indelingsvoorstellen
+      // lezen dit terug, zodat ze exact dezelfde maten tonen als wat de rekenkern bestelt.
+      panelenLijst: maten.flatMap((m) => Array.from({ length: m.aantal }, () => Math.round(m.breedte))).join(','),
       overlap: r1(overlap),
       wandBreedte: Math.round(wandBreedte),
       glasHoogte,
