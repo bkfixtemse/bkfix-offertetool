@@ -64,6 +64,8 @@ export interface AdviesOptie {
   verkoop: number;
   /** Er zit een paneel in dat smaller is dan krapPaneelBreedte. */
   krap: boolean;
+  /** Er zit een paneel in dat breder is dan de breedste standaardmaat (bv. als je zelf weinig panelen kiest). */
+  breed: boolean;
 }
 
 export interface GlaswandAdvies {
@@ -146,6 +148,7 @@ function reken(basis: GlaswandInput, soort: AdviesSoort, inst: AdviesInstelling)
     aankoop: eur(r.aankoop),
     verkoop: eur(r.uwVerkoop),
     krap: panelen.some((b) => b > 0 && b < KRAP_BREEDTE),
+    breed: panelen.some((b) => b > cfg.maxPaneelBreedte),
   };
 }
 
@@ -154,6 +157,7 @@ function vergelijk(gewenst: number) {
   return (a: AdviesOptie, b: AdviesOptie) =>
     Number(!a.mogelijk) - Number(!b.mogelijk)
     || Number(a.krap) - Number(b.krap)
+    || Number(a.breed) - Number(b.breed)
     || a.aankoop - b.aankoop
     || Math.abs(a.overlap - gewenst) - Math.abs(b.overlap - gewenst)
     || a.panelen.length - b.panelen.length
@@ -183,11 +187,8 @@ export const ADVIES_CRITERIUM =
   'Beste = de goedkoopste geschikte indeling zonder ongewoon smal glas. Bij gelijke prijs telt de '
   + 'overlap die het dichtst bij je gewenste ligt, dan het kleinste aantal panelen.';
 
-/**
- * @param basis de volledige invoer van het formulier; opties, extra lijnen, kleur en voorbereiding
- *              worden voor de vergelijking geneutraliseerd, zodat enkel de indeling het verschil maakt.
- */
-export function glaswandAdvies(basis: GlaswandInput): GlaswandAdvies {
+/** Invoer voor de vergelijking: alles wat niet over de indeling gaat, wordt geneutraliseerd. */
+function voorbereid(basis: GlaswandInput) {
   const gewenst = Math.max(0, basis.overlap || 0);
   const neutraal: GlaswandInput = {
     ...basis,
@@ -206,10 +207,82 @@ export function glaswandAdvies(basis: GlaswandInput): GlaswandAdvies {
   };
   const W = (basis.dagmaatBreedte || 0)
     - ((basis.kokerLinks || 0) + (basis.kokerMidden || 0) + (basis.kokerRechts || 0));
+  return { neutraal, W, gewenst, klaar: W > 0 && basis.dagmaatHoogte > 0 };
+}
+
+/**
+ * Alle indelingen met precies n panelen: elke combinatie van standaardmaten (de overlap volgt), en
+ * standaardglas met k maatwerkpanelen die de rest opvullen op de gewenste overlap.
+ * @param relatief de afgeleide overlap moet ook dicht bij de gewenste liggen (voor de overzichtslijst)
+ * @param maatwerk ook de indeling "alle panelen maatwerk" meenemen
+ */
+function genereer(
+  neutraal: GlaswandInput, W: number, gewenst: number, n: number,
+  opts: { relatief: boolean; maatwerk: boolean },
+): AdviesOptie[] {
+  const uit: AdviesOptie[] = [];
+  const kMax = opts.maatwerk ? n : n - 1;
+  for (let k = 0; k <= kMax; k++) {
+    for (const std of multisets(n - k)) {
+      const som = std.reduce((t, b) => t + b, 0);
+      const verdeling = telMaten(std);
+      if (k === 0) {
+        if (n === 1) {
+          if (W - som < 0 || W - som > 20) continue;          // één vast paneel moet de opening dekken
+        } else {
+          const o = (som - W) / (n - 1);
+          if (opts.relatief ? !overlapOk(o, gewenst) : !(o >= cfg.overlapMin && o <= cfg.overlapMax)) continue;
+        }
+        uit.push(reken(neutraal, verdeling.length === 1 ? 'standaard' : 'mix', {
+          paneelModus: verdeling.length === 1 ? 'standaard' : 'mix',
+          aantalPanelen: n,
+          paneelBreedte: verdeling.length === 1 ? verdeling[0].breedte : 0,
+          paneelVerdeling: verdeling.length === 1 ? [] : verdeling,
+          overlap: gewenst,
+        }));
+        continue;
+      }
+      if (k === n) {
+        // alle panelen maatwerk, even breed, op de gewenste overlap
+        uit.push(reken(neutraal, 'maatwerk', {
+          paneelModus: 'maatwerk', aantalPanelen: n, paneelBreedte: 0, paneelVerdeling: [], overlap: gewenst,
+        }));
+        continue;
+      }
+      // k opvulpanelen, allemaal even breed, op de gewenste overlap (zelfde afronding als de rekenkern)
+      const opvul = Math.round((W + (n - 1) * gewenst - som) / k);
+      if (opvul < MIN_BREEDTE || opvul > cfg.maxPaneelBreedte || STANDAARD.includes(opvul)) continue;
+      uit.push(reken(neutraal, 'aanvulling', {
+        paneelModus: 'mix', aantalPanelen: n, paneelBreedte: 0, overlap: gewenst,
+        paneelVerdeling: [...verdeling, { breedte: 0, aantal: k }],
+      }));
+    }
+  }
+  return uit;
+}
+
+/** Enkel wat kan, zonder dubbels (dezelfde glasmaten op dezelfde overlap). */
+function ontdubbel(opties: AdviesOptie[]): AdviesOptie[] {
+  const gezien = new Set<string>();
+  return opties.filter((k) => {
+    if (!k.mogelijk) return false;
+    const s = sleutel(k);
+    if (gezien.has(s)) return false;
+    gezien.add(s);
+    return true;
+  });
+}
+
+/**
+ * @param basis de volledige invoer van het formulier; opties, extra lijnen, kleur en voorbereiding
+ *              worden voor de vergelijking geneutraliseerd, zodat enkel de indeling het verschil maakt.
+ */
+export function glaswandAdvies(basis: GlaswandInput): GlaswandAdvies {
+  const { neutraal, W, gewenst, klaar } = voorbereid(basis);
   const leeg: GlaswandAdvies = {
     wandBreedte: W, overlap: gewenst, maatwerk: [], mix: [], beste: null, waarom: '', criterium: ADVIES_CRITERIUM,
   };
-  if (!(W > 0) || !(basis.dagmaatHoogte > 0)) return leeg;
+  if (!klaar) return leeg;
 
   // ---- Maatwerk: drie opeenvolgende aantallen panelen, te beginnen bij het eerste dat niet
   // breder uitkomt dan de breedste standaardmaat. Ook onmogelijke aantallen tonen we, met reden.
@@ -220,52 +293,13 @@ export function glaswandAdvies(basis: GlaswandInput): GlaswandAdvies {
     paneelModus: 'maatwerk', aantalPanelen: n, paneelBreedte: 0, paneelVerdeling: [], overlap: gewenst,
   }));
 
-  // ---- Mix & match: elke combinatie van standaardmaten (ook drie of vier verschillende), met nul,
-  // één of meer maatwerkpanelen die de rest opvullen. Zonder opvulpanelen volgt de overlap uit de
-  // maten; met opvulpanelen ligt hij exact op de gewenste. "Alles maatwerk" staat al in de maatwerklijst.
+  // ---- Mix & match over alle aantallen panelen; "alles maatwerk" staat al in de maatwerklijst.
   const kandidaten: AdviesOptie[] = [];
   for (let n = 1; n <= MAX_RAILS; n++) {
-    for (let k = 0; k < n; k++) {
-      for (const std of multisets(n - k)) {
-        const som = std.reduce((t, b) => t + b, 0);
-        const verdeling = telMaten(std);
-        if (k === 0) {
-          if (n === 1) {
-            if (W - som < 0 || W - som > 20) continue;          // één vast paneel moet de opening dekken
-          } else if (!overlapOk((som - W) / (n - 1), gewenst)) {
-            continue;
-          }
-          kandidaten.push(reken(neutraal, verdeling.length === 1 ? 'standaard' : 'mix', {
-            paneelModus: verdeling.length === 1 ? 'standaard' : 'mix',
-            aantalPanelen: n,
-            paneelBreedte: verdeling.length === 1 ? verdeling[0].breedte : 0,
-            paneelVerdeling: verdeling.length === 1 ? [] : verdeling,
-            overlap: gewenst,
-          }));
-          continue;
-        }
-        // k opvulpanelen, allemaal even breed, op de gewenste overlap (zelfde afronding als de rekenkern)
-        const opvul = Math.round((W + (n - 1) * gewenst - som) / k);
-        if (opvul < MIN_BREEDTE || opvul > cfg.maxPaneelBreedte || STANDAARD.includes(opvul)) continue;
-        kandidaten.push(reken(neutraal, 'aanvulling', {
-          paneelModus: 'mix', aantalPanelen: n, paneelBreedte: 0, overlap: gewenst,
-          paneelVerdeling: [...verdeling, { breedte: 0, aantal: k }],
-        }));
-      }
-    }
+    kandidaten.push(...genereer(neutraal, W, gewenst, n, { relatief: true, maatwerk: false }));
   }
-
-  // Dubbels weg (dezelfde glasmaten op dezelfde overlap), rangschikken, beste drie houden.
-  const gezien = new Set<string>();
-  const uniek = kandidaten.filter((k) => {
-    if (!k.mogelijk) return false;
-    const s = sleutel(k);
-    if (gezien.has(s)) return false;
-    gezien.add(s);
-    return true;
-  });
   const orde = vergelijk(gewenst);
-  const mix = [...uniek].sort(orde).slice(0, 3);
+  const mix = ontdubbel(kandidaten).sort(orde).slice(0, 3);
 
   const geschikt = [...maatwerk.filter((m) => m.mogelijk), ...mix].sort(orde);
   const beste = geschikt[0] ?? null;
@@ -294,4 +328,96 @@ export function glaswandAdvies(basis: GlaswandInput): GlaswandAdvies {
   }
 
   return { wandBreedte: W, overlap: gewenst, maatwerk, mix, beste, waarom, criterium: ADVIES_CRITERIUM };
+}
+
+export interface AantalAdvies {
+  aantal: number;
+  wandBreedte: number;
+  /** Alle indelingen die kunnen, gerangschikt: de beste eerst. */
+  opties: AdviesOptie[];
+  beste: AdviesOptie | null;
+  /** Waarom er niets kan, als opties leeg is. */
+  reden: string;
+}
+
+/**
+ * Alle mogelijke indelingen met precies het gekozen aantal panelen: maatwerk, standaardglas in elke
+ * combinatie van maten, en standaardglas met maatwerkpanelen die de rest opvullen — door elkaar,
+ * gerangschikt, de beste eerst. De gebruiker hoeft dus niet zelf te kiezen tussen standaard,
+ * maatwerk of mix. Een standaardcombinatie komt erin als haar overlap tussen overlapMin en
+ * overlapMax ligt (ook als dat verder van de gewenste overlap ligt; die afstand telt in de rangorde).
+ */
+export function glaswandOptiesVoorAantal(basis: GlaswandInput, aantal: number): AantalAdvies {
+  const { neutraal, W, gewenst, klaar } = voorbereid(basis);
+  const n = Math.floor(aantal || 0);
+  const leeg = { aantal: n, wandBreedte: W, opties: [], beste: null };
+  if (!klaar || n < 1) return { ...leeg, reden: '' };
+
+  const maatwerkReden = () => reken(neutraal, 'maatwerk', {
+    paneelModus: 'maatwerk', aantalPanelen: n, paneelBreedte: 0, paneelVerdeling: [], overlap: gewenst,
+  }).reden;
+  // Meer panelen dan rails: niets doorrekenen, meteen de reden van de rekenkern tonen.
+  if (n > MAX_RAILS) return { ...leeg, reden: maatwerkReden() };
+
+  const opties = ontdubbel(genereer(neutraal, W, gewenst, n, { relatief: false, maatwerk: true }))
+    .sort(vergelijk(gewenst));
+  if (opties.length === 0) {
+    return { ...leeg, reden: maatwerkReden() || `Geen indeling met ${n} panelen past in ${W}mm.` };
+  }
+  return { aantal: n, wandBreedte: W, opties, beste: opties[0], reden: '' };
+}
+
+/**
+ * Hoe het formulier aan zijn indeling komt:
+ * - 'auto'  : altijd de beste mogelijkheid voor het gekozen aantal panelen en de overlap;
+ * - 'vast'  : een mogelijkheid die de gebruiker zelf aanklikte (bewaard zoals ze toen was);
+ * - 'eigen' : de gebruiker gaf de glasmaten zelf in.
+ */
+export type IndelingKeuze = 'auto' | 'vast' | 'eigen';
+
+export interface IndelingStaat {
+  keuze: IndelingKeuze;
+  paneelModus: AdviesInstelling['paneelModus'];
+  aantalPanelen: number;
+  paneelBreedte: number;
+  paneelVerdeling: GlaswandPaneel[];
+  overlap: number;
+}
+
+/** De indeling waarmee het formulier rekent, volgens de keuze. */
+export function bepaalIndeling(st: IndelingStaat, perAantal: AantalAdvies | null): AdviesInstelling {
+  if (st.keuze === 'eigen') {
+    return {
+      paneelModus: 'mix',
+      aantalPanelen: st.paneelVerdeling.reduce((t, r) => t + (Math.floor(r.aantal) || 0), 0),
+      paneelBreedte: st.paneelBreedte,
+      paneelVerdeling: st.paneelVerdeling,
+      overlap: st.overlap,
+    };
+  }
+  if (st.keuze === 'auto' && perAantal?.beste) {
+    const b = perAantal.beste.instelling;
+    // Een maatwerk- of mixvoorstel heeft geen standaardbreedte (0); die laten we op wat er stond.
+    return { ...b, paneelBreedte: b.paneelBreedte || st.paneelBreedte };
+  }
+  if (st.keuze === 'auto') {
+    // Niets mogelijk met dit aantal: reken het als maatwerk, zodat de rekenkern de reden toont.
+    return {
+      paneelModus: 'maatwerk', aantalPanelen: st.aantalPanelen, paneelBreedte: st.paneelBreedte,
+      paneelVerdeling: [], overlap: st.overlap,
+    };
+  }
+  return {
+    paneelModus: st.paneelModus, aantalPanelen: st.aantalPanelen, paneelBreedte: st.paneelBreedte,
+    paneelVerdeling: st.paneelVerdeling, overlap: st.overlap,
+  };
+}
+
+/**
+ * Een offerte-item dat bewaard is voor er een keuze bestond, rekende met paneelModus en de
+ * bijhorende velden. Door het als 'vast' te openen, rekent het exact zoals toen — anders zou het
+ * bij het heropenen stil naar de beste mogelijkheid springen en van prijs veranderen.
+ */
+export function migreerIndeling<T extends object>(invoer: T): T & { keuze: IndelingKeuze } {
+  return 'keuze' in invoer ? (invoer as T & { keuze: IndelingKeuze }) : { ...invoer, keuze: 'vast' };
 }

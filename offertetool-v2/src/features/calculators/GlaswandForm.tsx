@@ -5,7 +5,10 @@ import {
   GLASWAND_MERKEN, type GlaswandExtra, type GlaswandMerk, type GlaswandOptieKeuze,
   type GlaswandPaneel,
 } from '../../calc/glaswand';
-import { glaswandAdvies, indelingNaarInvoer, type AdviesOptie } from '../../calc/glaswandAdvies';
+import {
+  bepaalIndeling, glaswandAdvies, glaswandOptiesVoorAantal, indelingNaarInvoer, migreerIndeling,
+  type AdviesInstelling, type AdviesOptie, type IndelingKeuze,
+} from '../../calc/glaswandAdvies';
 import type { GlaswandInput } from '../../calc/glaswand';
 import { GLASWAND_MERK, GLASWAND_VOORBEREIDING_TARIEF } from '../../data/constants';
 import { Chk, fmt, Num, Sec, Sel, Txt } from '../../components/fields';
@@ -21,6 +24,8 @@ const DEFAULT = {
   paneelModus: 'maatwerk' as 'standaard' | 'maatwerk' | 'mix',
   paneelBreedte: 900,
   paneelVerdeling: [] as GlaswandPaneel[],
+  /** auto = altijd de beste mogelijkheid · vast = zelf aangeklikt · eigen = glasmaten zelf ingegeven */
+  keuze: 'auto' as IndelingKeuze,
   overlap: 30,
   steellook: false,
   glas: 'helder' as 'helder' | 'getint',
@@ -41,8 +46,10 @@ type State = typeof DEFAULT;
 export function GlaswandForm() {
   const [s, set] = useState<State>(() => {
     const et = useOffer.getState().editTarget;
-    return et?.kind === 'glaswand' ? { ...DEFAULT, ...(et.input as Partial<State>) } : DEFAULT;
+    // Een item van voor de keuze bestond, opent als 'vast': het rekent dan exact zoals toen.
+    return et?.kind === 'glaswand' ? { ...DEFAULT, ...migreerIndeling(et.input as Partial<State>) } : DEFAULT;
   });
+  const [toonAlle, setToonAlle] = useState(false);
   const u = (p: Partial<State>) => set({ ...s, ...p });
   const isES = s.merk === 'ES Systems';
 
@@ -70,15 +77,14 @@ export function GlaswandForm() {
   const setPaneel = (i: number, p: Partial<GlaswandPaneel>) =>
     u({ paneelVerdeling: s.paneelVerdeling.map((o, j) => (j === i ? { ...o, ...p } : o)) });
 
-  const mix = s.paneelModus === 'mix';
+  // Bij ES geef je de glasmaten enkel zelf in als je daar uitdrukkelijk voor kiest; bij Deponti
+  // (geparkeerd) blijft de oude keuze tussen standaard, maatwerk en mix bestaan.
+  const eigen = isES ? s.keuze === 'eigen' : s.paneelModus === 'mix';
   const mixPanelen = s.paneelVerdeling.reduce((t, r) => t + (Math.floor(r.aantal) || 0), 0);
   const mixRest = s.paneelVerdeling.some((r) => !(r.breedte > 0));
-  /** Het aantal panelen dat de berekening echt gebruikt - in mix-modus volgt dat uit de rijen. */
-  const panelen = mix ? mixPanelen : s.aantalPanelen;
 
-  // Eén invoerobject voor de berekening én voor de voorstellen, met dezelfde vertaling van de
-  // indeling (indelingNaarInvoer). Zo rekent een gekozen voorstel exact door zoals het getoond werd.
-  const invoer: GlaswandInput = {
+  // Alles behalve de indeling. Zowel de berekening als de voorstellen vertrekken hiervan.
+  const basisInvoer: GlaswandInput = {
     ...s,
     ...indelingNaarInvoer({
       paneelModus: s.paneelModus, aantalPanelen: s.aantalPanelen, paneelBreedte: s.paneelBreedte,
@@ -93,15 +99,34 @@ export function GlaswandForm() {
       eenmaligeKorting: s.korting,
     },
   };
-  const r = calcGlaswand(invoer);
 
-  // De voorstellen hangen enkel af van de opening, de overlap, het glas en de marges.
-  const advies = useMemo(
-    () => (isES ? glaswandAdvies(invoer) : null),
+  // Alle mogelijkheden voor het gekozen aantal panelen. Hangt enkel af van de opening, het aantal,
+  // de overlap, het glas en de marges.
+  const deps = [isES, s.dagmaatBreedte, s.dagmaatHoogte, s.kokerLinks, s.kokerMidden, s.kokerRechts,
+    s.overlap, s.glas, s.kortingPct, s.margePct, s.plaatsingVast];
+  const perAantal = useMemo(
+    () => (isES ? glaswandOptiesVoorAantal(basisInvoer, s.aantalPanelen) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isES, s.dagmaatBreedte, s.dagmaatHoogte, s.kokerLinks, s.kokerMidden, s.kokerRechts,
-      s.overlap, s.glas, s.kortingPct, s.margePct, s.plaatsingVast],
+    [...deps, s.aantalPanelen],
   );
+  const advies = useMemo(
+    () => (isES ? glaswandAdvies(basisInvoer) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    deps,
+  );
+
+  // De indeling waarmee gerekend wordt: bij ES volgens de keuze (standaard: automatisch de beste),
+  // bij Deponti rechtstreeks uit de velden.
+  const instelling: AdviesInstelling = isES
+    ? bepaalIndeling(s, perAantal)
+    : {
+      paneelModus: s.paneelModus, aantalPanelen: s.aantalPanelen, paneelBreedte: s.paneelBreedte,
+      paneelVerdeling: s.paneelVerdeling, overlap: s.overlap,
+    };
+  const invoer: GlaswandInput = { ...basisInvoer, ...indelingNaarInvoer(instelling) };
+  const r = calcGlaswand(invoer);
+  /** Het aantal panelen waarmee de berekening echt rekent. */
+  const panelen = Number(r.detail.aantalPanelen) || 0;
   // Vergelijk gesorteerd: dezelfde panelen in een andere rijvolgorde zijn dezelfde indeling.
   const huidig = String(r.detail.panelenLijst || '').split(',').filter(Boolean).map(Number).sort((a, b) => a - b);
   const inGebruik = (o: AdviesOptie) =>
@@ -112,7 +137,26 @@ export function GlaswandForm() {
    * terwijl er maatwerk gerekend wordt.
    */
   const pasToe = (o: AdviesOptie) =>
-    u({ ...o.instelling, paneelBreedte: o.instelling.paneelBreedte || s.paneelBreedte });
+    u({ ...o.instelling, paneelBreedte: o.instelling.paneelBreedte || s.paneelBreedte, keuze: 'vast' });
+
+  /**
+   * Een maat wijzigen die bepaalt welke mogelijkheden er zijn. Stond er een zelf gekozen indeling,
+   * dan kiest de tool opnieuw de beste — de oude keuze past niet meer bij de nieuwe maten.
+   */
+  const wijzigMaat = (p: Partial<State>) =>
+    u({ ...p, ...(isES && s.keuze === 'vast' ? { keuze: 'auto' as IndelingKeuze } : {}) });
+
+  /** Naar "eigen indeling": vertrek van de indeling die nu gebruikt wordt. */
+  const naarEigen = () => u({
+    keuze: 'eigen',
+    paneelModus: 'mix',
+    paneelVerdeling: instelling.paneelModus === 'mix' ? instelling.paneelVerdeling
+      : instelling.paneelModus === 'standaard'
+        ? [{ breedte: instelling.paneelBreedte, aantal: instelling.aantalPanelen }]
+        : [{ breedte: 0, aantal: instelling.aantalPanelen }],
+  });
+  const naarVoorstellen = () =>
+    u({ keuze: 'auto', aantalPanelen: Math.max(1, mixPanelen || s.aantalPanelen) });
 
   const voorbereidingKost = s.voorbereidingPersonen * s.voorbereidingUren * s.voorbereidingTarief;
   const sporen = s.sporen || s.aantalPanelen;
@@ -140,13 +184,13 @@ export function GlaswandForm() {
           <div className="grid2">
             <Sel label="Merk *" value={s.merk} onChange={(m) => wisselMerk(m as GlaswandMerk)} options={GLASWAND_MERKEN} />
             <Num label="Aantal identieke wanden" value={s.aantal} min={1} onChange={(a) => u({ aantal: a || 1 })} />
-            <Num label="Gemeten dagmaat breedte (mm) *" value={s.dagmaatBreedte} onChange={(v) => u({ dagmaatBreedte: v })} />
+            <Num label="Gemeten dagmaat breedte (mm) *" value={s.dagmaatBreedte} onChange={(v) => wijzigMaat({ dagmaatBreedte: v })} />
             <Num label={isES ? 'Inbouwhoogte / dagmaat (mm) *' : 'Inbouwhoogte (mm) *'}
               value={s.dagmaatHoogte} onChange={(v) => u({ dagmaatHoogte: v })}
               hint={isES ? 'Vloer tot onderkant goot' : 'Onderzijde onderprofiel tot bovenzijde bovenprofiel'} />
-            <Num label="Koker links (mm)" value={s.kokerLinks} onChange={(v) => u({ kokerLinks: v })} />
-            <Num label="Koker midden (mm)" value={s.kokerMidden} onChange={(v) => u({ kokerMidden: v })} />
-            <Num label="Koker rechts (mm)" value={s.kokerRechts} onChange={(v) => u({ kokerRechts: v })} />
+            <Num label="Koker links (mm)" value={s.kokerLinks} onChange={(v) => wijzigMaat({ kokerLinks: v })} />
+            <Num label="Koker midden (mm)" value={s.kokerMidden} onChange={(v) => wijzigMaat({ kokerMidden: v })} />
+            <Num label="Koker rechts (mm)" value={s.kokerRechts} onChange={(v) => wijzigMaat({ kokerRechts: v })} />
           </div>
         </Sec>
 
@@ -154,7 +198,7 @@ export function GlaswandForm() {
           <Sec title="Voorstellen voor de paneelindeling">
             <div className="grid2">
               <Num label="Gewenste overlap (mm)" value={s.overlap} min={0}
-                onChange={(v) => u({ overlap: v })} hint="De voorstellen rekenen met deze overlap" />
+                onChange={(v) => wijzigMaat({ overlap: v })} hint="De voorstellen rekenen met deze overlap" />
               <div className="fld">
                 <label>Wandbreedte na kokers</label>
                 <div style={{ padding: '8px 0', fontWeight: 700 }}>{advies.wandBreedte} mm</div>
@@ -190,9 +234,8 @@ export function GlaswandForm() {
 
         <Sec title="Panelen">
           <div className="grid2">
-            {mix ? (
-              // Geen invoerveld: in mix & match volgt het aantal uit de rijen hieronder. Een veld dat
-              // je kan aanklikken maar dat je invoer negeert, wekt de indruk dat je het kan zetten.
+            {eigen ? (
+              // Geen invoerveld: bij een eigen indeling volgt het aantal uit de rijen hieronder.
               <div className="fld">
                 <label>{isES ? 'Aantal panelen = aantal rails' : 'Aantal panelen'}</label>
                 <div style={{ padding: '8px 0', fontWeight: 700 }}>
@@ -202,26 +245,33 @@ export function GlaswandForm() {
               </div>
             ) : (
               <Num label={isES ? 'Aantal panelen = aantal rails *' : 'Aantal panelen *'}
-                value={s.aantalPanelen} min={1} onChange={(v) => u({ aantalPanelen: v || 1 })} />
+                value={s.aantalPanelen} min={1} onChange={(v) => wijzigMaat({ aantalPanelen: v || 1 })} />
             )}
-            <Sel label="Glasmaat" value={s.paneelModus}
-              onChange={(m) => u({
-                paneelModus: m as any,
-                // De keuzelijst toont altijd een maat; de berekening moet dezelfde gebruiken.
-                ...(m === 'standaard' && !breedtes.includes(s.paneelBreedte) ? { paneelBreedte: breedtes[0] } : {}),
-              })}
-              options={[
-                { v: 'standaard', t: 'Standaardbreedte (overlap volgt)' },
-                { v: 'maatwerk', t: 'Maatwerk (overlap kiezen)' },
-                { v: 'mix', t: 'Mix & match (verschillende maten)' },
-              ]} />
-            {s.paneelModus === 'standaard' && (
-              <Sel label="Paneelbreedte (mm)" value={String(s.paneelBreedte)}
-                onChange={(v) => u({ paneelBreedte: Number(v) })} options={breedtes.map(String)} />
-            )}
-            {(s.paneelModus === 'maatwerk' || (mix && mixRest)) && (
+            {isES ? (
               <Num label="Gewenste overlap (mm)" value={s.overlap} min={0}
-                onChange={(v) => u({ overlap: v })} hint="Gebruikelijk 30 tot 70mm" />
+                onChange={(v) => wijzigMaat({ overlap: v })} hint="Gebruikelijk 30 tot 70mm" />
+            ) : (
+              <>
+                <Sel label="Glasmaat" value={s.paneelModus}
+                  onChange={(m) => u({
+                    paneelModus: m as any,
+                    // De keuzelijst toont altijd een maat; de berekening moet dezelfde gebruiken.
+                    ...(m === 'standaard' && !breedtes.includes(s.paneelBreedte) ? { paneelBreedte: breedtes[0] } : {}),
+                  })}
+                  options={[
+                    { v: 'standaard', t: 'Standaardbreedte (overlap volgt)' },
+                    { v: 'maatwerk', t: 'Maatwerk (overlap kiezen)' },
+                    { v: 'mix', t: 'Mix & match (verschillende maten)' },
+                  ]} />
+                {s.paneelModus === 'standaard' && (
+                  <Sel label="Paneelbreedte (mm)" value={String(s.paneelBreedte)}
+                    onChange={(v) => u({ paneelBreedte: Number(v) })} options={breedtes.map(String)} />
+                )}
+                {(s.paneelModus === 'maatwerk' || (eigen && mixRest)) && (
+                  <Num label="Gewenste overlap (mm)" value={s.overlap} min={0}
+                    onChange={(v) => u({ overlap: v })} hint="Gebruikelijk 30 tot 70mm" />
+                )}
+              </>
             )}
             {isES && (
               <Sel label="Glastype" value={s.glas} onChange={(g) => u({ glas: g as any })}
@@ -247,7 +297,53 @@ export function GlaswandForm() {
               </>
             )}
           </div>
-          {mix && (
+
+          {isES && !eigen && (
+            perAantal && s.dagmaatBreedte > 0 && s.dagmaatHoogte > 0 ? (
+              <div style={{ marginTop: 12 }}>
+                <h4 style={{ margin: '0 0 6px' }}>
+                  Alle mogelijkheden met {perAantal.aantal} {perAantal.aantal === 1 ? 'paneel' : 'panelen'} op {perAantal.wandBreedte} mm
+                </h4>
+                {perAantal.opties.length === 0 ? (
+                  <div className="alert warn">{perAantal.reden}</div>
+                ) : (
+                  <>
+                    <div className="hint" style={{ marginBottom: 6 }}>
+                      {s.keuze === 'auto' ? (
+                        <>★ De beste mogelijkheid is automatisch gekozen. Klik een andere aan om die te gebruiken.</>
+                      ) : (
+                        <>Zelf gekozen.{' '}
+                          <button className="btn ghost sm" type="button" onClick={() => u({ keuze: 'auto' })}>
+                            Terug naar de beste
+                          </button>
+                        </>
+                      )}
+                    </div>
+                    <AdviesTabel
+                      opties={toonAlle ? perAantal.opties : perAantal.opties.slice(0, 8)}
+                      inGebruik={inGebruik} gebruik={pasToe} beste={perAantal.beste} />
+                    {perAantal.opties.length > 8 && (
+                      <button className="btn ghost sm" type="button" style={{ marginTop: 6 }}
+                        onClick={() => setToonAlle(!toonAlle)}>
+                        {toonAlle ? 'Minder tonen' : `Toon alle ${perAantal.opties.length} mogelijkheden`}
+                      </button>
+                    )}
+                  </>
+                )}
+                <div style={{ marginTop: 8 }}>
+                  <button className="btn ghost sm" type="button" onClick={naarEigen}>
+                    Glasmaten zelf ingeven
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="hint" style={{ marginTop: 10 }}>
+                Vul de dagmaat breedte en hoogte in; dan verschijnen hier alle mogelijkheden.
+              </div>
+            )
+          )}
+
+          {eigen && (
             <div style={{ marginTop: 10 }}>
               <div className="alert info">
                 Eén rij per glasmaat. Laat de breedte op 0 staan om dat paneel de rest van de opening
@@ -265,7 +361,7 @@ export function GlaswandForm() {
                     onChange={(aantal) => setPaneel(i, { aantal })} />
                 </div>
               ))}
-              <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+              <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
                 <button className="btn ghost" type="button"
                   onClick={() => u({ paneelVerdeling: [...s.paneelVerdeling, { breedte: breedtes[0], aantal: 1 }] })}>
                   + standaardmaat
@@ -277,6 +373,11 @@ export function GlaswandForm() {
                 {s.paneelVerdeling.length > 0 && (
                   <button className="btn ghost" type="button"
                     onClick={() => u({ paneelVerdeling: s.paneelVerdeling.slice(0, -1) })}>− laatste</button>
+                )}
+                {isES && (
+                  <button className="btn ghost" type="button" onClick={naarVoorstellen}>
+                    Terug naar de voorstellen
+                  </button>
                 )}
               </div>
             </div>
@@ -441,8 +542,9 @@ function BesteOptie({ o, waarom, actief, gebruik }: {
   );
 }
 
-function AdviesTabel({ opties, inGebruik, gebruik }: {
+function AdviesTabel({ opties, inGebruik, gebruik, beste }: {
   opties: AdviesOptie[]; inGebruik: (o: AdviesOptie) => boolean; gebruik: (o: AdviesOptie) => void;
+  beste?: AdviesOptie | null;
 }) {
   return (
     <div style={{ overflowX: 'auto' }}>
@@ -462,7 +564,7 @@ function AdviesTabel({ opties, inGebruik, gebruik }: {
         <tbody>
           {opties.map((o, i) => (
             <tr key={i} style={o.mogelijk ? undefined : { color: 'var(--tx3)' }}>
-              <td>{o.titel}</td>
+              <td>{o === beste ? '★ ' : ''}{o.titel}{o.breed ? ' ⚠' : ''}</td>
               <td>{o.panelen.join(' · ')}</td>
               <td className="r">{o.overlap}</td>
               <td>{o.mogelijk ? controleTekst(o) : ''}</td>
