@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   calcGlaswand, glaswandKleuren, glaswandOpties, kiesRaillengte,
   DEPONTI_BREEDTES, DEPONTI_GLASSOORTEN, DEPONTI_HOOGTES, ES_BREEDTES,
   GLASWAND_MERKEN, type GlaswandExtra, type GlaswandMerk, type GlaswandOptieKeuze,
   type GlaswandPaneel,
 } from '../../calc/glaswand';
+import { glaswandAdvies, indelingNaarInvoer, type AdviesOptie } from '../../calc/glaswandAdvies';
+import type { GlaswandInput } from '../../calc/glaswand';
 import { GLASWAND_MERK, GLASWAND_VOORBEREIDING_TARIEF } from '../../data/constants';
-import { Chk, Num, Sec, Sel, Txt } from '../../components/fields';
+import { Chk, fmt, Num, Sec, Sel, Txt } from '../../components/fields';
 import { ResultCard } from '../../components/ResultCard';
 import { useOffer } from '../../store/offerStore';
 
@@ -74,10 +76,14 @@ export function GlaswandForm() {
   /** Het aantal panelen dat de berekening echt gebruikt - in mix-modus volgt dat uit de rijen. */
   const panelen = mix ? mixPanelen : s.aantalPanelen;
 
-  const r = calcGlaswand({
+  // Eén invoerobject voor de berekening én voor de voorstellen, met dezelfde vertaling van de
+  // indeling (indelingNaarInvoer). Zo rekent een gekozen voorstel exact door zoals het getoond werd.
+  const invoer: GlaswandInput = {
     ...s,
-    paneelModus: s.paneelModus === 'standaard' ? 'standaard' : 'maatwerk',
-    paneelVerdeling: mix ? s.paneelVerdeling : undefined,
+    ...indelingNaarInvoer({
+      paneelModus: s.paneelModus, aantalPanelen: s.aantalPanelen, paneelBreedte: s.paneelBreedte,
+      paneelVerdeling: s.paneelVerdeling, overlap: s.overlap,
+    }),
     kleur: { select: s.kleurSelect === 'andere' ? 'andere' : s.kleurSelect, custom: s.kleurCustom },
     bediening: { bed1: '', bed2: '' },
     vrijeOpties: [],
@@ -86,7 +92,18 @@ export function GlaswandForm() {
       bkfixMarge: s.margePct / 100,
       eenmaligeKorting: s.korting,
     },
-  });
+  };
+  const r = calcGlaswand(invoer);
+
+  // De voorstellen hangen enkel af van de opening, de overlap, het glas en de marges.
+  const advies = useMemo(
+    () => (isES ? glaswandAdvies(invoer) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isES, s.dagmaatBreedte, s.dagmaatHoogte, s.kokerLinks, s.kokerMidden, s.kokerRechts,
+      s.overlap, s.glas, s.kortingPct, s.margePct, s.plaatsingVast],
+  );
+  const inGebruik = (o: AdviesOptie) =>
+    String(r.detail.panelenLijst || '') === o.panelen.join(',') && Number(r.detail.overlap) === o.overlap;
 
   const voorbereidingKost = s.voorbereidingPersonen * s.voorbereidingUren * s.voorbereidingTarief;
   const sporen = s.sporen || s.aantalPanelen;
@@ -123,6 +140,44 @@ export function GlaswandForm() {
             <Num label="Koker rechts (mm)" value={s.kokerRechts} onChange={(v) => u({ kokerRechts: v })} />
           </div>
         </Sec>
+
+        {isES && advies && s.dagmaatBreedte > 0 && s.dagmaatHoogte > 0 && (
+          <Sec title="Voorstellen voor de paneelindeling">
+            <div className="grid2">
+              <Num label="Gewenste overlap (mm)" value={s.overlap} min={0}
+                onChange={(v) => u({ overlap: v })} hint="De voorstellen rekenen met deze overlap" />
+              <div className="fld">
+                <label>Wandbreedte na kokers</label>
+                <div style={{ padding: '8px 0', fontWeight: 700 }}>{advies.wandBreedte} mm</div>
+              </div>
+            </div>
+
+            {advies.beste ? (
+              <BesteOptie o={advies.beste} waarom={advies.waarom} actief={inGebruik(advies.beste)}
+                gebruik={() => u({ ...advies.beste!.instelling })} />
+            ) : (
+              <div className="alert warn" style={{ marginTop: 10 }}>{advies.waarom}</div>
+            )}
+
+            <h4 style={{ margin: '14px 0 6px' }}>Maatwerk — alle panelen even breed, op {advies.overlap}mm overlap</h4>
+            <AdviesTabel opties={advies.maatwerk} inGebruik={inGebruik}
+              gebruik={(o) => u({ ...o.instelling })} />
+
+            <h4 style={{ margin: '14px 0 6px' }}>Mix &amp; match — standaardglas, eventueel met één maatwerkpaneel</h4>
+            {advies.mix.length > 0 ? (
+              <AdviesTabel opties={advies.mix} inGebruik={inGebruik}
+                gebruik={(o) => u({ ...o.instelling })} />
+            ) : (
+              <div className="hint">
+                Geen combinatie van standaardglas mogelijk binnen {advies.overlap}mm ± 20mm overlap.
+              </div>
+            )}
+            <div className="hint" style={{ marginTop: 8 }}>
+              {advies.criterium} Prijzen zijn voor de glasset met plaatsing, zonder opties.
+              Vrije doorgang = de wandbreedte min het breedste paneel, met alles naar één kant geschoven.
+            </div>
+          </Sec>
+        )}
 
         <Sec title="Panelen">
           <div className="grid2">
@@ -329,5 +384,97 @@ export function GlaswandForm() {
       </div>
       {s.dagmaatBreedte > 0 && s.dagmaatHoogte > 0 && <ResultCard r={r} kind="glaswand" input={s} />}
     </>
+  );
+}
+
+/** Controle zoals je ze op papier zou maken: som van het glas min de overlappen = wandbreedte. */
+function controleTekst(o: AdviesOptie) {
+  const som = o.panelen.reduce((t, b) => t + b, 0);
+  const naden = Math.max(0, o.panelen.length - 1);
+  const klopt = Math.abs(o.controle - o.wandBreedte) <= 2;
+  return `${som} − ${naden}×${o.overlap} = ${o.controle}mm ${klopt ? '✓' : '⚠'}`;
+}
+
+function BesteOptie({ o, waarom, actief, gebruik }: {
+  o: AdviesOptie; waarom: string; actief: boolean; gebruik: () => void;
+}) {
+  return (
+    <div style={{
+      marginTop: 10, padding: '12px 14px', borderRadius: 10,
+      border: '2px solid var(--green)', background: 'var(--bg2, #f6fef9)',
+    }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--green)', textTransform: 'uppercase' }}>
+        ★ Beste optie
+      </div>
+      <div style={{ fontSize: 16, fontWeight: 700, margin: '4px 0' }}>{o.titel}</div>
+      <div className="pline"><span>Paneelbreedtes</span><b>{o.panelen.join(' · ')} mm</b></div>
+      <div className="pline"><span>Overlap</span><b>{o.overlap} mm</b></div>
+      <div className="pline"><span>Controle</span><b>{controleTekst(o)}</b></div>
+      <div className="pline"><span>Vrije doorgang ±</span><b>{o.doorgang} mm</b></div>
+      <div className="pline"><span>Inkoop glasset</span><b>€{fmt(o.aankoop)}</b></div>
+      <div className="pline"><span>Klantprijs (zonder opties)</span><b>€{fmt(o.verkoop)}</b></div>
+      <div style={{ fontSize: 13, margin: '6px 0' }}>{waarom}</div>
+      {o.meldingen.length > 0 && (
+        <div className="hint">{o.meldingen.join(' · ')}</div>
+      )}
+      {actief ? (
+        <span className="badge ok" style={{ display: 'inline-block', marginTop: 6 }}>✓ in gebruik</span>
+      ) : (
+        <button className="btn sm" type="button" style={{ marginTop: 6 }} onClick={gebruik}>Gebruik deze</button>
+      )}
+    </div>
+  );
+}
+
+function AdviesTabel({ opties, inGebruik, gebruik }: {
+  opties: AdviesOptie[]; inGebruik: (o: AdviesOptie) => boolean; gebruik: (o: AdviesOptie) => void;
+}) {
+  return (
+    <div style={{ overflowX: 'auto' }}>
+      <table className="det">
+        <thead>
+          <tr>
+            <th>Indeling</th>
+            <th>Paneelbreedtes (mm)</th>
+            <th className="r">Overlap</th>
+            <th>Controle</th>
+            <th className="r">Doorgang</th>
+            <th className="r">Inkoop</th>
+            <th className="r">Klantprijs</th>
+            <th />
+          </tr>
+        </thead>
+        <tbody>
+          {opties.map((o, i) => (
+            <tr key={i} style={o.mogelijk ? undefined : { color: 'var(--tx3)' }}>
+              <td>{o.titel}</td>
+              <td>{o.panelen.join(' · ')}</td>
+              <td className="r">{o.overlap}</td>
+              <td>{o.mogelijk ? controleTekst(o) : ''}</td>
+              <td className="r">{o.mogelijk ? o.doorgang : ''}</td>
+              <td className="r">{o.mogelijk ? `€${fmt(o.aankoop)}` : ''}</td>
+              <td className="r">{o.mogelijk ? `€${fmt(o.verkoop)}` : ''}</td>
+              <td>
+                {!o.mogelijk ? (
+                  <span className="badge err" title={o.reden}>niet mogelijk</span>
+                ) : inGebruik(o) ? (
+                  <span className="badge ok">✓ in gebruik</span>
+                ) : (
+                  <button className="btn ghost sm" type="button" onClick={() => gebruik(o)}
+                    title={o.meldingen.join(' · ') || undefined}>
+                    Gebruik{o.krap ? ' ⚠' : ''}
+                  </button>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {opties.some((o) => !o.mogelijk) && (
+        <div className="hint" style={{ marginTop: 4 }}>
+          {opties.filter((o) => !o.mogelijk).map((o) => `${o.panelen.length} panelen: ${o.reden}`).join(' · ')}
+        </div>
+      )}
+    </div>
   );
 }
