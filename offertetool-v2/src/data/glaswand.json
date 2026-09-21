@@ -37,11 +37,10 @@
     "minPaneelBreedte": 400,
     "krapPaneelBreedte": 600,
     "advies": {
-      "_toelichting": "Instellingen voor de indelingsvoorstellen. Geen van deze getallen staat in de ES-prijslijst; het zijn keuzes van BKfix. maxPaneelBreedte = de breedste standaardmaat: breder glas stelt de tool niet voor (zo komen de echte bestelbonnen BB260806, BB261000, BB261030 en BB260696 er exact terug uit). overlapMin/overlapMax: de afgeleide overlap van een standaardcombinatie moet hiertussen liggen (70 = bovengrens uit het ES-sjabloon 'gewenste overlap 30 tot 70mm'; 20 = net onder de kleinste overlap op een echte bestelbon, 25mm). overlapAfwijking: hoe ver die afgeleide overlap van je gewenste overlap mag afwijken.",
+      "_toelichting": "Instellingen voor de indelingsvoorstellen. Geen van deze getallen staat in de ES-prijslijst; het zijn keuzes van BKfix. maxPaneelBreedte = de breedste standaardmaat: glas dat breder uitkomt, wordt gemarkeerd en komt achteraan, en het overzicht beveelt het nooit aan. overlapMin/overlapMax: de overlap van een indeling met enkel standaardglas volgt uit de maten en moet hiertussen liggen (70 = bovengrens uit het ES-sjabloon 'gewenste overlap 30 tot 70mm'; 20 = net onder de kleinste overlap op een echte bestelbon, 25mm).",
       "maxPaneelBreedte": 1030,
       "overlapMin": 20,
-      "overlapMax": 70,
-      "overlapAfwijking": 20
+      "overlapMax": 70
     },
     "kleuren": ["RAL 7016 structuur", "RAL 9005 structuur"],
     "railBreedte": { "1": 26.2, "2": 47.6, "3": 69, "4": 90.4, "5": 111.8, "6": 133.2 },
