@@ -3,7 +3,11 @@ import { useOffer } from '../store/offerStore';
 import { fmt } from './fields';
 
 /** Resultaatkaart onder elk formulier: fouten, KPI's, prijsopbouw, toevoegen/opslaan-knop. */
-export function ResultCard({ r, kind, input }: { r: CalcResult; kind: ProductKind; input: unknown }) {
+export function ResultCard({ r, kind, input, zonderKnop }: {
+  r: CalcResult; kind: ProductKind; input: unknown;
+  /** true = het formulier heeft een eigen toevoegknop (bv. overkapping + glaswanden in één keer). */
+  zonderKnop?: boolean;
+}) {
   const add = useOffer((s) => s.add);
   const replace = useOffer((s) => s.replace);
   const editTarget = useOffer((s) => s.editTarget);
@@ -50,7 +54,7 @@ export function ResultCard({ r, kind, input }: { r: CalcResult; kind: ProductKin
           ))}
           <div className="pline"><span>Plaatsing</span><b>€{fmt(r.plaatsingTotaal)}</b></div>
           {r.bedieningTotaal > 0 && <div className="pline"><span>Bediening</span><b>€{fmt(r.bedieningTotaal)}</b></div>}
-          {editing ? (
+          {zonderKnop ? null : editing ? (
             <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
               <button className="btn" style={{ flex: 1 }} onClick={opslaan}>✓ Wijzigingen opslaan</button>
               <button className="btn sec2" onClick={cancelEdit}>Annuleren</button>

@@ -4,11 +4,11 @@
  * (lijstprijs − 40%); de glasmaten komen letterlijk van diezelfde bestelbon.
  */
 import { describe, expect, it } from 'vitest';
-import { calcGlaswand, glaswandOpties, kiesRaillengte, type GlaswandInput } from '../glaswand';
+import { calcGlaswand, depontiStandaardBreedtes, glaswandOpties, kiesRaillengte, type GlaswandInput } from '../glaswand';
 import type { Marges } from '../types';
 
 const ES_MARGES: Marges = { allroundKorting: 0.4, bkfixMarge: 0.41, eenmaligeKorting: 0 };
-const DP_MARGES: Marges = { allroundKorting: 0, bkfixMarge: 0.31, eenmaligeKorting: 0 };
+const DP_MARGES: Marges = { allroundKorting: 0, bkfixMarge: 0.2, eenmaligeKorting: 0 };
 
 const basis: GlaswandInput = {
   merk: 'ES Systems',
@@ -548,7 +548,51 @@ describe('ES75 — handmatige extra lijnen', () => {
   });
 });
 
-describe('Deponti Fiano', () => {
+describe('Deponti Fiano — lijst 2026 en de echte orders', () => {
+  // Werf 3835 (Bergmans): rekenblad "3835 Ashley Berghmans.xlsx" + Deponti-order so96274 (11-9-2026).
+  // Twee wanden van 4 panelen maatwerk met steel-look. Deponti leverde 696×2026 en 708×2025 glas.
+  const wand1 = {
+    dagmaatBreedte: 2714, dagmaatHoogte: 2111, aantalPanelen: 4, sporen: 0,
+    paneelModus: 'maatwerk' as const, overlap: 30, steellook: true,
+    kleur: { select: 'RAL 9005 zwart structuur', custom: '' },
+    opties: [
+      { id: 'glas_gat', aantal: 1 }, { id: 'meenemer', aantal: 10 }, { id: 'steellook_2500', aantal: 4 },
+      { id: 'u_profiel_2500', aantal: 1 },
+    ],
+  };
+
+  it('so96274 wand 1: 4× 696mm glas, netto 2026mm hoog, €183,66 per paneel', () => {
+    const r = dp(wand1);
+    expect(r.ok).toBe(true);
+    expect(r.detail.panelenLijst).toBe('696,696,696,696');   // (2714 − 20 + 3×30) / 4
+    expect(r.detail.overlap).toBe(30);
+    expect(r.bestelmaat).toEqual({ b: 696, h: 2026 });         // glas = inbouwhoogte − 85
+    const glas = r.regels.find((x) => /maatwerkglas/.test(x.label));
+    expect(glas?.bedrag).toBe(734.64);                        // 4 × 0,696 × 2,111 × 125 = 4 × 183,66
+    expect(r.detail.raillengte).toBe(4000);
+    expect(r.regels.find((x) => /Onderrail/.test(x.label))?.bedrag).toBe(183);
+  });
+
+  it('so96274: beide wanden + transport = exact het ordertotaal €2.917,60 vóór coupon', () => {
+    const r1 = dp({ ...wand1, opties: [...wand1.opties, { id: 'transport', aantal: 1 }] });
+    const r2 = dp({ ...wand1, dagmaatBreedte: 2760, dagmaatHoogte: 2110 });
+    expect(r2.detail.panelenLijst).toBe('708,708,708,708');    // 707,5 → 708, zoals Deponti
+    // 3 × 186,74 + 1 × (186,74 + 79): 708 × 2110 × 125 = 186,735 → €186,74 zoals op de order
+    expect(r2.regels.find((x) => /maatwerkglas/.test(x.label))?.bedrag).toBe(746.96);
+    expect(r1.productSubtotal).toBeCloseTo(1372.64 + 160, 2);
+    expect(r2.productSubtotal).toBeCloseTo(1384.96, 2);
+    expect(r1.productSubtotal + r2.productSubtotal).toBeCloseTo(2917.6, 2);
+    expect(r1.aankoop + r2.aankoop).toBeCloseTo(2917.6, 2);   // dealerlijst = inkoop
+  });
+
+  it('so87317: standaardpaneel 1040×2300 = €151 (lijst 2026)', () => {
+    const r = dp({
+      dagmaatBreedte: 1040, dagmaatHoogte: 2300, aantalPanelen: 1, sporen: 2,
+      paneelModus: 'standaard', paneelBreedte: 1040,
+    });
+    expect(r.regels[0]).toEqual({ label: '1 × glaspaneel 1040×2300mm (standaard)', bedrag: 151 });
+  });
+
   it('stuklijst: 5 panelen 820×2200 + rail 5 sporen 4000mm', () => {
     const r = dp({
       dagmaatBreedte: 3900, dagmaatHoogte: 2200, aantalPanelen: 5, sporen: 5,
@@ -557,9 +601,10 @@ describe('Deponti Fiano', () => {
     expect(r.ok).toBe(true);
     expect(r.detail.overlap).toBe(50);
     expect(r.detail.raillengte).toBe(4000);
-    expect(r.productSubtotal).toBe(5 * 140 + 251);   // paneel €140 + rail €251
-    expect(r.aankoop).toBeCloseTo(951, 2);           // dealerlijst = inkoop, geen korting
-    expect(r.verkoop).toBeCloseTo(951 / 0.69, 2);
+    expect(r.detail.uitvoeringLabel).toBe('standaard');
+    expect(r.productSubtotal).toBe(5 * 124 + 228);   // paneel €124 + rail €228
+    expect(r.aankoop).toBeCloseTo(848, 2);           // dealerlijst = inkoop, geen korting
+    expect(r.verkoop).toBeCloseTo(848 / 0.8, 2);
     expect(r.plaatsingTotaal).toBe(800);             // vast bedrag per wand
   });
 
@@ -569,6 +614,7 @@ describe('Deponti Fiano', () => {
     expect(kiesRaillengte(6, 4200)).toBe(6000);   // 6 sporen bestaat enkel in 6m
     expect(kiesRaillengte(6, 6200)).toBeNull();
     expect(kiesRaillengte(2, 2500)).toBe(6000);   // 2 sporen: enkel 2m of 6m
+    expect(kiesRaillengte(7, 5000)).toBe(7000);   // 7 sporen: enkel 7m
   });
 
   it('geen rail die de wand overspant → foutmelding met de beschikbare lengtes', () => {
@@ -580,33 +626,70 @@ describe('Deponti Fiano', () => {
     expect(r.errors.join(' ')).toMatch(/6-spoorrail/);
   });
 
-  it('640mm bestaat niet in hoogte 2350', () => {
+  it('meer dan 7 panelen kan niet', () => {
+    const r = dp({ dagmaatBreedte: 6900, dagmaatHoogte: 2200, aantalPanelen: 8, overlap: 30 });
+    expect(r.ok).toBe(false);
+    expect(r.errors.join(' ')).toMatch(/tot 7 sporen/);
+  });
+
+  it('640mm bestaat niet in hoogte 2350: dat glas wordt maatwerk (per m²), de rest blijft standaard', () => {
     const r = dp({
       dagmaatBreedte: 2400, dagmaatHoogte: 2350, aantalPanelen: 4, sporen: 4,
       paneelModus: 'standaard', paneelBreedte: 640,
     });
-    expect(r.ok).toBe(false);
-    expect(r.errors.join(' ')).toMatch(/geen paneel van 640mm/);
+    expect(r.ok).toBe(true);
+    expect(r.detail.uitvoeringLabel).toBe('maatwerk');
+    // 640 × 2350 × 125 = €188,00 per paneel
+    expect(r.regels[0].bedrag).toBe(752);
+    expect(r.warnings.join(' ')).toMatch(/maatwerkglas/);
   });
 
-  it('RAL 9005 kan niet op een 3-spoorrail van 6000mm', () => {
+  it('gemengde wand: standaardpanelen aan de paneelprijs, het opvulglas per m²', () => {
+    const r = dp({
+      dagmaatBreedte: 2800, dagmaatHoogte: 2200, overlap: 30, sporen: 3,
+      paneelVerdeling: [{ breedte: 980, aantal: 2 }, { breedte: 0, aantal: 1 }],
+    });
+    expect(r.ok).toBe(true);
+    expect(r.detail.panelenLijst).toBe('980,980,900');         // 2800 + 60 − 1960
+    expect(r.detail.uitvoeringLabel).toBe('gemengd (2× standaard + 1× maatwerk)');
+    expect(r.regels[0].bedrag).toBe(270);                      // 2 × €135
+    expect(r.regels[1].bedrag).toBe(247.5);                    // 900 × 2200 × 125
+  });
+
+  it('geen standaardhoogte: alle glas maatwerk, met melding', () => {
+    const r = dp({ dagmaatBreedte: 3000, dagmaatHoogte: 2230, aantalPanelen: 3, paneelModus: 'standaard', paneelBreedte: 1040 });
+    expect(r.ok).toBe(true);
+    expect(r.detail.uitvoeringLabel).toBe('maatwerk');
+    expect(r.warnings.join(' ')).toMatch(/geen standaardhoogte/);
+  });
+
+  it('gekleurd glas is altijd maatwerk, ook op een standaardbreedte', () => {
+    const r = dp({
+      dagmaatBreedte: 2880, dagmaatHoogte: 2200, aantalPanelen: 3, glassoort: 'brons',
+      paneelModus: 'standaard', paneelBreedte: 980,
+    });
+    expect(r.detail.uitvoeringLabel).toBe('maatwerk');
+    expect(r.regels[0].bedrag).toBeCloseTo(1067.22, 2);             // 980 × 2200 × 165 = 355,74
+  });
+
+  it('RAL 9005 op een rail die in 2025 niet in zwart bestond: waarschuwing, geen stop', () => {
     const r = dp({
       dagmaatBreedte: 5200, dagmaatHoogte: 2200, aantalPanelen: 3, sporen: 3, raillengte: 6000,
       paneelModus: 'maatwerk', overlap: 30,
       kleur: { select: 'RAL 9005 zwart structuur', custom: '' },
     });
-    expect(r.ok).toBe(false);
-    expect(r.errors.join(' ')).toMatch(/niet beschikbaar in RAL 9005/);
+    expect(r.errors.join(' ')).not.toMatch(/9005/);
+    expect(r.warnings.join(' ')).toMatch(/lijst 2025 niet in RAL 9005/);
   });
 
-  it('meenemers vragen minimaal 35mm overlap', () => {
+  it('meenemers onder 35mm overlap: waarschuwing (3835 kreeg ze op 30mm geleverd)', () => {
     const r = dp({
       dagmaatBreedte: 3900, dagmaatHoogte: 2200, aantalPanelen: 5, sporen: 5,
       paneelModus: 'maatwerk', overlap: 30,
-      opties: [{ id: 'meenemer', aantal: 5 }],
+      opties: [{ id: 'meenemer', aantal: 8 }],
     });
-    expect(r.ok).toBe(false);
-    expect(r.errors.join(' ')).toMatch(/minimaal 35mm overlap/);
+    expect(r.ok).toBe(true);
+    expect(r.warnings.join(' ')).toMatch(/lijst 2025 vroeg minstens 35mm/);
   });
 
   it('zijsluiting trekt 85mm van de gemeten dagmaat af', () => {
@@ -618,17 +701,18 @@ describe('Deponti Fiano', () => {
     expect(r.detail.paneelBreedte).toBe(795);   // (3815 + 4×40) / 5
   });
 
-  it('maatwerkglas per m² op de inbouwhoogtemaat', () => {
+  it('maatwerkglas per m² op de inbouwhoogtemaat, glas 85mm lager', () => {
     const r = dp({
       dagmaatBreedte: 3000, dagmaatHoogte: 2200, aantalPanelen: 3, sporen: 3,
       paneelModus: 'maatwerk', overlap: 30,
     });
-    const pb = (3000 + 2 * 30) / 3;             // 1020mm
-    const glas = (pb / 1000) * 2.2 * 125 * 3;
-    expect(r.productSubtotal).toBeCloseTo(glas + 120, 2);  // + rail 3 sporen 3000mm
+    // 3 × 1020 × 2200 × 125 = 3 × €280,50, + rail 3 sporen 3000mm €103
+    expect(r.productSubtotal).toBeCloseTo(3 * 280.5 + 103, 2);
+    expect(r.bestelmaat).toEqual({ b: 1020, h: 2115 });
+    expect(r.detail.glasmaat).toBe('3× maatwerkglas 1020×2115mm netto');
   });
 
-  it('steellook: 20mm van de breedte, 30mm overlap en €50 plaatsing per glas', () => {
+  it('steellook: 20mm van de breedte en 30mm overlap', () => {
     const r = dp({
       dagmaatBreedte: 3000, dagmaatHoogte: 2200, aantalPanelen: 3, sporen: 3,
       paneelModus: 'maatwerk', overlap: 45, steellook: true,
@@ -637,6 +721,26 @@ describe('Deponti Fiano', () => {
     expect(r.calculatiemaat?.b).toBe(2980);
     expect(r.detail.overlap).toBe(30);          // steellook forceert 30mm
     expect(r.plaatsingTotaal).toBe(800);
+  });
+
+  it('transport telt één keer per offerteregel, niet per wand', () => {
+    const r = dp({
+      aantal: 2, dagmaatBreedte: 3000, dagmaatHoogte: 2200, aantalPanelen: 3, sporen: 3,
+      paneelModus: 'maatwerk', overlap: 30, opties: [{ id: 'transport', aantal: 1 }],
+    });
+    const zonder = dp({
+      aantal: 2, dagmaatBreedte: 3000, dagmaatHoogte: 2200, aantalPanelen: 3, sporen: 3,
+      paneelModus: 'maatwerk', overlap: 30,
+    });
+    expect(r.productSubtotal - zonder.productSubtotal).toBe(160);
+  });
+
+  it('een optie die niet meer in de lijst staat: nooit stil weg, maar een melding', () => {
+    const r = dp({
+      dagmaatBreedte: 3000, dagmaatHoogte: 2200, aantalPanelen: 3, paneelModus: 'maatwerk', overlap: 30,
+      opties: [{ id: 'loopwiel', aantal: 2 }],
+    });
+    expect(r.warnings.join(' ')).toMatch(/"loopwiel" staat niet meer in de prijslijst/);
   });
 });
 
@@ -661,5 +765,98 @@ describe('robuustheid — een offerte-item dat bewaard is vóór deze velden bes
       dagmaatHoogte: 2400, aantalPanelen: 3, paneelModus: 'standaard', paneelBreedte: 900 });
     expect(r.ok).toBe(true);
     expect(r.warnings.join(' ')).toMatch(/Onbekend merk/);
+  });
+});
+
+describe('Deponti — review-bevindingen (regressies)', () => {
+  const w = { dagmaatBreedte: 3500, dagmaatHoogte: 2300, aantalPanelen: 4, paneelModus: 'maatwerk' as const, overlap: 30 };
+
+  it('brut: brute rail 7100mm (4 sporen €277), 2 of 7 sporen bestaan niet in brut', () => {
+    const r = dp({ ...w, kleur: { select: 'Brut', custom: '' } });
+    expect(r.regels.find((x) => /Onderrail/.test(x.label))).toEqual({ label: 'Onderrail 4 sporen Brute, 7100mm', bedrag: 277 });
+    expect(r.warnings.join(' ')).toMatch(/onbehandeld/);
+    expect(dp({ ...w, aantalPanelen: 2, kleur: { select: 'Brut', custom: '' } }).errors.join(' ')).toMatch(/3 tot 6 sporen/);
+  });
+
+  it('opties die niet in de gekozen kleur of voor het aantal sporen bestaan: waarschuwing', () => {
+    const brut = dp({ ...w, kleur: { select: 'Brut', custom: '' }, opties: [{ id: 'u_profiel_6000', aantal: 1 }] });
+    expect(brut.warnings.join(' ')).toMatch(/U-profiel 6000mm .* bestaat niet in brut/);
+    const zeven = dp({
+      dagmaatBreedte: 6500, dagmaatHoogte: 2300, aantalPanelen: 7, paneelModus: 'maatwerk', overlap: 30,
+      kleur: { select: 'RAL 9001 crèmewit', custom: '' }, opties: [{ id: 'u_profiel_2500', aantal: 1 }],
+    });
+    expect(zeven.warnings.join(' ')).toMatch(/bestaat bij 7 sporen niet in RAL 9001/);
+    const ok = dp({ ...w, kleur: { select: 'RAL 7024 antraciet structuur', custom: '' }, opties: [{ id: 'u_profiel_2500', aantal: 1 }] });
+    expect(ok.warnings.join(' ')).not.toMatch(/bestaat/);
+  });
+
+  it('een wand met enkel standaardpanelen: bestelmaat = de inbouwhoogte (so87317: 1040x2300)', () => {
+    const r = dp({ dagmaatBreedte: 3060, dagmaatHoogte: 2300, aantalPanelen: 3, paneelModus: 'standaard', paneelBreedte: 1040 });
+    expect(r.bestelmaat).toEqual({ b: 1040, h: 2300 });
+    expect(r.detail.glasHoogte).toBe(2300);
+  });
+
+  it('een zelf ingevulde rail die korter is dan de wand: waarschuwing', () => {
+    const r = dp({ dagmaatBreedte: 4500, dagmaatHoogte: 2300, aantalPanelen: 5, paneelModus: 'maatwerk', overlap: 30, raillengte: 4000 });
+    expect(r.warnings.join(' ')).toMatch(/rail van 4000mm is korter dan de wand/);
+  });
+
+  it('steel-look met enkel vaste maten die geen 30mm overlap geven: waarschuwing', () => {
+    const r = dp({ dagmaatBreedte: 2880, dagmaatHoogte: 2200, steellook: true, paneelVerdeling: [{ breedte: 980, aantal: 3 }] });
+    expect(r.warnings.join(' ')).toMatch(/Steel-look werkt met 30mm overlap; deze glasmaten geven 40mm/);
+  });
+
+  it('transport staat niet in de klanttekst van de glaswand', () => {
+    const r = dp({ ...w, opties: [{ id: 'transport', aantal: 1 }, { id: 'meenemer', aantal: 6 }] });
+    expect(String(r.detail.optiesTekst)).toBe('Meenemer (volger): 6');
+  });
+
+  it('standaardmaten volgens hoogte en glas (zelfde regel als de rekenkern)', () => {
+    expect(depontiStandaardBreedtes(2350, 'standaard')).toEqual([820, 980, 1040]);
+    expect(depontiStandaardBreedtes(2200, 'brons')).toEqual([]);
+    expect(depontiStandaardBreedtes(2230, 'standaard')).toEqual([]);
+  });
+});
+
+describe('Deponti — review ronde 2 (regressies)', () => {
+  it('gemengde wand: de bestelmaat is die van het maatwerkglas, geen mengvorm', () => {
+    const r = dp({ dagmaatBreedte: 2900, dagmaatHoogte: 2300, overlap: 30, paneelVerdeling: [{ breedte: 1040, aantal: 2 }, { breedte: 0, aantal: 1 }] });
+    expect(r.detail.glasmaat).toBe('2× standaardpaneel 1040×2300mm + 1× maatwerkglas 880×2215mm netto');
+    expect(r.bestelmaat).toEqual({ b: 880, h: 2215 });
+  });
+
+  it('brut met een ingevulde raillengte: melding dat die niet telt', () => {
+    const r = dp({ dagmaatBreedte: 3500, dagmaatHoogte: 2300, aantalPanelen: 4, paneelModus: 'maatwerk', overlap: 30,
+      raillengte: 4000, kleur: { select: 'Brut', custom: '' } });
+    expect(r.warnings.join(' ')).toMatch(/de ingevulde 4000mm telt niet/);
+  });
+
+  it('geen enkel optielabel bevat een prijs of een bladzijdeverwijzing (labels gaan naar de klantofferte)', () => {
+    for (const merk of ['ES Systems', 'Deponti'] as const) {
+      for (const o of glaswandOpties(merk)) expect(o.label, o.id).not.toMatch(/€|blz\.|\d+,\d\d/);
+    }
+  });
+});
+
+describe('Deponti — review ronde 3', () => {
+  it('vrij getypte "brut" telt als de standaardkleur Brut (geen meerprijs-melding, wel de brute rail)', () => {
+    const r = dp({ dagmaatBreedte: 3500, dagmaatHoogte: 2300, aantalPanelen: 4, paneelModus: 'maatwerk', overlap: 30,
+      kleur: { select: 'andere', custom: 'brut' } });
+    expect(r.warnings.join(' ')).not.toMatch(/geen standaardkleur/);
+    expect(r.regels.some((x) => /Brute, 7100mm/.test(x.label))).toBe(true);
+    const ander = dp({ dagmaatBreedte: 3500, dagmaatHoogte: 2300, aantalPanelen: 4, paneelModus: 'maatwerk', overlap: 30,
+      kleur: { select: 'andere', custom: 'RAL 7037' } });
+    expect(ander.warnings.join(' ')).toMatch(/geen standaardkleur/);
+  });
+});
+
+describe('onderzoek open vragen (21-09-2026)', () => {
+  it('grijs maatwerkglas: melding dat "Grijs met gat" niet bevestigd is, gat apart', () => {
+    const r = dp({ dagmaatBreedte: 3000, dagmaatHoogte: 2200, aantalPanelen: 3, paneelModus: 'maatwerk', overlap: 30, glassoort: 'grijs' });
+    expect(r.warnings.join(' ')).toMatch(/Grijs met gat/);
+    expect(dp({ dagmaatBreedte: 3000, dagmaatHoogte: 2200, aantalPanelen: 3, paneelModus: 'maatwerk', overlap: 30 }).warnings.join(' ')).not.toMatch(/Grijs met gat/);
+  });
+  it('brute afsluitborstel 2500: de hoogste van de twee lijstprijzen (€28) tot Deponti bevestigt', () => {
+    expect(glaswandOpties('Deponti').find((o) => o.id === 'afsluitborstel_brute_2500')?.prijs).toBe(28);
   });
 });

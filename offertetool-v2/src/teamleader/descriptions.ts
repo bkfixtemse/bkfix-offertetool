@@ -132,11 +132,18 @@ function glaswandDesc(it: OfferItem): string {
   h += UL;
   h += `<li>Afmetingen (breedte × hoogte): <strong>${it.breedte}×${it.hoogte}mm</strong></li>`;
   h += `<li>Panelen:${UL2}<li>Aantal: <strong>${panelen}</strong></li>`;
-  h += `<li>Paneelbreedte: ${d.paneelBreedte}mm</li>`;
+  // Een indeling met verschillende breedtes (bv. 2× 900mm + 2× 745mm) volledig tonen: paneelBreedte
+  // is enkel de breedste maat. Oudere items zonder paneelVerdeling tonen zoals vroeger.
+  const verdeling = String(d.paneelVerdeling || '');
+  const lijst = String(d.panelenLijst || '').split(',').filter(Boolean);
+  const gemengd = lijst.length > 0 ? new Set(lijst).size > 1 : verdeling.includes('+');
+  if (gemengd) h += `<li>Paneelbreedtes: ${verdeling}</li>`;
+  else h += `<li>Paneelbreedte: ${d.paneelBreedte}mm</li>`;
   if (Number(d.overlap) > 0) h += `<li>Overlap: ${d.overlap}mm</li>`;
   h += '</ul></li>';
   h += `<li>Glas:${UL2}<li>10mm gehard veiligheidsglas, rondom geslepen</li>`;
   if (merk !== 'Deponti' && d.glastype) h += `<li>Glastype: <strong>${d.glastype}</strong></li>`;
+  if (merk === 'Deponti' && d.glastype && d.glastype !== 'standaard') h += `<li>Glas: <strong>${d.glastype}</strong></li>`;
   if (d.uitvoering === 'maatwerk') h += '<li>Maatwerkglas</li>';
   h += '</ul></li>';
   h += `<li>Onderrail:${UL2}<li>Aantal sporen: <strong>${d.sporen || panelen}</strong></li>`;
@@ -153,6 +160,46 @@ function glaswandDesc(it: OfferItem): string {
   return h + '</ul>';
 }
 
+/** Pinela-overkapping (Deponti). Stramien zoals de andere overkappingen; geen inkoopbedragen. */
+function pinelaDesc(it: OfferItem): string {
+  const d = it.detail;
+  let h = `<p><strong>Overkapping '${it.type}' (Deponti)</strong></p>${UL}`;
+  h += `<li>Afmetingen:${UL2}<li>Breedte: <strong>${it.breedte}mm</strong></li><li>Uitval: <strong>${it.uitval}mm</strong></li></ul></li>`;
+  h += `<li>Montage: <strong>${d.montage}</strong></li>`;
+  if (d.lamellen) h += `<li>Aantal lamellen: ${d.lamellen}</li>`;
+  h += `<li>Kleur:${UL2}<li>Frame: <strong>${d.kleurFrame || 'nader te bepalen'}</strong></li>`;
+  if (d.kleurLamel && d.kleurLamel !== d.kleurFrame) h += `<li>Lamellen: <strong>${d.kleurLamel}</strong></li>`;
+  h += '</ul></li>';
+  if (d.led) h += `<li>LED-verlichting: ${d.led}</li>`;   // '' = niet inbegrepen (Pinela basis)
+  const extra = String(d.optiesTekst || '').split(' · ').map((x) => x.trim()).filter(Boolean);
+  if (extra.length > 0) h += `<li>Inbegrepen:${UL2}${extra.map((e) => `<li>${e}</li>`).join('')}</ul></li>`;
+  if (it.opmerkingen) h += `<li>Opmerkingen: ${it.opmerkingen}</li>`;
+  return h + '</ul>';
+}
+
+function louvreDesc(it: OfferItem): string {
+  const d = it.detail;
+  let h = `<p><strong>Schuivende louvrewand 'Deponti Fiano Louvre'</strong></p>${UL}`;
+  h += `<li>Panelen: <strong>${d.aantalPanelen}</strong> × 1040mm, inbouwhoogte <strong>${d.inbouwhoogte}mm</strong></li>`;
+  if (d.rail && d.rail !== 'geen') h += `<li>Onderrail: ${d.rail}</li>`;
+  h += `<li>Kleur:${UL2}<li>Frame: <strong>${d.kleurFrame || 'nader te bepalen'}</strong></li>`;
+  if (d.kleurLamel && d.kleurLamel !== d.kleurFrame) h += `<li>Lamellen: <strong>${d.kleurLamel}</strong></li>`;
+  h += '</ul></li>';
+  const extra = String(d.optiesTekst || '').split(' · ').map((x) => x.trim()).filter(Boolean);
+  if (extra.length > 0) h += `<li>Inbegrepen:${UL2}${extra.map((e) => `<li>${e}</li>`).join('')}</ul></li>`;
+  if (it.opmerkingen) h += `<li>Opmerkingen: ${it.opmerkingen}</li>`;
+  return h + '</ul>';
+}
+
+function depontiOnderdelenDesc(it: OfferItem): string {
+  const d = it.detail;
+  const lijst = String(d.optiesTekst || '').split(' · ').map((x) => x.trim()).filter(Boolean);
+  let h = `<p><strong>${it.type} (Deponti)</strong></p>${UL}`;
+  h += lijst.map((e) => `<li>${e}</li>`).join('');
+  if (it.opmerkingen) h += `<li>Opmerkingen: ${it.opmerkingen}</li>`;
+  return h + '</ul>';
+}
+
 /** Route naar de juiste omschrijving; nooit leeg (TL-API eis). */
 export function tlDescription(it: OfferItem): string {
   let desc = '';
@@ -162,6 +209,9 @@ export function tlDescription(it: OfferItem): string {
     case 'Knikarmscherm': desc = knikarmDesc(it); break;
     case 'Veranda': desc = verandaDesc(it); break;
     case 'Glazen schuifwand': desc = glaswandDesc(it); break;
+    case 'Overkapping': desc = pinelaDesc(it); break;
+    case 'Fiano Louvre': desc = louvreDesc(it); break;
+    case 'Deponti onderdelen': desc = depontiOnderdelenDesc(it); break;
     case 'Afstandsbediening': desc = `${it.type} (draadloze zender)`; break;
   }
   if (!desc.trim()) {

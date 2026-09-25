@@ -1,0 +1,350 @@
+{
+  "_bron": "STERDealer Prijslijst 2026 (NL_-_STERPricelist2026.pdf), blz. 19-36. De dealerlijst is de inkoopprijs (geen korting). Nagekeken op Deponti-orderbevestigingen 2026: so95422 (Pinela Delight 3124x3500 MM 5850, 5052x3500 MM 7720, koppelset 2 systemen muurmontage 290, hoekstaander -2 x 50), so91234 (Pinela Delight 4088x4000 VR 7315, screen 3785x2500 919), so93085 (Pinela Delight 3124x4000 VR 6300, montagevoet 4 x 45), so94994 (Pinela Deluxe Plus 4088x4000 MM 8532, hoekstuk 50, staander 3200mm 175), so88491 (screen 4749x2500 1040), so89101 (zijspie poly 4000 opaal 210), so88772 (zijspie glas 3924 375, Combi-Groove 249, Grillo 4000 51, U-profiel Grillo 4000 12).",
+  "_nietInLijst2026": "Pinela Deluxe (blz. 22) en de gewone Pinela (blz. 19) bewust weggelaten: BKfix biedt die niet (meer) aan. so88310 (april 2026) rekende Pinela Deluxe Plus 5052x3000 nog aan 8025 = de lijst 2024/2025; so94994 (augustus 2026) rekent al de lijst 2026.",
+  "pinela": {
+    "Pinela Delight": {
+      "goothoogte": 230,
+      "wanden": true,
+      "_maten": "Deponti-montagehandleiding Pinela Delight (maart 2026) blz. 5 en 14: goot 145 x 230, onderkant goot H - 230, max 2730 tot bovenzijde goot (= max 2500 onderkant goot). Lijst 2026 blz. 20: optioneel Deponti Fiano glazen schuifwand.",
+      "blz": 20,
+      "omschrijving": "Lamellendak met kubistisch frame, staanders 150x150mm. LED-verlichting en motoren aangestuurd via Teleco (4 vaste lichtstanden).",
+      "kleuren": ["RAL 9016 verkeerswit structuur", "RAL 7024 antraciet structuur", "RAL 9005 zwart structuur"],
+      "lamelKleurApart": true,
+      "led": "inbegrepen, bediening via Teleco",
+      "screens": true,
+      "maxBreedteTweeStaanders": 6000,
+      "rijen": [3124, 4088, 5052, 6016],
+      "kolommen": [3000, 3500, 4000],
+      "prijzen": {
+        "3124": { "3000": 5490, "3500": 5850, "4000": 6300 },
+        "4088": { "3000": 6435, "3500": 6865, "4000": 7315 },
+        "5052": { "3000": 7225, "3500": 7720, "4000": 8955 },
+        "6016": { "3000": 8415, "3500": 9720, "4000": 10330 }
+      }
+    },
+    "Pinela Tilt": {
+      "goothoogte": 300,
+      "wanden": true,
+      "_maten": "Deponti-montagehandleiding Pinela Tilt (maart 2026) blz. 5 en 15: goot 145 x 300, H1 = H - 300, max 2800 tot bovenzijde goot (= max 2500 onderkant goot); blz. 24: B - 300 / D - 300 tussen de staanders. Lijst 2026 blz. 21: optioneel Deponti Fiano glazen schuifwand.",
+      "blz": 21,
+      "_6980": "De lijst 2026 drukt de laatste rij als 6890: een drukfout. De Deponti-montagehandleiding Pinela Tilt (maart 2026, blz. 5) en deponti.com/nl/product/pinela-tilt geven als standaardbreedtes 4088 / 5052 / 6016 / 6980mm; de prijzen zijn die van Deluxe Plus 6980.",
+      "omschrijving": "Lamellendak met krachtige, kubistische uitstraling, staanders 150x150mm. LED en motoren via Teleco met 4 vaste standen (0% / 33% / 66% / 100%).",
+      "kleuren": ["RAL 9016 verkeerswit structuur", "RAL 7024 antraciet structuur", "RAL 9005 zwart structuur"],
+      "lamelKleurApart": true,
+      "led": "inbegrepen, bediening via Teleco",
+      "screens": true,
+      "maxBreedteTweeStaanders": 7000,
+      "rijen": [4088, 5052, 6016, 6980],
+      "kolommen": [3000, 3500, 4000, 4500],
+      "prijzen": {
+        "4088": { "3000": 7508, "3500": 8007, "4000": 8532, "4500": 9382 },
+        "5052": { "3000": 8427, "3500": 9004, "4000": 10448, "4500": 10905 },
+        "6016": { "3000": 9818, "3500": 11340, "4000": 12049, "4500": 12427 },
+        "6980": { "3000": 10999, "3500": 11970, "4000": 12973, "4500": 13955 }
+      }
+    },
+    "Pinela Deluxe Plus": {
+      "goothoogte": 300,
+      "wanden": true,
+      "_maten": "Deponti-montagehandleiding Pinela Deluxe Plus (dec. 2024) blz. 5, 17 en 26: goot 145 x 300, H1 = H - 300, max 2,8 m; B - 300 / D - 300. Lijst 2026 blz. 23: optioneel Deponti glazen schuifwanden.",
+      "blz": 23,
+      "omschrijving": "Cabriodak: de lamellen schuiven naar één zijde voor een open ruimte. Standaard LED-verlichting in de goot; lamellen en LED via de SOMFY OI-afstandsbediening. Staanders 150x150mm.",
+      "kleuren": ["RAL 9016 verkeerswit structuur", "RAL 7024 antraciet structuur", "RAL 9005 zwart structuur"],
+      "lamelKleurApart": false,
+      "led": "inbegrepen, in de goot",
+      "screens": true,
+      "maxBreedteTweeStaanders": 7000,
+      "rijen": [3124, 3445, 4088, 5052, 6016, 6980],
+      "kolommen": [3000, 3500, 4000, 4500],
+      "lamellen": { "rij": { "3124": 9, "3445": 10, "4088": 12, "5052": 15, "6016": 18, "6980": 21 } },
+      "prijzen": {
+        "3124": { "3000": 6405, "3500": 6825, "4000": 7345, "4500": 7849 },
+        "3445": { "3000": 6720, "3500": 7823, "4000": 8290, "4500": 8815 },
+        "4088": { "3000": 7508, "3500": 8007, "4000": 8532, "4500": 9382 },
+        "5052": { "3000": 8427, "3500": 9004, "4000": 10448, "4500": 10905 },
+        "6016": { "3000": 9818, "3500": 11340, "4000": 12049, "4500": 12427 },
+        "6980": { "3000": 10999, "3500": 11970, "4000": 12973, "4500": 13955 }
+      }
+    },
+    "Pinela Delight Carport": {
+      "goothoogte": 230,
+      "wanden": false,
+      "_maten": "deponti.com: goot 145 x 230. De lijst 2026 (blz. 24) noemt geen glaswand als optie bij de carports.",
+      "blz": 24,
+      "omschrijving": "Carport in de Pinela-stijl, staanders 150x150mm. Dak van stalen platen met anti-condens vilt (bovenzijde RAL 9010, onderzijde grijs), geschikt voor zonnepanelen of een groendak. Standaard LED in de goot. Vrijstaand of muurmontage, koppelbaar tot 2 of 4 systemen.",
+      "kleuren": ["RAL 9016 verkeerswit structuur", "RAL 7024 antraciet structuur", "RAL 9005 zwart structuur"],
+      "lamelKleurApart": false,
+      "lamellendak": false,
+      "led": "inbegrepen, in de goot",
+      "screens": false,
+      "maxBreedteTweeStaanders": 6000,
+      "rijen": [3000, 3124, 3500, 4000, 4088, 5052, 6016],
+      "kolommen": [3000, 3500, 4000, 5052],
+      "prijzen": {
+        "3000": { "3000": 2687, "3500": 2839, "4000": 3054, "5052": 3678 },
+        "3124": { "3000": 2709, "3500": 2861, "4000": 3076, "5052": 3700 },
+        "3500": { "3000": 2777, "3500": 2930, "4000": 3144, "5052": 3768 },
+        "4000": { "3000": 2965, "3500": 3134, "4000": 3381, "5052": 4116 },
+        "4088": { "3000": 2981, "3500": 3150, "4000": 3397, "5052": 4132 },
+        "5052": { "3000": 3253, "3500": 3438, "4000": 3717, "5052": 4563 },
+        "6016": { "3000": 3524, "3500": 3726, "4000": 4037, "5052": 4995 }
+      }
+    },
+    "Pinela Carport": {
+      "goothoogte": 300,
+      "wanden": false,
+      "_maten": "Deponti-tekening TD Pinela Carport: goot 145 x 300. De lijst 2026 (blz. 25) noemt geen glaswand als optie bij de carports.",
+      "blz": 25,
+      "omschrijving": "Carport in de Pinela-stijl, staanders 150x150mm. Dak van stalen platen met anti-condens vilt (bovenzijde RAL 9010, onderzijde grijs), geschikt voor zonnepanelen of een groendak. Standaard LED in de goot. Vrijstaand of muurmontage, koppelbaar tot 2 of 4 systemen.",
+      "kleuren": ["RAL 9016 verkeerswit structuur", "RAL 7024 antraciet structuur", "RAL 9005 zwart structuur"],
+      "lamelKleurApart": false,
+      "lamellendak": false,
+      "led": "inbegrepen, in de goot",
+      "screens": false,
+      "maxBreedteTweeStaanders": 7000,
+      "rijen": [3000, 3124, 3500, 4000, 4088, 4500, 5052, 6016, 6980],
+      "kolommen": [3000, 3500, 4000, 4500, 5052],
+      "prijzen": {
+        "3000": { "3000": 3314, "3500": 3523, "4000": 3813, "4500": 4223, "5052": 4584 },
+        "3124": { "3000": 3358, "3500": 3567, "4000": 3857, "4500": 4266, "5052": 4628 },
+        "3500": { "3000": 3452, "3500": 3661, "4000": 3952, "4500": 4361, "5052": 4723 },
+        "4000": { "3000": 3712, "3500": 3940, "4000": 4267, "4500": 4719, "5052": 5165 },
+        "4088": { "3000": 3772, "3500": 4000, "4000": 4327, "4500": 4778, "5052": 5225 },
+        "4500": { "3000": 3961, "3500": 4189, "4000": 4516, "4500": 4967, "5052": 5414 },
+        "5052": { "3000": 4099, "3500": 4346, "4000": 4710, "4500": 5202, "5052": 5734 },
+        "6016": { "3000": 4478, "3500": 4744, "4000": 5145, "4500": 5680, "5052": 6297 },
+        "6980": { "3000": 4813, "3500": 5098, "4000": 5536, "4500": 6112, "5052": 6815 }
+      }
+    }
+  },
+  "_overkappingMaten": "Pinela-familie: de maat breedte x uitval is de buitenkant van de staanders (150x150). Tussen de staanders: B - 300 en D - 300 (handleidingen Tilt, Delight, Deluxe Plus; ook de screens zijn B - 303 en D - 303). Onderkant goot = hoogte bovenzijde goot - goothoogte, maximaal 2500 mm doorloophoogte.",
+  "maxOnderkantGoot": 2500,
+  "vrijeOpeningAftrek": 300,
+  "transport": { "label": "Transport dealer", "prijs": 160, "_bron": "2026: €160 per levering aan het dealeradres, ook op grote orders (showroom €25.236; in 2025 Pinela €9.950 en €11.400 aan €144). Orders die op dezelfde leverdag meekomen: €0 (ticket 38130: 'gecombineerd transport'). Enige uitzondering zonder verklaring: levering 26-5-2026. BKfix rekent transport altijd (zaakvoerder, 21-09-2026)." },
+  "screens": {
+    "blz": 29,
+    "omschrijving": "Screen voor de Pinela-serie: doek antraciet, bak 114x114mm, Somfy IO, tot 2,5m onderkant goot.",
+    "kleuren": ["RAL 9016 verkeerswit structuur", "RAL 7024 antraciet structuur", "RAL 9005 zwart"],
+    "maxHoogte": 2500,
+    "breedte": {
+      "3124": { "maat": "2821x2500", "label": "breedte 3m", "prijs": 799 },
+      "4088": { "maat": "3785x2500", "label": "breedte 4m", "prijs": 919 },
+      "5052": { "maat": "4749x2500", "label": "breedte 5m", "prijs": 1040 },
+      "6016": { "maat": "5713x2500", "label": "breedte 6m", "prijs": 1160 }
+    },
+    "uitval": {
+      "3000": { "maat": "2697x2500", "label": "uitval 3m", "prijs": 783 },
+      "3500": { "maat": "3197x2500", "label": "uitval 3,5m", "prijs": 846 },
+      "4000": { "maat": "3697x2500", "label": "uitval 4m", "prijs": 908 },
+      "4500": { "maat": "4197x2500", "label": "uitval 4,5m", "prijs": 971 }
+    }
+  },
+  "pinelaOpties": [
+    { "id": "montagevoet", "label": "Montagevoet 150x150 incl. schroeven", "eenheid": "stuk", "prijs": 45, "perStuk": true, "bron": "so93085 / so95440 (2026)" },
+    { "id": "koppelset_muur2", "label": "Koppelset voor 2 systemen — muurmontage", "eenheid": "set", "prijs": 290, "koppelset": true, "bron": "so95422 (aug. 2026): Delight muurmontage 290; voor PPA/Tilt enkel lijst 2025" },
+    { "id": "koppelset_vrij2", "label": "Koppelset voor 2 systemen — vrijstaand", "eenheid": "set", "prijs": 570, "koppelset": true, "bron": "so96266 + factuur 26709965 (sep. 2026): 570 per set (PPA, vrijstaand)" },
+    { "id": "koppelset_vrij4", "label": "Koppelset voor 4 systemen — vrijstaand", "eenheid": "set", "prijs": 1524, "koppelset": true, "onbevestigd": "Koppelset voor 4 systemen: prijs uit de lijst 2025, in 2026 op geen enkele order — bevestigen bij Deponti", "bron": "lijst 2025 — niet in de lijst 2026, geen order in 2026" },
+    { "id": "hoekstaander_minder", "label": "Hoekstaander minder bij koppelen (creditering)", "eenheid": "stuk", "prijs": -50, "intern": true, "bron": "so95422: 2 × −50 bij 2 gekoppelde Delights (muurmontage); so96266 / factuur 26709965: 12 × −50 bij 3 vrijstaande koppelsets (4 per koppeling)" },
+    { "id": "staander_3200", "label": "Staander 150x150 3200mm (extra)", "eenheid": "stuk", "prijs": 175, "bron": "so94994 (2026)" },
+    { "id": "hoekstuk", "label": "Hoekstuk Pinela Glass, Tilt & Deluxe Plus", "eenheid": "stuk", "prijs": 50, "bron": "so94994 (2026)" }
+  ],
+  "onderdelen": [
+    {
+      "groep": "Fiano Louvre",
+      "blz": 28,
+      "info": "Frame 1040mm breed. Framekleur 9016 / 7024 / 9005, lamelkleur ook eik structuur.",
+      "kleuren": ["RAL 9016 verkeerswit structuur", "RAL 7024 antraciet structuur", "RAL 9005 zwart", "Eik structuur (enkel lamellen)"],
+      "artikelen": [
+        { "id": "fl_frame", "label": "Fiano Louvre frame set 1040x2575mm", "prijs": 130 },
+        { "id": "fl_louvre", "label": "Louvre (1x)", "prijs": 6 },
+        { "id": "fl_louvreset", "label": "Louvreset 35x incl. 2 eindstukken 1040mm", "prijs": 220 },
+        { "id": "fl_2050", "label": "Fiano Louvre inbouwhoogte 2050-2099mm", "prijs": 285, "hoogte": [2050, 2099] },
+        { "id": "fl_2100", "label": "Fiano Louvre inbouwhoogte 2100-2149mm", "prijs": 290, "hoogte": [2100, 2149] },
+        { "id": "fl_2150", "label": "Fiano Louvre inbouwhoogte 2150-2199mm", "prijs": 295, "hoogte": [2150, 2199] },
+        { "id": "fl_2200", "label": "Fiano Louvre inbouwhoogte 2200-2249mm", "prijs": 300, "hoogte": [2200, 2249] },
+        { "id": "fl_2250", "label": "Fiano Louvre inbouwhoogte 2250-2299mm", "prijs": 305, "hoogte": [2250, 2299] },
+        { "id": "fl_2300", "label": "Fiano Louvre inbouwhoogte 2300-2349mm", "prijs": 310, "hoogte": [2300, 2349] },
+        { "id": "fl_2350", "label": "Fiano Louvre inbouwhoogte 2350-2399mm", "prijs": 315, "hoogte": [2350, 2399] },
+        { "id": "fl_2400", "label": "Fiano Louvre inbouwhoogte 2400-2449mm", "prijs": 320, "hoogte": [2400, 2449] },
+        { "id": "fl_2450", "label": "Fiano Louvre inbouwhoogte 2450-2499mm", "prijs": 325, "hoogte": [2450, 2499] },
+        { "id": "fl_2500", "label": "Fiano Louvre inbouwhoogte 2500-2549mm", "prijs": 330, "hoogte": [2500, 2549] },
+        { "id": "fl_2550", "label": "Fiano Louvre inbouwhoogte 2550-2580mm", "prijs": 335, "hoogte": [2550, 2580] }
+      ]
+    },
+    {
+      "groep": "Screens Pinela",
+      "blz": 29,
+      "info": "Voor Pinela Glass, Deluxe Plus, Delight en Tilt. Doek antraciet, bak 114x114mm, Somfy IO, tot 2,5m onderkant goot.",
+      "kleuren": ["RAL 9016 verkeerswit structuur", "RAL 7024 antraciet structuur", "RAL 9005 zwart"],
+      "artikelen": [
+        { "id": "sc_b3", "label": "Screen 2821x2500 t.b.v. Pinela breedte 3m", "prijs": 799 },
+        { "id": "sc_b4", "label": "Screen 3785x2500 t.b.v. Pinela breedte 4m", "prijs": 919 },
+        { "id": "sc_b5", "label": "Screen 4749x2500 t.b.v. Pinela breedte 5m", "prijs": 1040 },
+        { "id": "sc_b6", "label": "Screen 5713x2500 t.b.v. Pinela breedte 6m", "prijs": 1160 },
+        { "id": "sc_u30", "label": "Screen 2697x2500 t.b.v. Pinela uitval 3m", "prijs": 783 },
+        { "id": "sc_u35", "label": "Screen 3197x2500 t.b.v. Pinela uitval 3,5m", "prijs": 846 },
+        { "id": "sc_u40", "label": "Screen 3697x2500 t.b.v. Pinela uitval 4m", "prijs": 908 },
+        { "id": "sc_u45", "label": "Screen 4197x2500 t.b.v. Pinela uitval 4,5m", "prijs": 971 }
+      ]
+    },
+    {
+      "groep": "Grillo panelen",
+      "blz": 30,
+      "info": "Aluminium schuttingdelen, 25mm dik, 166mm hoog, werkende hoogte 150mm.",
+      "werkendeHoogte": 150,
+      "artikelen": [
+        { "id": "gr_3500", "label": "Grillo schuttingdeel 3500mm", "prijs": 44, "kleuren": ["RAL 7024", "RAL 9001"] },
+        { "id": "gr_4000", "label": "Grillo schuttingdeel 4000mm", "prijs": 51, "kleuren": ["RAL 7024", "RAL 9016", "RAL 9005"] },
+        { "id": "gr_5000", "label": "Grillo schuttingdeel 5000mm", "prijs": 68, "kleuren": ["RAL 7024"] },
+        { "id": "gr_6000", "label": "Grillo schuttingdeel 6000mm", "prijs": 77, "kleuren": ["RAL 7024", "RAL 9001", "RAL 9016", "RAL 9005"] },
+        { "id": "gr_klik_2000", "label": "Klikprofiel Grillo 2000mm", "prijs": 7, "kleuren": ["RAL 7024"] },
+        { "id": "gr_klik_4000", "label": "Klikprofiel Grillo 4000mm", "prijs": 12, "kleuren": ["RAL 7024", "RAL 9001", "RAL 9016", "RAL 9005"] },
+        { "id": "gr_u_3000", "label": "U-profiel Grillo 3000mm", "prijs": 10, "kleuren": ["RAL 7024"] },
+        { "id": "gr_u_4000", "label": "U-profiel Grillo 4000mm", "prijs": 12, "kleuren": ["RAL 7024", "RAL 9001", "RAL 9016", "RAL 9005"] }
+      ]
+    },
+    {
+      "groep": "Louvres (vast en draaibaar)",
+      "blz": 31,
+      "info": "Lengte 4000 of 6000mm, lengte-advies 3500mm.",
+      "artikelen": [
+        { "id": "lv_4000", "label": "Louvre profiel 4000mm", "prijs": 40, "kleuren": ["RAL 7024", "RAL 9016", "RAL 9005"] },
+        { "id": "lv_6000", "label": "Louvre profiel 6000mm", "prijs": 60, "kleuren": ["RAL 7024", "RAL 9001", "RAL 9016", "RAL 9005"] },
+        { "id": "lv_mont_vast", "label": "Montageset vaste louvre", "prijs": 7 },
+        { "id": "lv_mont_draai", "label": "Montageset draaibare louvres", "prijs": 13 },
+        { "id": "lv_koppelstang", "label": "Koppelstang draaibare louvres (2 stuks)", "prijs": 20 },
+        { "id": "lv_boormal", "label": "Boormal t.b.v. installatie vaste/draaibare louvres", "prijs": 15 }
+      ]
+    },
+    {
+      "groep": "Zijspie polycarbonaat",
+      "blz": 32,
+      "info": "Eén pakket spieprofielen (2x 4200mm + 1x 2000mm) en één polycarbonaatplaat.",
+      "kleuren": ["RAL 9016 verkeerswit structuur", "RAL 9001 crèmewit", "RAL 7024 antraciet structuur", "RAL 9005 zwart structuur"],
+      "artikelen": [
+        { "id": "zsp_2500_opaal", "label": "Zijspie poly uitval 2500x1000 opaal", "prijs": 194 },
+        { "id": "zsp_2500_helder", "label": "Zijspie poly uitval 2500x1000 helder", "prijs": 194 },
+        { "id": "zsp_3000_opaal", "label": "Zijspie poly uitval 3000x1000 opaal", "prijs": 199 },
+        { "id": "zsp_3000_helder", "label": "Zijspie poly uitval 3000x1000 helder", "prijs": 199 },
+        { "id": "zsp_3500_opaal", "label": "Zijspie poly uitval 3500x1000 opaal", "prijs": 205 },
+        { "id": "zsp_3500_helder", "label": "Zijspie poly uitval 3500x1000 helder", "prijs": 205 },
+        { "id": "zsp_4000_opaal", "label": "Zijspie poly uitval 4000x1000 opaal", "prijs": 210 },
+        { "id": "zsp_4000_helder", "label": "Zijspie poly uitval 4000x1000 helder", "prijs": 210 },
+        { "id": "zsp_2500_uh", "label": "Zijspie poly uitval 2500x1000 ultra helder", "prijs": 299 },
+        { "id": "zsp_3000_uh", "label": "Zijspie poly uitval 3000x1000 ultra helder", "prijs": 304 },
+        { "id": "zsp_3500_uh", "label": "Zijspie poly uitval 3500x1000 ultra helder", "prijs": 315 },
+        { "id": "zsp_4000_uh", "label": "Zijspie poly uitval 4000x1000 ultra helder", "prijs": 321 },
+        { "id": "zsp_2500_sc", "label": "Zijspie poly uitval 2500x1000 solar control", "prijs": 238 },
+        { "id": "zsp_3000_sc", "label": "Zijspie poly uitval 3000x1000 solar control", "prijs": 243 },
+        { "id": "zsp_3500_sc", "label": "Zijspie poly uitval 3500x1000 solar control", "prijs": 265 },
+        { "id": "zsp_4000_sc", "label": "Zijspie poly uitval 4000x1000 solar control", "prijs": 271 },
+        { "id": "zsp_profielset", "label": "Zijspie profiel set 4000mm", "prijs": 161 },
+        { "id": "zsp_f_6060", "label": "F-profielen pakket 4x6060mm", "prijs": 272 },
+        { "id": "zsp_f_brute", "label": "F-profielen pakket Brute 4x7100mm (onbehandeld)", "prijs": 318, "kleuren": ["Brute"] },
+        { "id": "zsp_glasrubber", "label": "Glasrubber t.b.v. 8mm glas in F-profiel (per m)", "prijs": 9 }
+      ]
+    },
+    {
+      "groep": "Zijwand polycarbonaat",
+      "blz": 33,
+      "kleuren": ["RAL 9016 verkeerswit structuur", "RAL 9001 crèmewit", "RAL 7024 antraciet structuur", "RAL 9005 zwart structuur"],
+      "artikelen": [
+        { "id": "zwp_2500_opaal", "label": "Zijwand poly uitval 2500x3000 (3x3000 PC-platen) opaal", "prijs": 348 },
+        { "id": "zwp_2500_helder", "label": "Zijwand poly uitval 2500x3000 (3x3000 PC-platen) helder", "prijs": 348 },
+        { "id": "zwp_3000_opaal", "label": "Zijwand poly uitval 3000x3000 (3x3000 PC-platen) opaal", "prijs": 348 },
+        { "id": "zwp_3000_helder", "label": "Zijwand poly uitval 3000x3000 (3x3000 PC-platen) helder", "prijs": 348 },
+        { "id": "zwp_3500_opaal", "label": "Zijwand poly uitval 3500x3000 (4x3000 PC-platen) opaal", "prijs": 404 },
+        { "id": "zwp_3500_helder", "label": "Zijwand poly uitval 3500x3000 (4x3000 PC-platen) helder", "prijs": 404 },
+        { "id": "zwp_4000_opaal", "label": "Zijwand poly uitval 4000x3000 (4x3000 PC-platen) opaal", "prijs": 404 },
+        { "id": "zwp_4000_helder", "label": "Zijwand poly uitval 4000x3000 (4x3000 PC-platen) helder", "prijs": 404 },
+        { "id": "zwp_2500_uh", "label": "Zijwand poly uitval 2500x3000 (3x3000 PC-platen) ultra helder", "prijs": 657 },
+        { "id": "zwp_3000_uh", "label": "Zijwand poly uitval 3000x3000 (3x3000 PC-platen) ultra helder", "prijs": 657 },
+        { "id": "zwp_3500_uh", "label": "Zijwand poly uitval 3500x3000 (4x3000 PC-platen) ultra helder", "prijs": 763 },
+        { "id": "zwp_4000_uh", "label": "Zijwand poly uitval 4000x3000 (4x3000 PC-platen) ultra helder", "prijs": 763 },
+        { "id": "zwp_profielset", "label": "Zijwand profiel set 4000mm", "prijs": 205 }
+      ]
+    },
+    {
+      "groep": "Zijspie en zijwand glas",
+      "blz": 33,
+      "info": "Gehard glas 6mm.",
+      "kleuren": ["RAL 9016 verkeerswit structuur", "RAL 7024 antraciet structuur", "RAL 9005 zwart structuur"],
+      "artikelen": [
+        { "id": "zsg_2443_met", "label": "Zijspie glas uitval 2443mm — met glas", "prijs": 225 },
+        { "id": "zsg_2937_met", "label": "Zijspie glas uitval 2937mm — met glas", "prijs": 275 },
+        { "id": "zsg_3431_met", "label": "Zijspie glas uitval 3431mm — met glas", "prijs": 325 },
+        { "id": "zsg_3924_met", "label": "Zijspie glas uitval 3924mm — met glas", "prijs": 375 },
+        { "id": "zsg_2443_zonder", "label": "Zijspie glas uitval 2443mm — zonder glas", "prijs": 175 },
+        { "id": "zsg_2937_zonder", "label": "Zijspie glas uitval 2937mm — zonder glas", "prijs": 208 },
+        { "id": "zsg_3431_zonder", "label": "Zijspie glas uitval 3431mm — zonder glas", "prijs": 242 },
+        { "id": "zsg_3924_zonder", "label": "Zijspie glas uitval 3924mm — zonder glas", "prijs": 275 },
+        { "id": "zsg_5929_zonder", "label": "Zijspie glas uitval 5929mm — zonder glas", "prijs": 295 },
+        { "id": "zsg_plaat_2443", "label": "Zijspie glasplaten 6mm uitval 2443mm (2,5m)", "prijs": 37 },
+        { "id": "zsg_plaat_2937", "label": "Zijspie glasplaten 6mm uitval 2937mm (3m)", "prijs": 54 },
+        { "id": "zsg_plaat_3431", "label": "Zijspie glasplaten 6mm uitval 3431mm (3,5m)", "prijs": 75 },
+        { "id": "zsg_plaat_3924", "label": "Zijspie glasplaten 6mm uitval 3924mm (4m)", "prijs": 100 },
+        { "id": "zwg_kozijn_332", "label": "Kozijnprofiel t.b.v. zijwand glas 33.2 7m", "prijs": 165 },
+        { "id": "zwg_kozijn_442", "label": "Kozijnprofiel t.b.v. zijwand glas 44.2 & 10mm 7m", "prijs": 186 },
+        { "id": "zwg_glaslat", "label": "Glaslat zijwand glas 33.2 3500mm (2 stuks)", "prijs": 30 },
+        { "id": "zwg_hoek", "label": "Verbindingshoek t.b.v. kozijnprofiel zijwand glas (4 stuks)", "prijs": 4 }
+      ]
+    },
+    {
+      "groep": "LED inbouwspots",
+      "blz": 34,
+      "info": "Dimbaar, met afstandsbediening. 6 x 1W warm wit, inbouwmaat ø28mm, 5m kabel per lampje.",
+      "artikelen": [
+        { "id": "led_10_wit", "label": "LED inbouwspots 10x wit", "prijs": 205 },
+        { "id": "led_6_wit", "label": "LED inbouwspots 6x wit", "prijs": 142 },
+        { "id": "led_10_zwart", "label": "LED inbouwspots 10x zwart", "prijs": 205 },
+        { "id": "led_6_zwart", "label": "LED inbouwspots 6x zwart", "prijs": 142 },
+        { "id": "led_gatenboor", "label": "Gatenboor LED inbouwspots (28mm)", "prijs": 12 }
+      ]
+    },
+    {
+      "groep": "Lumassina LED",
+      "blz": 35,
+      "info": "Prijs per aantal armaturen en lengte. Uitvoeringen met een liggerafstand tot 2 meter staan enkel in de portal (so94835: 6 armaturen x 3500 'max 2m afstand' = €449 i.p.v. €419).",
+      "lumassina": {
+        "lengtes": [3000, 3500, 4000, 4500, 6000],
+        "prijzen": {
+          "1": [107, 111, 117, 120, 138],
+          "2": [144, 154, 166, 172, 254],
+          "3": [229, 244, 261, 270, 370],
+          "4": [267, 286, 310, 321, 486],
+          "5": [352, 376, 405, 420, 602],
+          "6": [390, 419, 453, 471, 718],
+          "7": [474, 508, 549, 570, 834],
+          "8": [512, 551, 597, 621, 951],
+          "9": [597, 641, 693, 719, 1067],
+          "10": [635, 684, 741, 771, 1183],
+          "11": [720, 773, 837, 869, 1299],
+          "12": [757, 816, 885, 921, 1415]
+        }
+      },
+      "artikelen": [
+        { "id": "lu_afdekkap", "label": "Afdekkap LED armatuur ligger (2 stuks)", "prijs": 7 },
+        { "id": "lu_montageplaatjes", "label": "Montageplaatjes t.b.v. Lumassina Pinela Glass / Trebbiano (6 stuks)", "prijs": 2.5 },
+        { "id": "lu_driver", "label": "LED driver dimbaar (60W, 24V, ZigBee)", "prijs": 64 },
+        { "id": "lu_afstandsbediening", "label": "Afstandsbediening LED driver (ZigBee)", "prijs": 16 },
+        { "id": "lu_kabel_21", "label": "Verlengkabel 2,1m t.b.v. 4m afstand tussen drivers (230V)", "prijs": 17.5 },
+        { "id": "lu_kabel_11", "label": "Verlengkabel 1,1m t.b.v. 2m afstand tussen armaturen (24V)", "prijs": 8.5 }
+      ]
+    },
+    {
+      "groep": "Combi-Groove",
+      "blz": 36,
+      "info": "Multifunctionele staander 110x110mm met drie groeven voor Grillo, polycarbonaat, 10mm glas, lamellen en louvres.",
+      "kleuren": ["RAL 9016 verkeerswit structuur", "RAL 7024 antraciet structuur", "RAL 9005 zwart structuur"],
+      "artikelen": [
+        { "id": "cg_6060", "label": "Combi-Groove 6060mm", "prijs": 249 },
+        { "id": "cg_voet", "label": "Blinde montagevoet Combi-Groove (HWA60)", "prijs": 23 },
+        { "id": "cg_beugels", "label": "Bevestigingsbeugels Combi-Groove t.b.v. Grillo (10 stuks)", "prijs": 12 },
+        { "id": "cg_blindplaat", "label": "Blindplaat Combi-Groove 6060mm", "prijs": 12 },
+        { "id": "cg_glasprofiel", "label": "Bevestigingsprofiel 10mm glas Combi-Groove 6060mm", "prijs": 22 },
+        { "id": "cg_rubber", "label": "Bevestigingsrubber set polycarbonaat plaat Combi-Groove 12m", "prijs": 22 },
+        { "id": "cg_flens", "label": "Montageflens t.b.v. montagevoet 110 + 4 bouten", "prijs": 6.75 }
+      ]
+    }
+  ]
+}
