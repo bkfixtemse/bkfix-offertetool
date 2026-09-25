@@ -109,3 +109,23 @@ export const GLASWAND_MERK: Record<string, {
 
 /** Standaard uurtarief voor voorbereidende werken — zelfde tarief als de werkuren van de offerte. */
 export const GLASWAND_VOORBEREIDING_TARIEF = 230;
+
+/**
+ * Deponti (Pinela-overkappingen, Fiano Louvre, onderdelen). De dealerlijst is de inkoopprijs: geen
+ * korting. Marge en plaatsing komen uit de BKfix-rekenbladen van de Deponti-werven van 2026
+ * (blad "19-", marge in A9 = 0,2 en "plaatsing per stuk" in kolom G):
+ *  - Pinela: €2.500 per overkapping bij 3450 (2× Delight), 4064 (Deluxe Plus) en 4132 (Tilt 6980);
+ *    €2.000 (4132, Tilt 5052), €1.840 (4006, Delight vrijstaand = 8u × €230) en €3.000 (3920,
+ *    Deluxe Plus mét koker). Standaard dus €2.500, per offerte aan te passen.
+ *  - Deponti-screen: €230 (4006) en €400 (4064). Standaard €230, aan te passen.
+ *  - Koppelstuk: €150 (3450).
+ *  - Fiano Louvre: €250 per Louvre-paneel (rekenblad 3864 Scheirs: 'louvre', plaatsing per stuk 250);
+ *    bij 2827 Heymans zat de Louvre in de plaatsing van de glaswand (€0 apart).
+ */
+export const DEPONTI = {
+  marge: 0.20,
+  plaatsingPinela: 2500,
+  plaatsingScreen: 230,
+  plaatsingKoppelset: 150,
+  plaatsingLouvrePerPaneel: 250,
+} as const;

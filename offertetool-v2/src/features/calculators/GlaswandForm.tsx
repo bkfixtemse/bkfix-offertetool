@@ -1,47 +1,27 @@
 import { useMemo, useState } from 'react';
 import {
-  calcGlaswand, glaswandKleuren, glaswandOpties, kiesRaillengte,
+  calcGlaswand, depontiStandaardBreedtes, glaswandKleuren, glaswandOpties, kiesRaillengte,
   DEPONTI_BREEDTES, DEPONTI_GLASSOORTEN, DEPONTI_HOOGTES, ES_BREEDTES,
   GLASWAND_MERKEN, type GlaswandExtra, type GlaswandMerk, type GlaswandOptieKeuze,
   type GlaswandPaneel,
 } from '../../calc/glaswand';
 import {
-  bepaalIndeling, glaswandOptiesVoorAantal, glaswandOverzicht, indelingNaarInvoer, migreerIndeling,
+  bepaalIndeling, glaswandOptiesVoorAantal, glaswandOverzicht, indelingNaarInvoer, migreerIndeling, INDELING_VERSIE,
   type AdviesInstelling, type AdviesOptie, type GlaswandOverzicht, type IndelingKeuze,
 } from '../../calc/glaswandAdvies';
 import type { GlaswandInput } from '../../calc/glaswand';
+import {
+  berekenGlaswandStaat, glaswandBasisInvoer, wijzigMaatStaat, wisselMerkStaat, GLASWAND_DEFAULT, type GlaswandStaat,
+} from '../../calc/glaswandStaat';
 import { GLASWAND_MERK, GLASWAND_VOORBEREIDING_TARIEF } from '../../data/constants';
 import { Chk, fmt, Num, Sec, Sel, Txt } from '../../components/fields';
 import { ResultCard } from '../../components/ResultCard';
 import { useOffer } from '../../store/offerStore';
 
-const DEFAULT = {
-  merk: 'ES Systems' as GlaswandMerk,
-  aantal: 1,
-  dagmaatBreedte: 0, dagmaatHoogte: 0,
-  kokerLinks: 0, kokerMidden: 0, kokerRechts: 0,
-  aantalPanelen: 3,
-  paneelModus: 'maatwerk' as 'standaard' | 'maatwerk' | 'mix',
-  paneelBreedte: 900,
-  paneelVerdeling: [] as GlaswandPaneel[],
-  /** auto = altijd de beste mogelijkheid · vast = zelf aangeklikt · eigen = glasmaten zelf ingegeven */
-  keuze: 'auto' as IndelingKeuze,
-  overlap: 30,
-  steellook: false,
-  glas: 'helder' as 'helder' | 'getint',
-  sporen: 0,
-  raillengte: 0,
-  glassoort: 'standaard',
-  sluiting: 'geen' as 'geen' | 'zij' | 'midden',
-  kleurSelect: '', kleurCustom: '',
-  opties: [] as GlaswandOptieKeuze[],
-  extraLijnen: [] as GlaswandExtra[],
-  kortingPct: 40, margePct: 20,
-  plaatsingVast: 800,
-  voorbereidingPersonen: 0, voorbereidingUren: 0, voorbereidingTarief: GLASWAND_VOORBEREIDING_TARIEF,
-  korting: 0, opmerkingen: '',
-};
-type State = typeof DEFAULT;
+// De toestand en hoe ze naar de rekenkern gaat, staan in calc/glaswandStaat.ts: de wanden onder een
+// overkapping rekenen daarmee exact zoals deze tab.
+const DEFAULT = GLASWAND_DEFAULT;
+type State = GlaswandStaat;
 
 export function GlaswandForm() {
   const [s, set] = useState<State>(() => {
@@ -53,24 +33,11 @@ export function GlaswandForm() {
   const u = (p: Partial<State>) => set({ ...s, ...p });
   const isES = s.merk === 'ES Systems';
 
-  /** Van merk wisselen zet de bijhorende korting/marge én wist merk-specifieke keuzes. */
-  const wisselMerk = (merk: GlaswandMerk) => {
-    const cfg = GLASWAND_MERK[merk];
-    set({
-      ...s, merk,
-      kortingPct: cfg.korting * 100,
-      margePct: cfg.marge * 100,
-      plaatsingVast: cfg.plaatsingVast,
-      paneelBreedte: merk === 'Deponti' ? 980 : 900,
-      opties: [], extraLijnen: [], kleurSelect: '', kleurCustom: '', sporen: 0, raillengte: 0,
-      // steel-look, sluiting en maatwerkglassoort zijn Deponti-velden: bij ES zijn ze onzichtbaar,
-      // dus ze mogen niet blijven staan wanneer je van merk wisselt.
-      steellook: false, sluiting: 'geen', glassoort: 'standaard',
-      // Ook de indeling is merkgebonden (andere standaardmaten). Een zelf gekozen of zelf ingegeven
-      // indeling van het ene merk mag niet doorlopen in het andere: begin opnieuw bij de beste.
-      keuze: 'auto', paneelModus: 'maatwerk', paneelVerdeling: [],
-    });
-  };
+  /**
+   * Van merk wisselen zet de bijhorende korting/marge én wist merk-specifieke keuzes. Een wand die
+   * bij een overkapping hoort, krijgt geen eigen transport: dat staat al op de overkapping.
+   */
+  const wisselMerk = (merk: GlaswandMerk) => set(wisselMerkStaat(s, merk));
 
   const optieLijst = glaswandOpties(s.merk);
   const setOptie = (i: number, p: Partial<GlaswandOptieKeuze>) =>
@@ -80,54 +47,32 @@ export function GlaswandForm() {
   const setPaneel = (i: number, p: Partial<GlaswandPaneel>) =>
     u({ paneelVerdeling: s.paneelVerdeling.map((o, j) => (j === i ? { ...o, ...p } : o)) });
 
-  // Bij ES geef je de glasmaten enkel zelf in als je daar uitdrukkelijk voor kiest; bij Deponti
-  // (geparkeerd) blijft de oude keuze tussen standaard, maatwerk en mix bestaan.
-  const eigen = isES ? s.keuze === 'eigen' : s.paneelModus === 'mix';
+  // De glasmaten geef je enkel zelf in als je daar uitdrukkelijk voor kiest — voor beide merken.
+  const eigen = s.keuze === 'eigen';
   const mixPanelen = s.paneelVerdeling.reduce((t, r) => t + (Math.floor(r.aantal) || 0), 0);
   const mixRest = s.paneelVerdeling.some((r) => !(r.breedte > 0));
 
   // Alles behalve de indeling. Zowel de berekening als de voorstellen vertrekken hiervan.
-  const basisInvoer: GlaswandInput = {
-    ...s,
-    ...indelingNaarInvoer({
-      paneelModus: s.paneelModus, aantalPanelen: s.aantalPanelen, paneelBreedte: s.paneelBreedte,
-      paneelVerdeling: s.paneelVerdeling, overlap: s.overlap,
-    }),
-    kleur: { select: s.kleurSelect === 'andere' ? 'andere' : s.kleurSelect, custom: s.kleurCustom },
-    bediening: { bed1: '', bed2: '' },
-    vrijeOpties: [],
-    marges: {
-      allroundKorting: s.kortingPct / 100,
-      bkfixMarge: s.margePct / 100,
-      eenmaligeKorting: s.korting,
-    },
-  };
+  const basisInvoer: GlaswandInput = glaswandBasisInvoer(s);
 
-  // Alle mogelijkheden voor het gekozen aantal panelen. Hangt enkel af van de opening, het aantal,
-  // de overlap, het glas en de marges.
-  const deps = [isES, s.dagmaatBreedte, s.dagmaatHoogte, s.kokerLinks, s.kokerMidden, s.kokerRechts,
-    s.overlap, s.glas, s.kortingPct, s.margePct, s.plaatsingVast];
+  // Alle mogelijkheden voor het gekozen aantal panelen. Hangt enkel af van het merk, de opening, het
+  // aantal, de overlap, het glas, steel-look en sluiting (Deponti: breedte en overlap) en de marges.
+  const deps = [s.merk, s.dagmaatBreedte, s.dagmaatHoogte, s.kokerLinks, s.kokerMidden, s.kokerRechts,
+    s.overlap, s.glas, s.glassoort, s.steellook, s.sluiting, s.sporen, s.raillengte, s.kleurSelect, s.kleurCustom,
+    s.kortingPct, s.margePct, s.plaatsingVast];
   const perAantal = useMemo(
-    () => (isES ? glaswandOptiesVoorAantal(basisInvoer, s.aantalPanelen) : null),
+    () => glaswandOptiesVoorAantal(basisInvoer, s.aantalPanelen),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [...deps, s.aantalPanelen],
   );
   const overzicht = useMemo(
-    () => (isES ? glaswandOverzicht(basisInvoer) : null),
+    () => glaswandOverzicht(basisInvoer),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     deps,
   );
 
-  // De indeling waarmee gerekend wordt: bij ES volgens de keuze (standaard: automatisch de beste),
-  // bij Deponti rechtstreeks uit de velden.
-  const instelling: AdviesInstelling = isES
-    ? bepaalIndeling(s, perAantal)
-    : {
-      paneelModus: s.paneelModus, aantalPanelen: s.aantalPanelen, paneelBreedte: s.paneelBreedte,
-      paneelVerdeling: s.paneelVerdeling, overlap: s.overlap,
-    };
-  const invoer: GlaswandInput = { ...basisInvoer, ...indelingNaarInvoer(instelling) };
-  const r = calcGlaswand(invoer);
+  // De indeling waarmee gerekend wordt, volgens de keuze (standaard: automatisch de beste).
+  const { instelling, r } = berekenGlaswandStaat(s, perAantal);
   /** Het aantal panelen waarmee de berekening echt rekent. */
   const panelen = Number(r.detail.aantalPanelen) || 0;
   // Vergelijk gesorteerd: dezelfde panelen in een andere rijvolgorde zijn dezelfde indeling.
@@ -154,11 +99,11 @@ export function GlaswandForm() {
     u({ ...o.instelling, paneelBreedte: o.instelling.paneelBreedte || s.paneelBreedte, keuze: 'vast' });
 
   /**
-   * Een maat wijzigen die bepaalt welke mogelijkheden er zijn. Stond er een zelf gekozen indeling,
-   * dan kiest de tool opnieuw de beste — de oude keuze past niet meer bij de nieuwe maten.
+   * Een maat wijzigen die bepaalt welke mogelijkheden er zijn. Een zelf gekozen indeling blijft staan
+   * zolang ze met de nieuwe maten nog een mogelijkheid is (bij ES veranderen hoogte en glastype de
+   * mogelijkheden niet); anders kiest de tool opnieuw de beste.
    */
-  const wijzigMaat = (p: Partial<State>) =>
-    u({ ...p, ...(isES && s.keuze === 'vast' ? { keuze: 'auto' as IndelingKeuze } : {}) });
+  const wijzigMaat = (p: Partial<State>) => u(wijzigMaatStaat(s, p));
 
   /** Naar "eigen indeling": vertrek van de indeling die nu gebruikt wordt. */
   const naarEigen = () => u({
@@ -173,9 +118,12 @@ export function GlaswandForm() {
     u({ keuze: 'auto', aantalPanelen: Math.max(1, mixPanelen || s.aantalPanelen) });
 
   const voorbereidingKost = s.voorbereidingPersonen * s.voorbereidingUren * s.voorbereidingTarief;
-  const sporen = s.sporen || s.aantalPanelen;
+  // Het werkelijke aantal panelen van de berekening (bij een eigen indeling volgt dat uit de rijen).
+  const sporen = s.sporen || panelen;
   const autoRail = !isES ? kiesRaillengte(sporen, Number(r.calculatiemaat?.b ?? 0)) : null;
-  const breedtes = isES ? ES_BREEDTES : DEPONTI_BREEDTES;
+  // Bij Deponti hangt "standaard" af van de hoogte en het glas (640 bestaat niet in 2350, gekleurd
+  // glas is altijd maatwerk) — dezelfde regel als de rekenkern.
+  const breedtes = isES ? ES_BREEDTES : depontiStandaardBreedtes(s.dagmaatHoogte, s.glassoort);
 
   return (
     <>
@@ -188,20 +136,29 @@ export function GlaswandForm() {
               één prijs tot dagmaat 2700mm, daarboven op aanvraag bij ES · glashoogte = dagmaat − 100mm ·
               inkoop = lijst − 40%.</>
           ) : (
-            <>Deponti Fiano: <b>stuklijst</b> = panelen × paneelprijs + rail + opties; de dealerlijst is de
-              inkoopprijs. Paneelbreedtes {DEPONTI_BREEDTES.join(' / ')}mm · hoogtes {DEPONTI_HOOGTES.join(' / ')}mm ·
-              let op: niet elke rail bestaat in elke lengte.</>
+            <>Deponti Fiano (lijst 2026): <b>per paneel</b> + rail + opties; de dealerlijst is de inkoopprijs.
+              Standaardpanelen {DEPONTI_BREEDTES.join(' / ')}mm op inbouwhoogte {DEPONTI_HOOGTES.join(' / ')}mm ·
+              ander glas is maatwerk: glasbreedte × inbouwhoogte × m²-prijs · glas = inbouwhoogte − 85mm ·
+              niet elke rail bestaat in elke lengte.</>
           )}
         </div>
 
+        {s.transportBijOverkapping && (
+          <div className="hint">Deze wand hoort bij een overkapping: het transport staat op de overkapping.</div>
+        )}
         <Sec title="Merk & opening">
           <div className="grid2">
             <Sel label="Merk *" value={s.merk} onChange={(m) => wisselMerk(m as GlaswandMerk)} options={GLASWAND_MERKEN} />
             <Num label="Aantal identieke wanden" value={s.aantal} min={1} onChange={(a) => u({ aantal: a || 1 })} />
             <Num label="Gemeten dagmaat breedte (mm) *" value={s.dagmaatBreedte} onChange={(v) => wijzigMaat({ dagmaatBreedte: v })} />
             <Num label={isES ? 'Inbouwhoogte / dagmaat (mm) *' : 'Inbouwhoogte (mm) *'}
-              value={s.dagmaatHoogte} onChange={(v) => u({ dagmaatHoogte: v })}
-              hint={isES ? 'Vloer tot onderkant goot' : 'Onderzijde onderprofiel tot bovenzijde bovenprofiel'} />
+              value={s.dagmaatHoogte} onChange={(v) => wijzigMaat({ dagmaatHoogte: v, gemetenHoogte: 0 })}
+              hint={s.gemetenHoogte > 0
+                ? `Gemeten onder de goot: ${s.gemetenHoogte}mm${!isES && s.dagmaatHoogte !== s.gemetenHoogte
+                  ? ` → Fiano-standaardhoogte ${s.dagmaatHoogte}mm (compensatietabel Deponti)` : ''}`
+                : isES ? 'Vloer tot onderkant goot'
+                : `Onderzijde onderprofiel tot bovenzijde bovenprofiel — standaard: ${DEPONTI_HOOGTES.join(' / ')}. `
+                  + 'Gemeten dagmaat? Standaardhoogte H past van H − 20 tot H + 25mm (handleiding Fiano).'} />
             <Num label="Koker links (mm)" value={s.kokerLinks} onChange={(v) => wijzigMaat({ kokerLinks: v })} />
             <Num label="Koker midden (mm)" value={s.kokerMidden} onChange={(v) => wijzigMaat({ kokerMidden: v })} />
             <Num label="Koker rechts (mm)" value={s.kokerRechts} onChange={(v) => wijzigMaat({ kokerRechts: v })} />
@@ -223,48 +180,30 @@ export function GlaswandForm() {
               <Num label={isES ? 'Aantal panelen = aantal rails *' : 'Aantal panelen *'}
                 value={s.aantalPanelen} min={1} onChange={(v) => wijzigMaat({ aantalPanelen: Math.max(0, Math.floor(v)) })} />
             )}
-            {isES ? (
-              <Num label="Gewenste overlap (mm)" value={s.overlap} min={0}
-                onChange={(v) => wijzigMaat({ overlap: v })} hint="Gebruikelijk 30 tot 70mm" />
-            ) : (
-              <>
-                <Sel label="Glasmaat" value={s.paneelModus}
-                  onChange={(m) => u({
-                    paneelModus: m as any,
-                    // De keuzelijst toont altijd een maat; de berekening moet dezelfde gebruiken.
-                    ...(m === 'standaard' && !breedtes.includes(s.paneelBreedte) ? { paneelBreedte: breedtes[0] } : {}),
-                  })}
-                  options={[
-                    { v: 'standaard', t: 'Standaardbreedte (overlap volgt)' },
-                    { v: 'maatwerk', t: 'Maatwerk (overlap kiezen)' },
-                    { v: 'mix', t: 'Mix & match (verschillende maten)' },
-                  ]} />
-                {s.paneelModus === 'standaard' && (
-                  <Sel label="Paneelbreedte (mm)" value={String(s.paneelBreedte)}
-                    onChange={(v) => u({ paneelBreedte: Number(v) })} options={breedtes.map(String)} />
-                )}
-                {(s.paneelModus === 'maatwerk' || (eigen && mixRest)) && (
-                  <Num label="Gewenste overlap (mm)" value={s.overlap} min={0}
-                    onChange={(v) => u({ overlap: v })} hint="Gebruikelijk 30 tot 70mm" />
-                )}
-              </>
+            {(!eigen || mixRest) && (
+              <Num label="Gewenste overlap (mm)" value={!isES && s.steellook ? 30 : s.overlap} min={0}
+                onChange={(v) => wijzigMaat({ overlap: v })}
+                hint={!isES && s.steellook ? 'Steel-look werkt met 30mm overlap' : 'Gebruikelijk 30 tot 70mm'} />
             )}
             {isES && (
-              <Sel label="Glastype" value={s.glas} onChange={(g) => u({ glas: g as any })}
+              <Sel label="Glastype" value={s.glas} onChange={(g) => wijzigMaat({ glas: g as any })}
                 options={[{ v: 'helder', t: 'Helder' }, { v: 'getint', t: 'Getint' }]} />
-            )}
-            {!isES && s.paneelModus === 'maatwerk' && (
-              <Sel label="Maatwerkglas" value={s.glassoort} onChange={(glassoort) => u({ glassoort })}
-                options={DEPONTI_GLASSOORTEN} />
             )}
             {!isES && (
               <>
+                <Sel label="Glas" value={s.glassoort} onChange={(glassoort) => wijzigMaat({ glassoort })}
+                  options={DEPONTI_GLASSOORTEN.map((g) => ({
+                    v: g,
+                    t: g === 'standaard' ? 'Helder (standaardpanelen of maatwerk)' : `${g[0].toUpperCase()}${g.slice(1)} (altijd maatwerk)`,
+                  }))} />
                 <Num label="Aantal sporen (0 = zoals panelen)" value={s.sporen} min={0}
                   onChange={(v) => u({ sporen: v })} />
                 <Num label="Raillengte (mm, 0 = automatisch)" value={s.raillengte} min={0}
                   onChange={(v) => u({ raillengte: v })}
-                  hint={autoRail ? `Automatisch: ${autoRail}mm` : 'Geen passende rail gevonden'} />
-                <Sel label="Sluiting" value={s.sluiting} onChange={(v) => u({ sluiting: v as any })}
+                  hint={/brut/i.test(s.kleurSelect === 'andere' ? s.kleurCustom : s.kleurSelect)
+                    ? 'Brut: altijd de brute rail van 7100mm'
+                    : autoRail ? `Automatisch: ${autoRail}mm` : 'Geen passende rail gevonden'} />
+                <Sel label="Sluiting" value={s.sluiting} onChange={(v) => wijzigMaat({ sluiting: v as any })}
                   options={[
                     { v: 'geen', t: 'Geen' },
                     { v: 'zij', t: 'Zijsluiting (−85mm)' },
@@ -274,7 +213,7 @@ export function GlaswandForm() {
             )}
           </div>
 
-          {isES && !eigen && (
+          {!eigen && (
             perAantal && overzicht && s.dagmaatBreedte > 0 && s.dagmaatHoogte > 0 ? (
               <div style={{ marginTop: 12 }}>
                 {overzicht.beste ? (
@@ -340,7 +279,9 @@ export function GlaswandForm() {
               <div className="alert info">
                 Eén rij per glasmaat. Laat de breedte op 0 staan om dat paneel de rest van de opening
                 te laten opvullen — zo zet je één maatwerkglas in een verder standaard wand.
-                {isES && ' Zit er een afwijkende maat tussen, dan gaat alleen dat glas aan het maatwerktarief.'}
+                {isES
+                  ? ' Zit er een afwijkende maat tussen, dan gaat alleen dat glas aan het maatwerktarief.'
+                  : ' Zit er een afwijkende maat tussen, dan gaat alleen dat glas aan de m²-prijs.'}
               </div>
               {s.paneelVerdeling.map((rij, i) => (
                 <div className="grid2" key={i} style={{ marginBottom: 6 }}>
@@ -354,10 +295,12 @@ export function GlaswandForm() {
                 </div>
               ))}
               <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
-                <button className="btn ghost" type="button"
-                  onClick={() => u({ paneelVerdeling: [...s.paneelVerdeling, { breedte: breedtes[0], aantal: 1 }] })}>
-                  + standaardmaat
-                </button>
+                {breedtes.length > 0 && (
+                  <button className="btn ghost" type="button"
+                    onClick={() => u({ paneelVerdeling: [...s.paneelVerdeling, { breedte: breedtes[0], aantal: 1 }] })}>
+                    + standaardmaat
+                  </button>
+                )}
                 <button className="btn ghost" type="button"
                   onClick={() => u({ paneelVerdeling: [...s.paneelVerdeling, { breedte: 0, aantal: 1 }] })}>
                   + paneel dat de rest opvult
@@ -366,18 +309,16 @@ export function GlaswandForm() {
                   <button className="btn ghost" type="button"
                     onClick={() => u({ paneelVerdeling: s.paneelVerdeling.slice(0, -1) })}>− laatste</button>
                 )}
-                {isES && (
-                  <button className="btn ghost" type="button" onClick={naarVoorstellen}>
-                    Terug naar de voorstellen
-                  </button>
-                )}
+                <button className="btn ghost" type="button" onClick={naarVoorstellen}>
+                  Terug naar de voorstellen
+                </button>
               </div>
             </div>
           )}
           {!isES && (
             <div style={{ marginTop: 10 }}>
               <Chk label="Steel-look glasroeden (−20mm breedte, 30mm overlap)" value={s.steellook}
-                onChange={(steellook) => u({ steellook })} />
+                onChange={(steellook) => wijzigMaat({ steellook, ...(steellook ? { overlap: 30 } : {}) })} />
             </div>
           )}
         </Sec>
@@ -560,7 +501,7 @@ function AdviesTabel({ opties, inGebruik, gebruik, beste }: {
         <tbody>
           {opties.map((o, i) => (
             <tr key={i} style={o.mogelijk ? undefined : { color: 'var(--tx3)' }}>
-              <td title={o.breed ? 'Breder dan de breedste standaardmaat — bevestigen bij ES' : undefined}>
+              <td title={o.breed ? 'Breder dan de breedste standaardmaat — bevestigen bij de leverancier' : undefined}>
                 {o === beste ? '★ ' : ''}{o.titel}{o.breed ? ' ⚠' : ''}
               </td>
               <td>{o.panelen.join(' · ')}</td>

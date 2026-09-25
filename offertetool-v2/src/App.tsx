@@ -5,6 +5,8 @@ import { ScreenForm } from './features/calculators/ScreenForm';
 import { KnikarmForm } from './features/calculators/KnikarmForm';
 import { VerandaForm } from './features/calculators/VerandaForm';
 import { GlaswandForm } from './features/calculators/GlaswandForm';
+import { DepontiForm } from './features/calculators/DepontiForm';
+import { OverkappingForm } from './features/calculators/OverkappingForm';
 import { BedieningForm } from './features/calculators/BedieningForm';
 import { OfferPanel } from './features/offer/OfferPanel';
 import { HistoryTab } from './features/history/HistoryTab';
@@ -21,6 +23,8 @@ const TABS = [
   { k: 'knikarm', t: 'Knikarmscherm' },
   { k: 'veranda', t: 'Veranda/Pergola' },
   { k: 'glaswand', t: 'Glaswand' },
+  { k: 'overkapping', t: 'Overkappingen' },
+  { k: 'deponti', t: 'Deponti' },
   { k: 'bediening', t: '📱 Afstandsbediening' },
   { k: 'historie', t: '📜 Historie', right: true },
   { k: 'instellingen', t: '⚙ Instellingen' },
@@ -96,6 +100,8 @@ export default function App() {
               {tab === 'knikarm' && <KnikarmForm key={`knikarm-${editKey}`} />}
               {tab === 'veranda' && <VerandaForm key={`veranda-${editKey}`} />}
               {tab === 'glaswand' && <GlaswandForm key={`glaswand-${editKey}`} />}
+              {tab === 'overkapping' && <OverkappingForm key={`overkapping-${editKey}`} />}
+              {tab === 'deponti' && <DepontiForm key={`deponti-${editKey}`} />}
               {tab === 'bediening' && <BedieningForm key={`bediening-${editKey}`} />}
             </div>
             <OfferPanel />

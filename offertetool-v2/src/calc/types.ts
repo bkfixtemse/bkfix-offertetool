@@ -89,7 +89,7 @@ export interface CalcResult {
 }
 
 /** Welk formulier/tab een offerte-item hoort — bepaalt waar het bewerkt wordt. */
-export type ProductKind = 'rolluik' | 'screen' | 'knikarm' | 'veranda' | 'glaswand' | 'bediening' | 'artikel';
+export type ProductKind = 'rolluik' | 'screen' | 'knikarm' | 'veranda' | 'glaswand' | 'overkapping' | 'deponti' | 'bediening' | 'artikel';
 
 /** Eén regel op de offerte (= CalcResult + id + herkomst + ruwe invoer voor bewerken). */
 export interface OfferItem extends CalcResult {

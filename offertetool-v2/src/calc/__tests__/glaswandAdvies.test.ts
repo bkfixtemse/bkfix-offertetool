@@ -176,3 +176,92 @@ describe('lijst per aantal — details', () => {
     expect(performance.now() - t0).toBeLessThan(500);
   });
 });
+
+describe('Deponti Fiano — dezelfde voorstellen, met de Deponti-regels', () => {
+  const dpBasis: GlaswandInput = {
+    ...basis, merk: 'Deponti', dagmaatHoogte: 2200, paneelBreedte: 980,
+    marges: { allroundKorting: 0, bkfixMarge: 0.2, eenmaligeKorting: 0 },
+  };
+  const dpOverzicht = (o: Partial<GlaswandInput>) => glaswandOverzicht({ ...dpBasis, ...o });
+
+  it('2880mm op standaardhoogte 2200: 3× 980mm standaard op 30mm, €508 (3 × €135 + rail €103)', () => {
+    const a = dpOverzicht({ dagmaatBreedte: 2880 });
+    expect(a.beste?.panelen).toEqual([980, 980, 980]);
+    expect(a.beste?.overlap).toBe(30);
+    expect(a.beste?.aankoop).toBe(508);
+    expect(a.perAantal).toHaveLength(7);                          // Fiano gaat tot 7 sporen
+    expect(a.criterium).toMatch(/breder dan 1040mm/);
+  });
+
+  it('werf 3835 (2714 × 2111, steel-look): alles op 30mm, en de bestelde 4× 696mm staat erbij', () => {
+    const a = dpOverzicht({ dagmaatBreedte: 2714, dagmaatHoogte: 2111, steellook: true, overlap: 45 });
+    expect(a.wandBreedte).toBe(2694);                             // −20mm voor steel-look
+    for (const p of a.perAantal) for (const o of p.opties) expect(o.overlap).toBe(30);
+    const vier = a.perAantal[3].opties.find((o) => o.panelen.join(',') === '696,696,696,696');
+    expect(vier?.aankoop).toBe(917.64);                           // 4 × €183,66 + rail €183
+  });
+
+  it('geen standaardhoogte: enkel maatwerk', () => {
+    const a = dpOverzicht({ dagmaatBreedte: 3000, dagmaatHoogte: 2230 });
+    for (const p of a.perAantal) for (const o of p.opties) expect(o.soort).toBe('maatwerk');
+    expect(a.beste?.panelen).toEqual([1020, 1020, 1020]);
+  });
+
+  it('gekleurd glas: enkel maatwerk, ook op een standaardhoogte', () => {
+    const a = dpOverzicht({ dagmaatBreedte: 2880, glassoort: 'brons' });
+    for (const p of a.perAantal) for (const o of p.opties) expect(o.soort).toBe('maatwerk');
+  });
+
+  it('640mm is geen standaardmaat op 2350: nooit als standaardpaneel voorgesteld', () => {
+    const a = dpOverzicht({ dagmaatBreedte: 2400, dagmaatHoogte: 2350 });
+    for (const p of a.perAantal) {
+      for (const o of p.opties) {
+        if (o.panelen.includes(640)) expect(o.titel).toMatch(/640mm \(maatwerk\)/);
+      }
+    }
+  });
+
+  it('elke Deponti-mogelijkheid rekent na "gebruik" exact hetzelfde door', () => {
+    for (const [b, h] of [[2880, 2200], [3900, 2200], [2714, 2111], [5500, 2300]]) {
+      const a = dpOverzicht({ dagmaatBreedte: b, dagmaatHoogte: h });
+      for (const p of a.perAantal) {
+        for (const o of p.opties) {
+          const r = calcGlaswand({ ...dpBasis, dagmaatBreedte: b, dagmaatHoogte: h, ...indelingNaarInvoer(o.instelling) });
+          expect(String(r.detail.panelenLijst), `${b}x${h} ${o.titel}`).toBe(o.panelen.join(','));
+          expect(r.aankoop, `${b}x${h} ${o.titel}`).toBeCloseTo(o.aankoop, 2);
+        }
+      }
+    }
+  });
+
+  it('de standaardcombinaties blijven binnen 30-70mm overlap (sjabloon BKfix)', () => {
+    const a = dpOverzicht({ dagmaatBreedte: 3900 });
+    for (const p of a.perAantal) {
+      for (const o of p.opties) {
+        if (o.soort === 'standaard' || o.soort === 'mix') {
+          expect(o.overlap, o.titel).toBeGreaterThanOrEqual(30);
+          expect(o.overlap, o.titel).toBeLessThanOrEqual(70);
+        }
+      }
+    }
+  });
+});
+
+describe('Deponti brut in het advies (review ronde 2)', () => {
+  const brut: GlaswandInput = {
+    ...basis, merk: 'Deponti', dagmaatHoogte: 2300, kleur: { select: 'Brut', custom: '' },
+    marges: { allroundKorting: 0, bkfixMarge: 0.2, eenmaligeKorting: 0 },
+  };
+  it('de voorstellen rekenen met de brute rail, zoals de berekening', () => {
+    const v = glaswandOptiesVoorAantal({ ...brut, dagmaatBreedte: 3500 }, 4);
+    const r = calcGlaswand({ ...brut, dagmaatBreedte: 3500, ...indelingNaarInvoer(v.beste!.instelling) });
+    expect(r.regels.some((x) => /Brute, 7100mm/.test(x.label))).toBe(true);
+    expect(r.aankoop).toBeCloseTo(v.beste!.aankoop, 2);
+  });
+  it('2 of 7 panelen (geen brute rail) worden niet voorgesteld', () => {
+    const a = glaswandOverzicht({ ...brut, dagmaatBreedte: 1980 });
+    expect(a.perAantal[1].opties).toEqual([]);
+    expect(a.perAantal[6].opties).toEqual([]);
+    expect(a.beste?.panelen.length).not.toBe(2);
+  });
+});

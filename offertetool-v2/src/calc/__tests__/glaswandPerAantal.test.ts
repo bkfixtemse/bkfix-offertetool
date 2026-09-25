@@ -176,3 +176,46 @@ describe('bewaarde offertes van voor deze wijziging', () => {
     expect(migreerIndeling({ keuze: 'auto' as const }).keuze).toBe('auto');
   });
 });
+
+describe('Deponti-items bewaard vóór het Deponti-advies (review)', () => {
+  // De vorige versie bewaarde voor Deponti altijd keuze 'auto', maar rekende met de eigen velden.
+  const dpBasis: GlaswandInput = { ...basis, merk: 'Deponti', dagmaatBreedte: 3000, dagmaatHoogte: 2300,
+    marges: { allroundKorting: 0, bkfixMarge: 0.2, eenmaligeKorting: 0 } };
+  const oud = [
+    { merk: 'Deponti' as const, keuze: 'auto' as const, paneelModus: 'mix' as const, aantalPanelen: 3, overlap: 40,
+      paneelBreedte: 980, paneelVerdeling: [{ breedte: 1040, aantal: 2 }, { breedte: 0, aantal: 1 }] },
+    { merk: 'Deponti' as const, keuze: 'auto' as const, paneelModus: 'maatwerk' as const, aantalPanelen: 4, overlap: 50,
+      paneelBreedte: 980, paneelVerdeling: [] },
+    { merk: 'Deponti' as const, keuze: 'auto' as const, paneelModus: 'standaard' as const, aantalPanelen: 3, overlap: 30,
+      paneelBreedte: 1040, paneelVerdeling: [] },
+  ];
+
+  it('rekenen na heropenen met hun eigen velden (mix → eigen, de rest → vast)', () => {
+    for (const o of oud) {
+      const toen = calcGlaswand({ ...dpBasis, ...indelingNaarInvoer(o) });
+      const m = migreerIndeling(o);
+      expect(m.keuze).toBe(o.paneelModus === 'mix' ? 'eigen' : 'vast');
+      const perAantal = glaswandOptiesVoorAantal(dpBasis, m.aantalPanelen ?? 3);
+      const nu = calcGlaswand({ ...dpBasis, ...indelingNaarInvoer(bepaalIndeling(m, perAantal)) });
+      expect(String(nu.detail.panelenLijst), o.paneelModus).toBe(String(toen.detail.panelenLijst));
+      expect(nu.aankoop, o.paneelModus).toBeCloseTo(toen.aankoop, 2);
+    }
+  });
+
+  it('een nieuw Deponti-item (versie 2) houdt zijn keuze, ES-items zoals voorheen', () => {
+    expect(migreerIndeling({ ...oud[1], indelingVersie: 2 }).keuze).toBe('auto');
+    expect(migreerIndeling({ merk: 'ES Systems', keuze: 'auto' as const }).keuze).toBe('auto');
+  });
+});
+
+describe('advies met een zelf gekozen rail (review)', () => {
+  it('Deponti: de voorstellen rekenen met de ingevulde raillengte, zoals de berekening', () => {
+    const inv: GlaswandInput = { ...basis, merk: 'Deponti', dagmaatBreedte: 2880, dagmaatHoogte: 2200, raillengte: 6000,
+      marges: { allroundKorting: 0, bkfixMarge: 0.2, eenmaligeKorting: 0 } };
+    const v = glaswandOptiesVoorAantal(inv, 3);
+    expect(v.beste?.panelen).toEqual([980, 980, 980]);
+    expect(v.beste?.aankoop).toBe(3 * 135 + 205);                 // rail 3 sporen 6000mm
+    const r = calcGlaswand({ ...inv, ...indelingNaarInvoer(v.beste!.instelling) });
+    expect(r.aankoop).toBeCloseTo(v.beste!.aankoop, 2);
+  });
+});

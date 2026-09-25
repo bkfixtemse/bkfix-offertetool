@@ -59,6 +59,11 @@ export interface GlaswandInput {
   kokerRechts: number;
   /** Inbouwhoogte: vloer tot onderkant goot (ES) / onderzijde onderprofiel tot bovenzijde bovenprofiel (Deponti). */
   dagmaatHoogte: number;
+  /**
+   * Gemeten hoogte onder de goot (wanden uit de Overkappingen-tab); 0 = niet gekend. Deponti bestelt
+   * dan de standaardhoogte die erin past (zie fianoKlasse) en de bestelbon zegt waarom.
+   */
+  gemetenHoogte?: number;
 
   aantalPanelen: number;
   /** 'standaard' = paneelbreedte uit de lijst, overlap volgt · 'maatwerk' = overlap gekozen, breedte volgt. */
@@ -111,6 +116,62 @@ export const DEPONTI_BREEDTES: number[] = dp.standaardBreedtes;
 export const DEPONTI_HOOGTES: number[] = dp.standaardHoogtes;
 export const DEPONTI_GLASSOORTEN: string[] = Object.keys(dp.maatwerkPerM2);
 
+/** Fiano-compensatietabel (handleiding Fiano blz. 12): welke dagmaat hoogte een standaardhoogte afdekt. */
+export const FIANO_COMPENSATIE: {
+  onder: number; boven: number; meenemerOnder: number; uProfielBoven: number; koker60Boven: number;
+} = dp.hoogteCompensatie;
+
+export interface FianoKlasse {
+  /** De standaardhoogte (inbouwhoogte) die besteld wordt. */
+  hoogte: number;
+  /** Dagmaat hoogte waarin ze past: van … tot … (standaard, zonder meenemers). */
+  van: number;
+  tot: number;
+  /** Met meenemers past ze pas vanaf deze dagmaat. */
+  meenemerVan: number;
+}
+
+/**
+ * De Fiano-standaardhoogte die in een gemeten dagmaat hoogte past, of null: dan is het maatwerkglas.
+ * Volgens Deponti past standaardhoogte H in een dagmaat van H − 20 tot H + 25mm.
+ */
+export function fianoKlasse(dagmaatHoogte: number): FianoKlasse | null {
+  const c = FIANO_COMPENSATIE;
+  for (const h of DEPONTI_HOOGTES) {
+    if (dagmaatHoogte >= h - c.onder && dagmaatHoogte <= h + c.boven) {
+      return { hoogte: h, van: h - c.onder, tot: h + c.boven, meenemerVan: h - c.meenemerOnder };
+    }
+  }
+  return null;
+}
+
+/** De hoogte waarmee een merk rekent voor een gemeten hoogte onder de goot. */
+export function hoogteVoorMerk(merk: GlaswandMerk, gemeten: number): number {
+  return merk === 'Deponti' ? (fianoKlasse(gemeten)?.hoogte ?? gemeten) : gemeten;
+}
+
+/** Waarom een Fiano-wand op deze hoogte besteld wordt (voor de bestelbon); '' als er niets te zeggen is. */
+export function fianoHoogteNota(gemeten: number): string {
+  if (!(gemeten > 0)) return '';
+  const k = fianoKlasse(gemeten);
+  if (!k) return `Gemeten dagmaat hoogte ${gemeten}mm valt tussen de Fiano-standaardhoogtes: maatwerkglas`;
+  if (k.hoogte === gemeten) return '';
+  const meenemer = gemeten < k.meenemerVan ? `; met meenemers past ze pas vanaf ${k.meenemerVan}mm` : '';
+  return `Gemeten dagmaat hoogte ${gemeten}mm → Fiano-standaardhoogte ${k.hoogte}mm `
+    + `(compensatietabel Deponti: ${k.van} tot ${k.tot}mm${meenemer})`;
+}
+
+/** Tussen twee standaardhoogtes: het alternatief uit de compensatietabel (enkel op het scherm). */
+export function fianoAlternatief(gemeten: number): string {
+  if (!(gemeten > 0) || fianoKlasse(gemeten)) return '';
+  const c = FIANO_COMPENSATIE;
+  const u = DEPONTI_HOOGTES.find((h) => gemeten > h + c.boven && gemeten <= h + c.uProfielBoven);
+  if (u) return `Alternatief volgens Deponti: standaardhoogte ${u}mm met een U-profiel (tot ${u + c.uProfielBoven}mm)`;
+  const k = DEPONTI_HOOGTES.find((h) => gemeten > h + c.boven && gemeten <= h + c.koker60Boven);
+  if (k) return `Alternatief volgens Deponti: standaardhoogte ${k}mm met een koker 60 (tot ${k + c.koker60Boven}mm)`;
+  return '';
+}
+
 export function glaswandOpties(merk: GlaswandMerk) {
   return (merk === 'Deponti' ? dp.opties : es.opties) as {
     id: string; label: string; eenheid: string; prijs: number;
@@ -121,7 +182,54 @@ export function glaswandOpties(merk: GlaswandMerk) {
     perWand?: boolean;
     /** true = dit artikel vraagt een glas met gat. */
     vereistGat?: boolean;
+    /** Deponti: leverbaar in deze kleuren (RAL-code of 'Brut'); kleuren7 = bij 7 sporen. */
+    kleuren?: string[];
+    kleuren7?: string[];
+    /** Deponti: leverbaar voor dit aantal sporen. */
+    sporen?: number[];
+    /** true = leveranciersregel (transport): wel in de berekening, niet in de klantoffertetekst. */
+    intern?: boolean;
   }[];
+}
+
+/** 'RAL 9016 verkeerswit structuur' → '9016', 'Brut' → 'Brut', anders ''. */
+export function kleurCode(kleur: string): string {
+  if (/brut/i.test(kleur || '')) return 'Brut';
+  return (kleur || '').match(/\b(9001|9016|7024|9005)\b/)?.[1] ?? '';
+}
+
+/**
+ * Deponti: bestaat deze optie in de gekozen kleur en voor dit aantal sporen? (lijst 2026 blz. 42-44)
+ * Geeft de waarschuwingen terug; leeg = in orde. Gedeeld door de glaswand en de Fiano Louvre.
+ */
+export function depontiOptieMeldingen(
+  opt: { label: string; kleuren?: string[]; kleuren7?: string[]; sporen?: number[] },
+  kleur: string,
+  sporen: number,
+): string[] {
+  const uit: string[] = [];
+  const code = kleurCode(kleur);
+  const kleuren = sporen === 7 && opt.kleuren7 ? opt.kleuren7 : opt.kleuren;
+  if (kleuren && code && !kleuren.includes(code)) {
+    uit.push(
+      `${opt.label} bestaat${sporen === 7 && opt.kleuren7 ? ' bij 7 sporen' : ''} niet in `
+      + `${code === 'Brut' ? 'brut' : `RAL ${code}`} (leverbaar: ${kleuren.map((k) => (k === 'Brut' ? 'brut' : k)).join(' / ')})`,
+    );
+  }
+  if (opt.sporen && sporen > 0 && !opt.sporen.includes(sporen)) {
+    uit.push(`${opt.label} bestaat niet voor ${sporen} sporen`);
+  }
+  return uit;
+}
+
+/**
+ * Deponti: de breedtes die op deze inbouwhoogte een standaardpaneel zijn. Enkel helder glas bestaat
+ * als standaardpaneel, en niet elke breedte bestaat op elke hoogte (640 niet in 2350).
+ */
+export function depontiStandaardBreedtes(inbouwhoogte: number, glassoort: string): number[] {
+  const rij = dp.panelen[String(inbouwhoogte)] as Record<string, number> | undefined;
+  if (!rij || (glassoort && glassoort !== 'standaard')) return [];
+  return (dp.standaardBreedtes as number[]).filter((b) => typeof rij[String(b)] === 'number');
 }
 
 export function glaswandKleuren(merk: GlaswandMerk): string[] {
@@ -134,6 +242,21 @@ export function kiesRaillengte(sporen: number, wandBreedte: number): number | nu
   if (!rij) return null;
   const passend = Object.keys(rij).map(Number).filter((l) => l >= wandBreedte).sort((a, b) => a - b);
   return passend.length > 0 ? passend[0] : null;
+}
+
+/**
+ * Breedte die het glas moet overspannen: gemeten dagmaat min de kokers, en bij Deponti ook min
+ * 20mm voor steel-look (het profiel is 35mm breed; de sjablonen rekenen met 30mm overlap — zo komt
+ * werf 3835 exact op de 696mm glas van so96274) en min 85mm bij een zij- of middensluiting.
+ * ES Systems voert geen steel-look glasroeden: daar telt het vinkje niet.
+ */
+export function glaswandWandBreedte(inp: Pick<GlaswandInput,
+  'merk' | 'dagmaatBreedte' | 'kokerLinks' | 'kokerMidden' | 'kokerRechts' | 'steellook' | 'sluiting'>): number {
+  const isDeponti = inp.merk === 'Deponti';
+  const kokers = (inp.kokerLinks || 0) + (inp.kokerMidden || 0) + (inp.kokerRechts || 0);
+  const steellookAftrek = isDeponti && inp.steellook ? 20 : 0;
+  const sluitingAftrek = isDeponti && inp.sluiting && inp.sluiting !== 'geen' ? dp.sluitingAftrek : 0;
+  return (inp.dagmaatBreedte || 0) - kokers - steellookAftrek - sluitingAftrek;
 }
 
 export function calcGlaswand(inp: GlaswandInput): CalcResult {
@@ -160,18 +283,11 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
   const n = verdeling.reduce((t, r) => t + Math.floor(r.aantal), 0);
 
   // ---- Breedte van de wand ----
-  const kokers = (inp.kokerLinks || 0) + (inp.kokerMidden || 0) + (inp.kokerRechts || 0);
-  // Het steellookprofiel is 35mm breed: de sjablonen trekken 20mm van de breedte af en rekenen met 30mm overlap.
-  // ES Systems voert geen steel-look glasroeden (dat is een Deponti-artikel); het vinkje mag daar
-  // de glasmaat en de overlap dus niet stil beïnvloeden.
   const steellookActief = inp.steellook && !isES;
   if (inp.steellook && isES) {
     warnings.push('ES Systems levert geen steel-look glasroeden — het vinkje wordt genegeerd');
   }
-  const steellookAftrek = steellookActief ? 20 : 0;
-  // Deponti: bij zij- of middensluiting moet 85mm van de gemeten dagmaat.
-  const sluitingAftrek = !isES && inp.sluiting !== 'geen' ? dp.sluitingAftrek : 0;
-  const wandBreedte = (inp.dagmaatBreedte || 0) - kokers - steellookAftrek - sluitingAftrek;
+  const wandBreedte = glaswandWandBreedte(inp);
 
   if (!inp.dagmaatBreedte || !inp.dagmaatHoogte) errors.push('Vul de dagmaat breedte en hoogte in');
   if (n < 1) errors.push(eigenVerdeling ? 'Voeg minstens één glasmaat toe' : 'Vul het aantal panelen in');
@@ -191,6 +307,12 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
       // Alle breedtes zijn gegeven: de overlap volgt eruit.
       overlap = n > 1 ? (somVast - wandBreedte) / (n - 1) : 0;
       maten = vast.map((r) => ({ breedte: r.breedte, aantal: Math.floor(r.aantal) }));
+      if (steellookActief && n > 1 && Math.abs(overlap - 30) > 1) {
+        warnings.push(
+          `Steel-look werkt met 30mm overlap; deze glasmaten geven ${r1(overlap)}mm — `
+          + 'laat één paneel de rest opvullen of kies andere maten',
+        );
+      }
     } else {
       // Eén of meer panelen vullen de rest op, op basis van de gekozen overlap.
       overlap = steellookActief ? 30 : inp.overlap;
@@ -237,7 +359,7 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
     } else if (m.breedte < krapBreedte) {
       warnings.push(
         `Een glaspaneel van ${Math.round(m.breedte)}mm is ongewoon smal `
-        + `(het smalste op een echte bestelbon was 599mm) — bevestigen bij ES`,
+        + `(het smalste op een echte ES-bestelbon was 599mm) — bevestigen bij ${isES ? 'ES' : 'Deponti'}`,
       );
     }
   }
@@ -267,9 +389,14 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
   // de klantofferte en op de bestelbon belanden.
   const kl = inp.kleur.select === 'andere' ? (inp.kleur.custom || '').trim() : (inp.kleur.select || '');
   if (inp.kleur.select === 'andere' && !kl) {
-    errors.push('Vul in welke kleur — ES rekent niet-standaardkleuren op aanvraag aan');
+    errors.push(`Vul in welke kleur — ${isES ? 'ES' : 'Deponti'} rekent niet-standaardkleuren op aanvraag aan`);
   }
-  if (kl && !glaswandKleuren(merk).includes(kl)) {
+  // Bij Deponti telt een vrij getypte standaardkleur ("brut", "ral 7024") als die standaardkleur: de
+  // rekenkern herkent ze via kleurCode() (brute rail, beschikbaarheid) en mag dan niet tegelijk
+  // "geen standaardkleur, meerprijs toevoegen" zeggen.
+  const standaardKleur = glaswandKleuren(merk).includes(kl)
+    || (!isES && !!kleurCode(kl) && glaswandKleuren(merk).some((k) => kleurCode(k) === kleurCode(kl)));
+  if (kl && !standaardKleur) {
     warnings.push(`"${kl}" is geen standaardkleur — prijs op aanvraag, voeg de meerprijs als extra lijn toe`);
   }
 
@@ -277,6 +404,8 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
   const detail: Record<string, string | number | boolean> = {};
   let uitvoering: PaneelModus = inp.paneelModus;
   let glasHoogte = 0;
+  /** Breedte op de bestelmaat; 0 = de breedste glasmaat. */
+  let bestelBreedte = 0;
 
   if (isES) {
     // ---------------- ES Systems ES75 ----------------
@@ -359,73 +488,157 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
   } else {
     // ---------------- Deponti Fiano ----------------
     const sporen = inp.sporen || n;
+    if (n > dp.maxPanelen) errors.push(`Deponti Fiano gaat tot ${dp.maxPanelen} sporen; ${n} panelen is niet mogelijk`);
     if (!dp.rail[String(sporen)]) errors.push(`Deponti heeft geen rail met ${sporen} sporen`);
+    if (sporen < n && inp.sluiting !== 'midden') {
+      warnings.push(`${n} panelen op ${sporen} sporen — kan enkel met een middensluiting (panelen naar twee kanten)`);
+    }
 
-    if (inp.paneelModus === 'standaard') {
-      const rij = dp.panelen[String(inp.dagmaatHoogte)];
-      if (!rij) {
-        errors.push(
-          `Inbouwhoogte ${inp.dagmaatHoogte}mm is geen Deponti-standaardmaat `
-          + `(${dp.standaardHoogtes.join(' / ')})`,
-        );
+    // Per paneel afrekenen, zoals Deponti factureert (stuklijst). Een paneel is een standaardpaneel
+    // als de lijst er een prijs voor heeft bij deze inbouwhoogte (640 bestaat niet in 2350); al de
+    // rest is maatwerkglas: glasbreedte × INBOUWHOOGTE × m²-prijs (lijst 2026 blz. 41). Zo rekent
+    // Deponti ook: so96274 = 0,696 × 2,111 × €125 = €183,66 per paneel.
+    const H = inp.dagmaatHoogte;
+    const rij = dp.panelen[String(H)] as Record<string, number> | undefined;
+    const glassoort = dp.maatwerkPerM2[inp.glassoort] !== undefined ? inp.glassoort : 'standaard';
+    if (glassoort !== inp.glassoort && inp.glassoort) warnings.push(`Onbekende glassoort "${inp.glassoort}" — gerekend als helder`);
+    const perM2: number = dp.maatwerkPerM2[glassoort];
+    if (glassoort === 'grijs' && dp.grijsMelding) warnings.push(dp.grijsMelding);
+    // Standaardpanelen bestaan enkel in helder glas: grijs, brons en gesatineerd zijn altijd maatwerk.
+    const standaardMogelijk = glassoort === 'standaard' && !!rij;
+    const isStandaardPaneel = (m: { breedte: number }) =>
+      standaardMogelijk && typeof rij?.[String(m.breedte)] === 'number';
+    const standaardAantal = maten.filter(isStandaardPaneel).reduce((t, m) => t + m.aantal, 0);
+    const maatwerkAantal = n - standaardAantal;
+    const nettoGlasHoogte = H > 0 ? H - dp.glasAftrek : 0;
+    if (H > 0 && nettoGlasHoogte <= 0) errors.push(`Inbouwhoogte ${H}mm is te klein: er blijft geen glashoogte over`);
+
+    for (const m of maten) {
+      if (!(m.breedte > 0) || !(H > 0)) continue;
+      const b = Math.round(m.breedte);
+      if (isStandaardPaneel(m)) {
+        const prijs = rij![String(m.breedte)];
+        regels.push({ label: `${m.aantal} × glaspaneel ${b}×${H}mm (standaard)`, bedrag: prijs * m.aantal });
       } else {
-        const prijs = rij[String(paneelBreedte)];
-        if (typeof prijs !== 'number') {
-          errors.push(`Deponti levert geen paneel van ${paneelBreedte}mm breed bij hoogte ${inp.dagmaatHoogte}mm`);
-        } else {
-          regels.push({ label: `${n} × glaspaneel ${paneelBreedte}×${inp.dagmaatHoogte}mm`, bedrag: prijs * n });
-        }
+        // In centen rekenen op hele mm: 708 × 2110 × 125 = 186,735 moet €186,74 worden (zoals op de factuur),
+        // en niet €186,73 door een afrondingsfout in de komma.
+        const centen = Math.round((b * H * perM2) / 10000);
+        const perPaneel = centen / 100;
+        regels.push({
+          label: `${m.aantal} × maatwerkglas ${dp.maatwerkLabels?.[glassoort] ?? glassoort} ${b}×${nettoGlasHoogte}mm `
+            + `(${b}×${H}mm × €${perM2}/m² = €${perPaneel.toFixed(2)}/paneel)`,
+          bedrag: Math.round(perPaneel * m.aantal * 100) / 100,
+        });
       }
-    } else {
-      const perM2 = dp.maatwerkPerM2[inp.glassoort] ?? dp.maatwerkPerM2.standaard;
-      const m2 = (paneelBreedte / 1000) * (inp.dagmaatHoogte / 1000);
-      regels.push({
-        label: `${n} × maatwerkglas ${Math.round(paneelBreedte)}×${inp.dagmaatHoogte}mm (${r1(m2)} m² × €${perM2})`,
-        bedrag: m2 * perM2 * n,
-      });
+    }
+    uitvoering = maatwerkAantal === 0 && n > 0 ? 'standaard' : 'maatwerk';
+    detail.uitvoeringLabel = maatwerkAantal === 0 ? 'standaard'
+      : standaardAantal === 0 ? 'maatwerk'
+        : `gemengd (${standaardAantal}× standaard + ${maatwerkAantal}× maatwerk)`;
+    if (maatwerkAantal > 0 && n > 0 && paneelBreedte > 0) {
+      if (glassoort !== 'standaard') {
+        // geen extra melding: gekleurd glas is altijd maatwerk
+      } else if (!rij && H > 0) {
+        warnings.push(
+          `Inbouwhoogte ${H}mm is geen standaardhoogte (${dp.standaardHoogtes.join(' / ')}) — alle glas is maatwerk`,
+        );
+      } else if (standaardAantal > 0 || maten.some((m) => dp.standaardBreedtes.includes(m.breedte))) {
+        const afwijkend = maten.filter((m) => !isStandaardPaneel(m));
+        warnings.push(
+          `${afwijkend.map((m) => `${m.aantal}× ${Math.round(m.breedte)}mm`).join(', ')} is maatwerkglas — `
+          + 'alleen dat glas gaat aan de m²-prijs',
+        );
+      }
       warnings.push('Maatwerkglas: levertijd ± 4 weken');
     }
 
-    const lengte = inp.raillengte || kiesRaillengte(sporen, wandBreedte);
-    if (!lengte) {
+    // Brut (onbewerkt): lijst 2026 blz. 42 — enkel 3 tot 6 sporen, altijd 7100mm, zelf op maat te zagen.
+    const brut = kleurCode(kl) === 'Brut';
+    if (brut) {
+      warnings.push(
+        'Brut: de profielen zijn onbehandeld (voor buiten nog te behandelen) en komen in 7100mm, '
+        + 'zelf op maat te zagen (lijst 2026 blz. 42)',
+      );
+      const bruteLengte: number = dp.railBruteLengte;
+      const bruteRail = dp.railBrute[String(sporen)];
+      if (typeof bruteRail !== 'number') {
+        errors.push(`Een brute rail bestaat enkel in 3 tot 6 sporen (nu ${sporen})`);
+      } else if (wandBreedte > bruteLengte) {
+        errors.push(`De brute rail is ${bruteLengte}mm, de wand ${r1(wandBreedte)}mm`);
+      } else {
+        regels.push({ label: `Onderrail ${sporen} sporen Brute, ${bruteLengte}mm`, bedrag: bruteRail });
+        detail.raillengte = bruteLengte;
+      }
+    }
+    if (brut && inp.raillengte && inp.raillengte !== dp.railBruteLengte) {
+      warnings.push(`Brut: de rail komt altijd in ${dp.railBruteLengte}mm — de ingevulde ${inp.raillengte}mm telt niet`);
+    }
+    const lengte = brut ? null : inp.raillengte || kiesRaillengte(sporen, wandBreedte);
+    if (brut) {
+      // al gerekend hierboven
+    } else if (!lengte) {
       const beschikbaar = Object.keys(dp.rail[String(sporen)] ?? {}).join(' / ');
       errors.push(
         `Geen ${sporen}-spoorrail die ${r1(wandBreedte)}mm overspant`
         + (beschikbaar ? ` — beschikbaar: ${beschikbaar}mm` : ''),
       );
     } else {
+      // Een zelf ingevulde lengte die korter is dan de wand: bv. bewust, als de wand breder is dan
+      // de langste rail en de rest apart besteld wordt. Daarom een waarschuwing en geen stop.
+      if (inp.raillengte && inp.raillengte < wandBreedte) {
+        warnings.push(`De rail van ${inp.raillengte}mm is korter dan de wand (${r1(wandBreedte)}mm)`);
+      }
       const railPrijs = dp.rail[String(sporen)]?.[String(lengte)];
       if (typeof railPrijs !== 'number') {
         errors.push(`Deponti levert geen rail van ${lengte}mm met ${sporen} sporen`);
       } else {
         regels.push({ label: `Onderrail ${sporen} sporen, ${lengte}mm`, bedrag: railPrijs });
-        if (dp.railNiet9005.includes(`${sporen}/${lengte}`) && /9005/.test(kl)) {
-          errors.push(`Rail ${sporen} sporen × ${lengte}mm is niet beschikbaar in RAL 9005`);
+        if (dp.railNiet9005Lijst2025.includes(`${sporen}/${lengte}`) && /9005/.test(kl)) {
+          warnings.push(
+            `Rail ${sporen} sporen × ${lengte}mm bestond in de lijst 2025 niet in RAL 9005; de lijst 2026 `
+            + 'markeert geen cellen meer — nakijken in de Deponti-portal',
+          );
         }
         detail.raillengte = lengte;
       }
     }
 
-    // Deponti bestelt het paneel op de inbouwhoogtemaat zelf (artikel "1040x2300"),
-    // er gaat dus geen 100mm af zoals bij ES.
-    glasHoogte = inp.dagmaatHoogte;
+    // Een standaardpaneel bestel je op de inbouwhoogte (artikel "1040x2300", so87317); maatwerkglas op
+    // de netto glasmaat, en die is 85mm kleiner (lijst 2025 blz. 94; so96274: 2111 -> 2026). In een
+    // gemengde wand staan beide in detail.glasmaat; de bestelmaat volgt dan het maatwerkglas.
+    glasHoogte = maatwerkAantal === 0 ? H : nettoGlasHoogte;
+    // Gemengde wand: de bestelmaat is die van het maatwerkglas (de standaardpanelen zijn artikels
+    // op de inbouwhoogte en staan in detail.glasmaat) — nooit een mengvorm van de twee.
+    if (maatwerkAantal > 0 && standaardAantal > 0) {
+      bestelBreedte = maten.filter((m) => !isStandaardPaneel(m)).reduce((b, m) => Math.max(b, m.breedte), 0);
+    }
+    detail.inbouwhoogte = H;
+    detail.glasmaat = H > 0 && maten.length > 0
+      ? maten.map((m) => (isStandaardPaneel(m)
+        ? `${m.aantal}× standaardpaneel ${Math.round(m.breedte)}×${H}mm`
+        : `${m.aantal}× maatwerkglas ${Math.round(m.breedte)}×${nettoGlasHoogte}mm netto`)).join(' + ')
+      : '';
+    detail.glastype = glassoort;
     detail.sporen = sporen;
     detail.railBreedte = dp.railBreedte[String(sporen)] ?? '';
     if (inp.sluiting !== 'geen') detail.sluiting = inp.sluiting === 'zij' ? 'Zijsluiting' : 'Middensluiting';
-    warnings.push(
-      'Deponti-prijzen komen uit de dealerlijst 2024/2025; op facturen van 2026 weken rail, meenemer en '
-      + 'maatwerkglas af — controleer voor je bestelt',
-    );
   }
 
   // ---- Opties ----
   const optieLijst = glaswandOpties(merk);
   const optieLabels: string[] = [];
+  /** Wat de klant te zien krijgt: zonder leveranciersregels zoals transport. */
+  const klantLabels: string[] = [];
+  const sporenWand = Number(detail.sporen) || n;
   let heeftMeenemers = false;
   const reserveGekozen: string[] = [];
   const aantalPerOptie = new Map<string, number>();
   for (const keuze of inp.opties ?? []) {
     const opt = optieLijst.find((o) => o.id === keuze.id);
+    if (!opt && keuze.id && keuze.aantal > 0) {
+      // Een bewaarde offerte met een artikel dat niet meer in de prijslijst staat: nooit stil weglaten.
+      warnings.push(`Optie "${keuze.id}" staat niet meer in de prijslijst — niet meegerekend, voeg ze toe als extra lijn`);
+    }
     if (!opt || keuze.aantal <= 0) continue;
     aantalPerOptie.set(opt.id, (aantalPerOptie.get(opt.id) ?? 0) + keuze.aantal);
     // Palen, kokers en L-profielen horen bij de werf, niet bij elke wand apart.
@@ -436,6 +649,8 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
       eenmalig,
     });
     optieLabels.push(`${opt.label}: ${keuze.aantal}`);
+    if (!opt.intern) klantLabels.push(`${opt.label}: ${keuze.aantal}`);
+    if (!isES) warnings.push(...depontiOptieMeldingen(opt, kl, sporenWand));
     if (opt.id === 'meenemer') heeftMeenemers = true;
     if (opt.reserve) reserveGekozen.push(opt.label);
   }
@@ -465,11 +680,20 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
     if (!e || !e.bedrag) continue;
     const naam = (e.omschrijving || '').trim() || 'Extra';
     regels.push({ label: e.netto ? `${naam} (netto inkoop)` : naam, bedrag: e.bedrag, netto: e.netto });
-    optieLabels.push(naam);   // bewust zonder bedrag: optieLabels gaat mee naar de klantoffertetekst
+    optieLabels.push(naam);   // bewust zonder bedrag: dit gaat mee naar de klantoffertetekst
+    klantLabels.push(naam);
   }
 
+  // De lijst 2025 vroeg minstens 35mm overlap bij meenemers. De lijst 2026 zegt het niet meer, en
+  // werf 3835 kreeg meenemers geleverd met steel-look op 30mm (so96274) — dus een waarschuwing, geen stop.
   if (!isES && heeftMeenemers && n > 1 && overlap < dp.minOverlapMeenemer) {
-    errors.push(`Meenemers vragen minimaal ${dp.minOverlapMeenemer}mm overlap (nu ${r1(overlap)}mm)`);
+    warnings.push(
+      `Meenemers bij ${r1(overlap)}mm overlap: de lijst 2025 vroeg minstens ${dp.minOverlapMeenemer}mm `
+      + '(de lijst 2026 vermeldt het niet meer) — nakijken bij Deponti',
+    );
+  }
+  if (!isES && (aantalPerOptie.get('glas_gat') ?? 0) > n && n > 0) {
+    warnings.push(`${aantalPerOptie.get('glas_gat')} glazen met gat, maar de wand heeft ${n} panelen`);
   }
 
   // ---- Plaatsing ----
@@ -495,7 +719,7 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
     breedte: inp.dagmaatBreedte,
     hoogte: inp.dagmaatHoogte,
     calculatiemaat: { b: Math.round(wandBreedte), h: inp.dagmaatHoogte },
-    bestelmaat: { b: Math.round(paneelBreedte), h: glasHoogte || inp.dagmaatHoogte },
+    bestelmaat: { b: Math.round(bestelBreedte || paneelBreedte), h: glasHoogte || inp.dagmaatHoogte },
     regels,
     productSubtotal: tot.productSubtotal,
     plaatsingTotaal,
@@ -513,7 +737,7 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
       isES && `Glas: ${inp.glas}`,
       isES && uitvoering === 'maatwerk' && 'Maatwerkglas',
       !isES && `Rail: ${detail.sporen} sporen${detail.raillengte ? ` × ${detail.raillengte}mm` : ''}`,
-      !isES && inp.paneelModus === 'maatwerk' && `Maatwerkglas ${inp.glassoort}`,
+      !isES && uitvoering === 'maatwerk' && `Maatwerkglas ${dp.maatwerkLabels?.[String(detail.glastype)] ?? inp.glassoort}`,
       detail.sluiting && String(detail.sluiting),
       steellookActief && 'Steel-look glasroeden',
       // Bewust zonder bedrag: options gaat mee naar de leveranciersbestelbon, en ons uurtarief
@@ -528,6 +752,8 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
       ...detail,
       merk,
       uitvoering,
+      // Enkel voor de bestelbon: waarom een Fiano-wand onder een overkapping op deze hoogte besteld wordt.
+      hoogteNota: isES ? '' : fianoHoogteNota(inp.gemetenHoogte ?? 0),
       aantalPanelen: n,
       paneelBreedte: Math.round(paneelBreedte),
       paneelVerdeling: maten.map((m) => `${m.aantal}× ${Math.round(m.breedte)}mm`).join(' + '),
@@ -540,7 +766,7 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
       steellook: steellookActief,
       // Schone lijst van gekozen opties voor de offertetekst — zonder bedragen, zodat er geen
       // inkoopprijs in de klantoffertetekst kan belanden.
-      optiesTekst: optieLabels.join(' · '),
+      optiesTekst: klantLabels.join(' · '),
       plaatsingVast,
       voorbereidingPersonen: vbPersonen,
       voorbereidingUren: vbUren,
