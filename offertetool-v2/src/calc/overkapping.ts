@@ -60,17 +60,28 @@ export function wandenMogelijk(type: string): boolean {
 export function overkappingZijden(
   type: string, breedte: number, uitval: number, montage: PinelaMontage,
 ): OverkappingZijde[] {
-  if (!wandenMogelijk(type) || !(breedte > 0) || !(uitval > 0)) return [];
+  if (!wandenMogelijk(type)) return [];
+  return zijdenVan(breedte, uitval, montage, AFTREK, 'twee staanders van 150',
+    'muurmontage: zelf nameten, van de muur tot de staander (Deponti geeft hier geen maat)');
+}
+
+/**
+ * De open zijden van eender welke overkapping. De opgegeven maat loopt over de buitenkant van de
+ * palen, dus tussen twee palen blijft maat − `aftrek` over. Bij muurmontage staat er aan de
+ * muurkant geen paal: hoe breed die zijkant is, meet je zelf na.
+ */
+export function zijdenVan(
+  breedte: number, uitval: number, montage: PinelaMontage,
+  aftrek: number, paalUitleg: string, muurUitleg: string,
+): OverkappingZijde[] {
+  if (!(breedte > 0) || !(uitval > 0)) return [];
   const voor = (id: ZijdeId, label: string): OverkappingZijde => ({
-    id, label, langs: 'breedte', dagmaat: breedte - AFTREK,
-    uitleg: `breedte ${breedte} − ${AFTREK} (twee staanders van 150)`,
+    id, label, langs: 'breedte', dagmaat: breedte - aftrek,
+    uitleg: `breedte ${breedte} − ${aftrek} (${paalUitleg})`,
   });
   const zij = (id: ZijdeId, label: string): OverkappingZijde => (montage === 'vrij'
-    ? { id, label, langs: 'uitval', dagmaat: uitval - AFTREK, uitleg: `uitval ${uitval} − ${AFTREK} (twee staanders van 150)` }
-    : {
-      id, label, langs: 'uitval', dagmaat: null,
-      uitleg: 'muurmontage: zelf nameten, van de muur tot de staander (Deponti geeft hier geen maat)',
-    });
+    ? { id, label, langs: 'uitval', dagmaat: uitval - aftrek, uitleg: `uitval ${uitval} − ${aftrek} (${paalUitleg})` }
+    : { id, label, langs: 'uitval', dagmaat: null, uitleg: muurUitleg });
   return montage === 'vrij'
     ? [voor('voor', 'Voorzijde'), voor('achter', 'Achterzijde'), zij('links', 'Zijkant links'), zij('rechts', 'Zijkant rechts')]
     : [voor('voor', 'Voorzijde'), zij('links', 'Zijkant links'), zij('rechts', 'Zijkant rechts')];
@@ -141,11 +152,99 @@ export function wandVoorstellen(
   return { es, deponti, goedkoopste };
 }
 
-/** Meldingen over de hoogte onder de goot (elke melding blokkeert het toevoegen van de wanden). */
-export function hoogteMeldingen(onderkantGoot: number): string[] {
+/** Wat de gebruiker per zijde kiest. Leeft in de staat van het overkappingsformulier. */
+export interface WandKeuze {
+  aan: boolean;
+  /** Gemeten/gewenste dagmaat breedte; 0 = de voorgestelde vrije opening gebruiken. */
+  dagmaat: number;
+  /** '' = het goedkoopste merk. */
+  merk: '' | GlaswandMerk;
+  /** Aantal wanden aan deze zijde; 0 = één per overkapping (het aantal identieke overkappingen). */
+  aantal: number;
+}
+
+export const GEEN_WAND: WandKeuze = { aan: false, dagmaat: 0, merk: '', aantal: 0 };
+
+export interface WandenStatus {
+  /** De aangevinkte zijden. */
+  actief: OverkappingZijde[];
+  voorstellen: Partial<Record<ZijdeId, WandVoorstellen>>;
+  /** Het gekozen (of goedkoopste) voorstel van een zijde. */
+  gekozen: (id: ZijdeId) => WandVoorstel | null;
+  maatVan: (id: ZijdeId) => number;
+  aantalVan: (id: ZijdeId) => number;
+  /** Alles wat het toevoegen van de wanden tegenhoudt. */
+  fouten: string[];
+  /** Klantprijs van alle gekozen wanden samen. */
+  totaal: number;
+}
+
+/**
+ * Alle glaswanden onder één overkapping doorgerekend: per aangevinkte zijde het beste voorstel in
+ * beide merken, plus wat het toevoegen tegenhoudt. Puur — het formulier memoïseert de aanroep.
+ */
+export function berekenWanden(o: {
+  zijden: OverkappingZijde[];
+  wanden: Record<ZijdeId, WandKeuze>;
+  onderkantGoot: number;
+  uitval: number;
+  /** Aantal identieke overkappingen: standaard één wand per overkapping. */
+  aantal: number;
+  /** Omschrijving die in het glaswand-item komt, bv. "Onder Pinela Delight 4088 × 3500". */
+  titel: string;
+  /** Telt het aantal per zijde mee? (Enkel bij meerdere of gekoppelde overkappingen.) */
+  toonAantal: boolean;
+}): WandenStatus {
+  const maatVan = (id: ZijdeId) => {
+    const z = o.zijden.find((x) => x.id === id);
+    return o.wanden[id]?.dagmaat > 0 ? o.wanden[id].dagmaat : (z?.dagmaat ?? 0);
+  };
+  const aantalVan = (id: ZijdeId) =>
+    (o.toonAantal && o.wanden[id]?.aantal > 0 ? o.wanden[id].aantal : o.aantal);
+  const actief = o.zijden.filter((z) => o.wanden[z.id]?.aan);
+
+  const voorstellen: Partial<Record<ZijdeId, WandVoorstellen>> = {};
+  for (const z of actief) {
+    const b = maatVan(z.id);
+    if (b > 0 && o.onderkantGoot > 0) {
+      voorstellen[z.id] = wandVoorstellen(b, o.onderkantGoot, `${o.titel} — ${z.label.toLowerCase()}`, aantalVan(z.id));
+    }
+  }
+  const gekozen = (id: ZijdeId): WandVoorstel | null => {
+    const v = voorstellen[id];
+    if (!v) return null;
+    const merk = o.wanden[id].merk || v.goedkoopste;
+    return merk === 'ES Systems' ? v.es : merk === 'Deponti' ? v.deponti : null;
+  };
+
+  const fouten: string[] = [];
+  for (const z of actief) {
+    const b = maatVan(z.id);
+    const maatFout = b > 0 ? wandMaatFout(z, b, o.uitval) : '';
+    if (!(b > 0)) fouten.push(`${z.label}: vul de dagmaat in`);
+    else if (maatFout) fouten.push(maatFout);
+    else {
+      const g = gekozen(z.id);
+      // Zonder hoogte is er nog geen voorstel: dat meldt hoogteMeldingen al, niet "geen glaswand".
+      if (!g) { if (o.onderkantGoot > 0) fouten.push(`${z.label}: geen geschikte glaswand in ${b}mm`); }
+      // Een zelf gekozen merk dat na een maatwijziging niet meer past: nooit stil een onmogelijke wand toevoegen.
+      else if (!g.beste) fouten.push(`${z.label} (${g.merk}): ${g.reden}`);
+      else if (!g.r.ok) fouten.push(`${z.label}: ${g.r.errors.join(' · ')}`);
+    }
+  }
+  const totaal = actief.reduce((t, z) => t + (gekozen(z.id)?.r.uwVerkoop ?? 0), 0);
+  return { actief, voorstellen, gekozen, maatVan, aantalVan, fouten, totaal };
+}
+
+/**
+ * Meldingen over de hoogte onder de goot (elke melding blokkeert het toevoegen van de wanden).
+ * `max` is de maximale doorloophoogte die de fabrikant opgeeft; null = de lijst noemt er geen,
+ * dan bepaalt enkel de glaswand zelf hoe hoog ze kan (dat meldt het wandvoorstel).
+ */
+export function hoogteMeldingen(onderkantGoot: number, max: number | null = MAX_ONDERKANT_GOOT): string[] {
   if (!(onderkantGoot > 0)) return ['Vul de hoogte onder de goot in'];
-  if (onderkantGoot > MAX_ONDERKANT_GOOT) {
-    return [`${onderkantGoot}mm onder de goot is meer dan de maximale doorloophoogte van ${MAX_ONDERKANT_GOOT}mm volgens Deponti`];
+  if (max != null && onderkantGoot > max) {
+    return [`${onderkantGoot}mm onder de goot is meer dan de maximale doorloophoogte van ${max}mm volgens Deponti`];
   }
   if (onderkantGoot < MIN_ONDERKANT_GOOT) {
     return [`${onderkantGoot}mm onder de goot is lager dan de laagste maat in de prijslijsten `
