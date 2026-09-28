@@ -119,7 +119,7 @@ export function OfferPanel() {
         <Num label="Verborgen kost (€) — onzichtbaar verdeeld" value={hiddenCost} onChange={setHidden} />
         <div className="grid3" style={{ marginTop: 8 }}>
           <Num label="Uurtarief (€)" value={werkuren.tarief} onChange={(tarief) => setWerkuren({ tarief })} />
-          <Num label="Uren" value={werkuren.uren} step={0.5} onChange={(uren) => setWerkuren({ uren })} />
+          <Num label="Uren" value={werkuren.uren} onChange={(uren) => setWerkuren({ uren })} hint="Halve uren mogen: 1,5" />
           <Num label="Personen" value={werkuren.personen} min={1} onChange={(personen) => setWerkuren({ personen })} />
         </div>
         <div className="hint" style={{ marginTop: 4 }}>Werkuren verschijnen niet als aparte lijn op de offerte.</div>

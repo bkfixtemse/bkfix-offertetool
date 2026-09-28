@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 export const fmt = (n: number, d = 2) =>
   isFinite(n) ? n.toLocaleString('nl-BE', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—';
@@ -7,14 +7,39 @@ export function Sec({ title, children }: { title: string; children: ReactNode })
   return <div className="sec"><h3>{title}</h3>{children}</div>;
 }
 
-export function Num({ label, value, onChange, min, step, hint }: {
-  label: string; value: number; onChange: (v: number) => void; min?: number; step?: number; hint?: string;
+/** "1,5" en "1.5" zijn hetzelfde getal; punten naast een komma zijn duizendtallen. */
+function naarGetal(tekst: string): number {
+  const t = tekst.includes(',') ? tekst.replace(/\./g, '').replace(',', '.') : tekst;
+  const n = parseFloat(t);
+  return isFinite(n) ? n : 0;
+}
+
+/**
+ * Getalveld, maar een gewoon tekstvak. Met <input type="number"> kon je de "1" van een aantal
+ * niet wissen om er een ander getal in te tikken: leegmaken gaf 0, het formulier zette dat
+ * meteen terug op 1 en je typte tegen die 1 aan. Daarom houdt het veld vast wat je intikt
+ * zolang het focus heeft, en telt de berekende waarde pas weer als je eruit gaat.
+ */
+export function Num({ label, value, onChange, min, hint }: {
+  label: string; value: number; onChange: (v: number) => void; min?: number; hint?: string;
 }) {
+  const [getypt, setGetypt] = useState<string | null>(null);
+  const toon = getypt ?? (value ? String(value) : '');
+  // Een minteken heeft enkel zin waar negatief mag; in een maat of een aantal is het een typfout.
+  const toegelaten = min !== undefined && min >= 0 ? /[^\d.,]/g : /[^\d.,-]/g;
+
+  const typ = (tekst: string) => {
+    const schoon = tekst.replace(toegelaten, '');
+    setGetypt(schoon);
+    onChange(naarGetal(schoon));
+  };
+
   return (
     <div className="fld">
       <label>{label}</label>
-      <input type="number" value={value || ''} min={min} step={step}
-        onChange={(e) => onChange(parseFloat(e.target.value) || 0)} />
+      {/* Leeg blijft leeg: het formulier beslist zelf of het 0 of een minimum wordt. */}
+      <input type="text" inputMode="decimal" value={toon}
+        onChange={(e) => typ(e.target.value)} onBlur={() => setGetypt(null)} />
       {hint && <div className="hint">{hint}</div>}
     </div>
   );

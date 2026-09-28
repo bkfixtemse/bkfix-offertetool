@@ -52,7 +52,11 @@ function transportRegel(aan: boolean | undefined, regels: PrijsRegel[], labels: 
   labels.push(t.label);
 }
 
-/** Kleur als tekst; 'andere' vraagt een omschrijving. */
+/**
+ * Kleur als tekst; 'andere' vraagt een omschrijving. Het formulier biedt 'andere' niet meer aan
+ * bij de Pinela (Deponti levert die enkel in de drie structuurkleuren); het blijft hier staan voor
+ * offertes van voor 28-09-2026 en voor de Fiano-glaswanden, waar een andere kleur wel kan.
+ */
 function kleurTekst(select: string, custom: string, errors: string[], wat: string) {
   if (select === 'andere') {
     const k = (custom || '').trim();
@@ -73,6 +77,8 @@ export interface PinelaType {
   omschrijving: string;
   kleuren: string[];
   lamelKleurApart: boolean;
+  /** Kleuren die de lamellen los van het frame kunnen krijgen; leeg = enkel de framekleur. */
+  lamelKleuren?: string[];
   /** false = geen lamellendak (carports: dak van stalen platen), dus ook geen lamelkleur op de bestelbon. */
   lamellendak?: boolean;
   /** Klanttekst ('' = geen LED inbegrepen). */
@@ -186,6 +192,14 @@ export function calcPinela(inp: PinelaInput): CalcResult {
   }
   if (t && !frame && inp.kleurFrame !== 'andere') warnings.push('Kies de framekleur');
   const lamel = t?.lamelKleurApart ? (inp.kleurLamel || frame) : frame;
+  // De lamellen volgen het frame, of krijgen een kleur die Deponti er los voor levert (wit).
+  const lamelToegelaten = t?.lamelKleuren ?? [];
+  if (t?.lamelKleurApart && inp.kleurLamel && inp.kleurLamel !== frame && !lamelToegelaten.includes(inp.kleurLamel)) {
+    warnings.push(
+      `Lamellen in "${inp.kleurLamel}" levert Deponti niet voor ${inp.type} — enkel zoals het frame`
+      + (lamelToegelaten.length ? ` of ${lamelToegelaten.join(' / ')}` : ''),
+    );
+  }
 
   // ---- Screens (per overkapping) ----
   const sB = Math.max(0, Math.floor(inp.screensBreedte || 0));

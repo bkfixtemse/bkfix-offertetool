@@ -5,8 +5,11 @@
  * Formule (geldt voor elk product):
  *   productAankoop = productSubtotal × (1 − allroundKorting)
  *   verkoop        = productAankoop ÷ (1 − bkfixMarge)
- *   aankoop        = productAankoop + bedieningAankoop          (bedieningen @ 40%)
- *   uwVerkoop      = verkoop − eenmaligeKorting + plaatsing + bedieningVerkoop
+ *   aankoop        = productAankoop + bedieningAankoop + vasteAankoop
+ *   uwVerkoop      = verkoop − eenmaligeKorting + plaatsing + bedieningVerkoop + vasteVerkoop
+ *
+ * "vast" zijn stukken met een afgesproken klantprijs, plaatsing inbegrepen: die prijs gaat er
+ * rechtstreeks op, onze inkoop telt enkel mee in de aankoop. Zelfde principe als een bediening.
  */
 import opties from '../data/opties.json';
 import {
@@ -51,6 +54,10 @@ export function kleurMeerprijs(k: KleurKeuze, productType?: string): number {
   return 0;
 }
 
+/** Een stuk met een vaste klantprijs (plaatsing inbegrepen): geen marge erop, inkoop apart. */
+export interface VastePrijs { aankoop: number; verkoop: number }
+const GEEN_VASTE_PRIJS: VastePrijs = { aankoop: 0, verkoop: 0 };
+
 export interface Totalen {
   productSubtotal: number;
   aankoop: number;
@@ -65,6 +72,7 @@ export interface Totalen {
  * @param regels prijscomponenten per stuk (basis + opties)
  * @param aantal aantal stuks
  * @param vrijeOpties som van handmatige opties (niet vermenigvuldigd met aantal)
+ * @param vast stukken met een afgesproken klantprijs, plaatsing inbegrepen (bv. steel-look glasroeden)
  */
 export function berekenTotalen(
   regels: PrijsRegel[],
@@ -73,6 +81,7 @@ export function berekenTotalen(
   plaatsingTotaal: number,
   bed: BedieningKeuze,
   marges: Marges,
+  vast: VastePrijs = GEEN_VASTE_PRIJS,
 ): Totalen {
   // Regels met netto:true zijn al inkoopprijzen (bv. een stuk dat niet in de prijslijst staat en
   // waarvoor de leverancier los een prijs opgaf). Die mogen de leverancierskorting niet nog eens
@@ -87,8 +96,8 @@ export function berekenTotalen(
   const productAankoop = productSubtotal * (1 - marges.allroundKorting)
     + nettoPerStuk * aantal + nettoEenmalig;
   const verkoop = productAankoop / (1 - marges.bkfixMarge);
-  const aankoop = productAankoop + bedT.aankoop;
-  const uwVerkoop = verkoop - marges.eenmaligeKorting + plaatsingTotaal + bedT.verkoop;
+  const aankoop = productAankoop + bedT.aankoop + vast.aankoop;
+  const uwVerkoop = verkoop - marges.eenmaligeKorting + plaatsingTotaal + bedT.verkoop + vast.verkoop;
   return {
     productSubtotal,
     aankoop,

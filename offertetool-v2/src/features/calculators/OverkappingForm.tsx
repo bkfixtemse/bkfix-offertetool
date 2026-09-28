@@ -256,15 +256,23 @@ export function OverkappingForm() {
         {t && (
           <Sec title="Kleur">
             <div className="grid2">
+              {/* Deponti levert de Pinela enkel in deze structuurkleuren: geen kleur op aanvraag.
+                  'Andere kleur' blijft enkel staan zolang een oude offerte die nog bevat. */}
               <Sel label="Framekleur" value={s.kleurFrame} onChange={(kleurFrame) => u({ kleurFrame })}
-                options={[{ v: '', t: '(kies)' }, ...t.kleuren.map((k) => ({ v: k, t: k })), { v: 'andere', t: 'Andere kleur (op aanvraag)' }]} />
+                options={[{ v: '', t: '(kies)' }, ...t.kleuren.map((k) => ({ v: k, t: k })),
+                  ...(s.kleurFrame === 'andere' ? [{ v: 'andere', t: 'Andere kleur (oude offerte)' }] : [])]}
+                hint="Enkel deze kleuren — Deponti doet de Pinela niet op aanvraag" />
               {s.kleurFrame === 'andere' && (
                 <Txt label="Welke kleur" value={s.kleurFrameCustom} onChange={(kleurFrameCustom) => u({ kleurFrameCustom })} />
               )}
               {t.lamelKleurApart && (
                 <Sel label="Lamelkleur" value={s.kleurLamel} onChange={(kleurLamel) => u({ kleurLamel })}
-                  options={[{ v: '', t: 'zoals het frame' }, ...t.kleuren.map((k) => ({ v: k, t: k }))]}
-                  hint="Combinaties frame/lamel zijn mogelijk (lijst 2026)" />
+                  options={[{ v: '', t: 'zoals het frame' },
+                    ...(t.lamelKleuren ?? []).map((k) => ({ v: k, t: k })),
+                    // Een bewaarde offerte kan nog een combinatie bevatten die nu niet meer kan.
+                    ...(s.kleurLamel && !(t.lamelKleuren ?? []).includes(s.kleurLamel)
+                      ? [{ v: s.kleurLamel, t: `${s.kleurLamel} (oude offerte)` }] : [])]}
+                  hint="Zoals het frame of witte lamellen" />
               )}
             </div>
           </Sec>

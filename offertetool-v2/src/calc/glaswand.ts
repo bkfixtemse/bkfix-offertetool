@@ -14,8 +14,8 @@
  */
 import data from '../data/glaswand.json';
 import { GLASWAND_MERK, GLASWAND_VOORBEREIDING_TARIEF } from '../data/constants';
-import { berekenTotalen } from './shared';
-import type { BedieningKeuze, CalcResult, KleurKeuze, Marges, PrijsRegel, VrijeOptie } from './types';
+import { berekenTotalen, type VastePrijs } from './shared';
+import type { BedieningKeuze, CalcResult, KleurKeuze, Marges, PrijsRegel, VasteRegel, VrijeOptie } from './types';
 
 export type GlaswandMerk = 'ES Systems' | 'Deponti';
 export type PaneelModus = 'standaard' | 'maatwerk';
@@ -257,6 +257,33 @@ export function glaswandWandBreedte(inp: Pick<GlaswandInput,
   const steellookAftrek = isDeponti && inp.steellook ? 20 : 0;
   const sluitingAftrek = isDeponti && inp.sluiting && inp.sluiting !== 'geen' ? dp.sluitingAftrek : 0;
   return (inp.dagmaatBreedte || 0) - kokers - steellookAftrek - sluitingAftrek;
+}
+
+/** Vaste klantprijs van steel-look glasroeden per glaspaneel, plaatsing inbegrepen. */
+export const STEELLOOK_VERKOOP: number = dp.steellookVerkoopPerPaneel;
+
+/**
+ * Steel-look voor een hele offerteregel: onze inkoop tegenover die vaste klantprijs.
+ * Welke set we inkopen volgt de glashoogte. De lijst zegt niet vanaf welke hoogte de 6000mm-bar
+ * nodig is; dat is afgeleid uit de benaming (zie _steellookSet in glaswand.json) en raakt enkel
+ * de getoonde marge — de klant betaalt hoe dan ook STEELLOOK_VERKOOP per paneel.
+ */
+function steellookPrijs(actief: boolean, panelen: number, glasHoogte: number)
+  : VastePrijs & { regel?: VasteRegel } {
+  if (!actief || !(panelen > 0)) return { aankoop: 0, verkoop: 0 };
+  const id = glasHoogte > dp.steellookSet6000Vanaf ? 'steellook_6000' : 'steellook_2500';
+  const set = (dp.opties as { id: string; prijs: number }[]).find((o) => o.id === id);
+  const aankoop = (set?.prijs ?? 0) * panelen;
+  const verkoop = STEELLOOK_VERKOOP * panelen;
+  return {
+    aankoop,
+    verkoop,
+    regel: {
+      label: `Steel-look glasroeden (${panelen} × €${STEELLOOK_VERKOOP}, plaatsing inbegrepen)`,
+      verkoop,
+      aankoop,
+    },
+  };
 }
 
 export function calcGlaswand(inp: GlaswandInput): CalcResult {
@@ -696,6 +723,20 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
     warnings.push(`${aantalPerOptie.get('glas_gat')} glazen met gat, maar de wand heeft ${n} panelen`);
   }
 
+  // ---- Steel-look glasroeden ----
+  // De klant betaalt altijd €200 per glaspaneel, plaatsing inbegrepen; onze inkoop is de set per
+  // paneel uit de lijst. Die vaste prijs loopt dus buiten de marge om (zie berekenTotalen).
+  const steellook = steellookPrijs(steellookActief, n * inp.aantal, glasHoogte || inp.dagmaatHoogte);
+  if (steellookActief) {
+    const dubbel = optieLijst.filter((o) => o.steellook && (aantalPerOptie.get(o.id) ?? 0) > 0);
+    if (dubbel.length > 0) {
+      warnings.push(
+        `${dubbel.map((o) => o.label).join(', ')} staat dubbel: de steel-look zit al in de berekening `
+        + `(€${STEELLOOK_VERKOOP} per glaspaneel, plaatsing inbegrepen) — haal die optielijn weg`,
+      );
+    }
+  }
+
   // ---- Plaatsing ----
   // Vast bedrag per wand, ongeacht het aantal sporen. Het variabele werk zit in de voorbereiding,
   // die voor de hele regel geldt (de gebruiker vult de werkelijke man-uren in, niet per wand).
@@ -707,7 +748,7 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
   const plaatsingTotaal = plaatsingVast * inp.aantal + voorbereiding;
 
   const vrijeSom = (inp.vrijeOpties ?? []).reduce((s, o) => s + (o?.amount || 0), 0);
-  const tot = berekenTotalen(regels, inp.aantal, vrijeSom, plaatsingTotaal, inp.bediening, inp.marges);
+  const tot = berekenTotalen(regels, inp.aantal, vrijeSom, plaatsingTotaal, inp.bediening, inp.marges, steellook);
 
   return {
     ok: errors.length === 0,
@@ -722,6 +763,7 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
     bestelmaat: { b: Math.round(bestelBreedte || paneelBreedte), h: glasHoogte || inp.dagmaatHoogte },
     regels,
     productSubtotal: tot.productSubtotal,
+    vasteRegels: steellook.regel ? [steellook.regel] : undefined,
     plaatsingTotaal,
     bedieningTotaal: tot.bedieningTotaal,
     bedieningAankoop: tot.bedieningAankoop,

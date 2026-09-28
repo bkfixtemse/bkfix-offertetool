@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import {
   calcGlaswand, depontiStandaardBreedtes, glaswandKleuren, glaswandOpties, kiesRaillengte,
   DEPONTI_BREEDTES, DEPONTI_GLASSOORTEN, DEPONTI_HOOGTES, ES_BREEDTES,
-  GLASWAND_MERKEN, type GlaswandExtra, type GlaswandMerk, type GlaswandOptieKeuze,
+  GLASWAND_MERKEN, STEELLOOK_VERKOOP, type GlaswandExtra, type GlaswandMerk, type GlaswandOptieKeuze,
   type GlaswandPaneel,
 } from '../../calc/glaswand';
 import {
@@ -317,7 +317,8 @@ export function GlaswandForm() {
           )}
           {!isES && (
             <div style={{ marginTop: 10 }}>
-              <Chk label="Steel-look glasroeden (−20mm breedte, 30mm overlap)" value={s.steellook}
+              <Chk label={`Steel-look glasroeden (+€${STEELLOOK_VERKOOP} per glaspaneel incl. plaatsing, −20mm breedte, 30mm overlap)`}
+                value={s.steellook}
                 onChange={(steellook) => wijzigMaat({ steellook, ...(steellook ? { overlap: 30 } : {}) })} />
             </div>
           )}

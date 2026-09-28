@@ -136,6 +136,16 @@ describe('Pinela — regels en grenzen', () => {
     expect(dl.detail.kleurLamel).toBe('RAL 7024 antraciet structuur');   // Deluxe Plus: één kleur
   });
 
+  it('lamellen volgen het frame of zijn wit; een andere combinatie waarschuwt', () => {
+    const wit = p({ kleurLamel: 'RAL 9016 verkeerswit structuur' });     // frame staat op antraciet
+    expect(wit.detail.kleurLamel).toBe('RAL 9016 verkeerswit structuur');
+    expect(wit.warnings.join(' ')).not.toMatch(/levert Deponti niet/);
+    expect(p({ kleurLamel: 'RAL 9005 zwart structuur' }).warnings.join(' '))
+      .toMatch(/Lamellen in "RAL 9005 zwart structuur" levert Deponti niet/);
+    // Zelfde kleur als het frame blijft gewoon goed, ook al staat ze niet in lamelKleuren.
+    expect(p({ kleurLamel: 'RAL 7024 antraciet structuur' }).warnings.join(' ')).not.toMatch(/levert Deponti niet/);
+  });
+
   it('koppelset van het verkeerde montagetype: waarschuwing', () => {
     expect(p({ montage: 'vrij', opties: [{ id: 'koppelset_muur2', aantal: 1 }] }).warnings.join(' '))
       .toMatch(/muurmontage gekozen bij een vrijstaande/);
