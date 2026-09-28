@@ -4,69 +4,109 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-BKfix Offertetool is a single-file PWA (`index.html`, ~2600 lines) for calculating and quoting roller shutters (rolluiken), screens, knikarmschermen and veranda/pergola installations. Deployed on GitHub Pages at `https://bkfixtemse.github.io/bkfix-offertetool/`.
+BKfix Offertetool: a React SPA for calculating and quoting roller shutters (rolluiken), screens,
+knikarmschermen, veranda/pergola, glazen schuifwanden and terrasoverkappingen. The whole app lives
+in `offertetool-v2/` — React + TypeScript + Vite + Zustand, with Firebase for login, Firestore and
+hosting. Deployed at `https://offertetool-134c5.web.app` (Firebase project `offertetool-134c5`).
 
-## Deployment
+The single-file PWA that preceded it (root `index.html`, GitHub Pages) was removed on 28-09-2026;
+its price tables live on, verified, in `src/data/*.json`. Look in git history if you ever need it.
+
+## Commands
+
+All from `offertetool-v2/`:
 
 ```bash
-git add index.html
-git commit -m "..."
-git push origin main   # GitHub Pages auto-deploys from main
+npm install
+npm run dev            # vite dev server
+npm test               # vitest, ~293 tests — run this before every commit
+npm run build          # tsc -b && vite build
+npx firebase-tools deploy --only hosting   # deploy (hosting only, never the Firestore rules)
 ```
 
-## Local preview
-
-```bash
-npx serve -p 3456 .
-# then open http://localhost:3456/index.html
-```
-
-`crypto.subtle` (used for login hashing) requires HTTPS or localhost — a local server is required, opening the file directly via `file://` will break login.
+`crypto.subtle` (login hashing) needs HTTPS or localhost, so use the dev server — opening a built
+file over `file://` breaks login.
 
 ## Architecture
 
-Everything lives in `index.html`. Script execution order matters:
-
-1. **`const DATA = {...}`** — inline JSON price tables (~line 1). Keys follow the pattern `PREFIX_H_<height>` → `PREFIX_B_<width>`, e.g. `EL_H_1500` → `EL_B_2000`. Prefixes: `EL_` Ecoroll-L, `RL_` Rollex-L, `EM_` Ecoroll-M, `RM_` Rollex-M, `N83_`/`N120_`/`N150_` screens, `KA_` knikarm, `VP_` veranda.
-2. **Utility functions** — `$()`, `fmt()`, `ceil()`, `el()`, `recalcCurrentProduct()` (~line 277)
-3. **Calc functions** — `calcRolluik()`, `calcScreen()`, `calcKnikarm()`, `calcVeranda()` — read DOM inputs, compute prices, call `showResult(item)` and set `state.currentItem`
-4. **Render functions** — `renderRolluik()`, `renderScreen()`, etc. — write innerHTML into the product panel; each ends with `applyFieldVis(prod)`
-5. **Offer / TL / Tabs** — `addItemToOffer()`, `renderOffer()`, Teamleader OAuth + API (~line 1468), `activateTab()`
-6. **⚠️ Init calls** (`renderRolluik(); renderOffer(); tlInit();`) — must stay **after** `const ADMIN`, `const CONFIG`, `const FIELD_VIS` are declared (currently ~line 1922). Moving them earlier causes a ReferenceError that breaks the entire script including login.
-7. **Login IIFE** — SHA-256 hash check, sets `sessionStorage 'az_auth'`
-8. **ADMIN / CONFIG / FIELD_VIS** — `const` declarations for localStorage-backed storage objects (~line 1866)
-9. **Beheer render functions** — `renderBeheer()`, `renderVelden()`, `renderInstellingen()`, etc.
-
-## Key patterns
-
-**Price lookup** (rolluik example):
-```js
-const prefix = {Ecoroll_L:'EL_', ...}[type];
-const heightKey = `${prefix}H_${hCeil}`;   // note: no underscore between prefix and H
-const basePrice = DATA.rolluik.prices[type][heightKey][`${prefix}B_${bCeil}`];
+```
+offertetool-v2/src/
+  calc/        pure rekenkernen — no React, no Firebase, fully unit-tested
+  data/        price tables as JSON, with the source noted per block
+  components/  fields.tsx (Num/Sel/Txt/Chk), ResultCard, KleurSelect
+  features/
+    calculators/   one form per product tab
+    offer/         the running offer (items, totals, werkuren, hidden cost)
+    history/       saved offers
+    settings/      shared settings (margins, discounts), synced via Firestore
+    shell/         LoginGate
+  store/       zustand: offerStore, settingsStore, articlesStore, authStore
+  teamleader/  OAuth, API, quote payload and the HTML product descriptions
+  excel/       bestelbon generation (exceljs; templates in public/bestelformulieren)
+  firebase/    app, offers, articles, settings
 ```
 
-**Bestelmaat (order dimensions)** — always round up to nearest 100mm via `ceil(n, 100)`. For all rolluiken: `bestB = effectiefB + 110` (geleiders), `bestH = effectiefH + kasthoogte` (Solar: fixed 180mm, others: `getKasthoogte(type, h)`). IDD placement does NOT change dimensions but makes `kastPrice = 0`.
+The layering matters: a form reads its own `useState`, calls a `calc*()` function, and renders the
+`CalcResult`. Calculation code never touches React or Firebase, which is why it can be tested
+directly. Keep it that way.
 
-**CONFIG / FIELD_VIS** — persist to localStorage. `CONFIG.data` merges defaults with saved overrides. `FIELD_VIS.data` controls which form groups are visible; `applyFieldVis(prod)` reads it and toggles `.vis-hidden` on `[data-vis-grp]` elements.
+### Tabs and their calc modules
 
-**`state.currentItem`** — set by each `calc*()` function; used by `addItemToOffer()`. Contains all computed prices plus `errors[]` and `warnings[]`.
+| Tab | Form | Calc |
+|-----|------|------|
+| Rolluik | `RolluikForm` | `calc/rolluik.ts` |
+| Screen | `ScreenForm` | `calc/screen.ts` |
+| Knikarmscherm | `KnikarmForm` | `calc/knikarm.ts` |
+| Veranda/Pergola | `VerandaForm` | `calc/veranda.ts` |
+| Glaswand | `GlaswandForm` | `calc/glaswand.ts` + `glaswandAdvies.ts` + `glaswandStaat.ts` |
+| Overkappingen | `OverkappingForm` → Pinela or `EsOverkappingForm` | `calc/deponti.ts`, `calc/essystems.ts`, `calc/overkapping.ts` |
+| Deponti | `DepontiForm` | `calc/deponti.ts` (Fiano Louvre + onderdelen) |
+| Afstandsbediening | `BedieningForm` | `calc/afstandsbediening.ts` |
 
-**Pricing formula**:
+The Overkappingen tab carries two brands behind one merk selector. Both share
+`GlaswandenEronder` + `berekenWanden`, so a wall calculated under an overkapping is the exact same
+wall when you reopen it in the Glaswand tab.
+
+## The pricing formula
+
+One formula for every product, in `calc/shared.ts`:
+
 ```
-aankoop = productSubtotal × (1 - marge)      // marge default 50%
-verkoop = aankoop / (1 - bkfixMarge)         // bkfixMarge default 20%
-uwVerkoop = verkoop - korting + plaatsingTotaal + bediening
+productAankoop = productSubtotal × (1 − allroundKorting)
+verkoop        = productAankoop ÷ (1 − bkfixMarge)
+aankoop        = productAankoop + bedieningAankoop + vasteAankoop
+uwVerkoop      = verkoop − eenmaligeKorting + plaatsing + bedieningVerkoop + vasteVerkoop
 ```
 
-## localStorage keys
+Per-supplier discounts: Allround 50% (40% on pergola/serre), ES Systems 40% on everything,
+Deponti 0% (their dealer list *is* the purchase price). BKfix margin 20% by default.
 
-| Key | Contents |
-|-----|----------|
-| `bkfix_articles` | Artikel bibliotheek (Beheer) |
-| `bkfix_cust_prods` | Custom product tabs |
-| `bkfix_tl_tmpl` | Teamleader offerte templates |
-| `bkfix_settings` | App settings |
-| `bkfix_config` | CONFIG overrides (rekenparameters) |
-| `bkfix_field_vis` | FIELD_VIS overrides (veld zichtbaarheid) |
-| `tl_*` | Teamleader OAuth tokens and state |
+Two amounts bypass the margin because they have an agreed customer price, installation included:
+**bedieningen** (a Tahoma costs €260 and sells at €375) and **vaste regels** like steel-look
+glasroeden (€48 purchase, €200 per glass panel to the customer). Those land in `aankoop` and
+`uwVerkoop` separately — never in `productSubtotal`.
+
+`PrijsRegel.netto` marks a line that is already a purchase price, so no supplier discount comes
+off it again.
+
+## Working agreements
+
+- **Dutch** — code comments, commit messages, UI text, customer-facing text. This file is the
+  exception because it was written in English.
+- **Never guess a price.** Look it up in the list, the manual, a real order or a rekenblad. If a
+  gap remains, say literally in the code that it is a derivation or a guess, what it rests on and
+  how to confirm it. The `_`-prefixed keys in the JSON data are exactly for that.
+- **Prices live in the JSON data, never in the logic.** Every block carries its source
+  (`_bron`, `blz`).
+- **Golden tests must keep passing.** They check real supplier orders and BKfix rekenbladen
+  cell for cell; if one breaks, the change is wrong until proven otherwise.
+- **Commit, push, merge and deploy only when asked** — permission counts once, per time.
+- Every larger change gets an adversarial review and a test per confirmed finding.
+
+## Data and storage
+
+Firestore: `offers/*` (saved quotes, last 300), `articles/*` (article library),
+`settings/global` and `settings/teamleader` (shared settings, synced live).
+Teamleader OAuth tokens are kept in `localStorage` under `tl_*`.
+Offer items are written with `JSON.parse(JSON.stringify(...))`, which drops `undefined` fields —
+Firestore rejects those.
