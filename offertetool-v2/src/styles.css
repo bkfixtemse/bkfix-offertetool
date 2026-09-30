@@ -2,6 +2,8 @@
   --bg:#f1f5f9; --panel:#fff; --line:#e2e8f0; --line2:#cbd5e1;
   --tx:#0f172a; --tx2:#475569; --tx3:#94a3b8;
   --accent:#1d4ed8; --accent2:#1e40af; --green:#059669; --amber:#d97706; --red:#dc2626;
+  /* Donkerder groen voor vlakken met witte tekst erop: #059669 haalt het contrast niet (3,8:1), deze wel (5,5:1). */
+  --green2:#047857; --green3:#065f46;
   --r:10px;
 }
 *{box-sizing:border-box;margin:0}
@@ -45,6 +47,11 @@ input:disabled,select:disabled{background:#f8fafc;color:var(--tx3)}
 .btn.sec2{background:#fff;color:var(--tx2);border:1px solid var(--line2)}
 .btn.danger{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
 .btn.sm{padding:5px 10px;font-size:12px}
+/* Maat die in de beschikbare ruimte past: groene knop met witte tekst (groene tekst op blauw was onleesbaar). */
+.btn.past{background:var(--green2);color:#fff}
+.btn.past:hover{background:var(--green3)}
+/* De maat die nu gekozen is: een donkere rand, zodat ze opvalt tussen de andere knoppen. */
+.btn.gekozen{box-shadow:0 0 0 2px var(--tx)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 
 .alert{border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:10px}
