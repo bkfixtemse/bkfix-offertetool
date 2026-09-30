@@ -177,6 +177,21 @@ function pinelaDesc(it: OfferItem): string {
   return h + '</ul>';
 }
 
+/** ES Systems-overkapping (Comfortline Plus of Black). Zelfde stramien, geen inkoopbedragen. */
+function esOverkappingDesc(it: OfferItem): string {
+  const d = it.detail;
+  let h = `<p><strong>Terrasoverkapping '${it.type}' (ES Systems)</strong></p>${UL}`;
+  h += `<li>Afmetingen:${UL2}<li>Breedte: <strong>${it.breedte}mm</strong></li><li>Uitval: <strong>${it.uitval}mm</strong></li></ul></li>`;
+  h += `<li>Montage: <strong>${d.montage}</strong>${d.palen ? ` — ${d.palen} palen` : ''}</li>`;
+  if (d.paal) h += `<li>Palen: ${d.paal}</li>`;
+  h += `<li>Kleur: <strong>${d.kleur || 'nader te bepalen'}</strong></li>`;
+  if (d.xlLigger) h += '<li>Versterkte XL-ligger inbegrepen</li>';
+  const extra = String(d.optiesTekst || '').split(' · ').map((x) => x.trim()).filter(Boolean);
+  if (extra.length > 0) h += `<li>Inbegrepen:${UL2}${extra.map((e) => `<li>${e}</li>`).join('')}</ul></li>`;
+  if (it.opmerkingen) h += `<li>Opmerkingen: ${it.opmerkingen}</li>`;
+  return h + '</ul>';
+}
+
 function louvreDesc(it: OfferItem): string {
   const d = it.detail;
   let h = `<p><strong>Schuivende louvrewand 'Deponti Fiano Louvre'</strong></p>${UL}`;
@@ -209,7 +224,9 @@ export function tlDescription(it: OfferItem): string {
     case 'Knikarmscherm': desc = knikarmDesc(it); break;
     case 'Veranda': desc = verandaDesc(it); break;
     case 'Glazen schuifwand': desc = glaswandDesc(it); break;
-    case 'Overkapping': desc = pinelaDesc(it); break;
+    case 'Overkapping':
+      desc = it.detail?.soort === 'es-overkapping' ? esOverkappingDesc(it) : pinelaDesc(it);
+      break;
     case 'Fiano Louvre': desc = louvreDesc(it); break;
     case 'Deponti onderdelen': desc = depontiOnderdelenDesc(it); break;
     case 'Afstandsbediening': desc = `${it.type} (draadloze zender)`; break;

@@ -551,12 +551,15 @@ describe('ES75 — handmatige extra lijnen', () => {
 describe('Deponti Fiano — lijst 2026 en de echte orders', () => {
   // Werf 3835 (Bergmans): rekenblad "3835 Ashley Berghmans.xlsx" + Deponti-order so96274 (11-9-2026).
   // Twee wanden van 4 panelen maatwerk met steel-look. Deponti leverde 696×2026 en 708×2025 glas.
+  // De steel-look staat niet bij de opties: het vinkje boekt ze zelf, 4 × €48 inkoop tegenover
+  // 4 × €200 klantprijs (plaatsing inbegrepen). De order bevat ze wel als lijn — vandaar dat het
+  // ordertotaal hieronder tegen aankoop getoetst wordt en niet tegen het adviesprijs-subtotaal.
   const wand1 = {
     dagmaatBreedte: 2714, dagmaatHoogte: 2111, aantalPanelen: 4, sporen: 0,
     paneelModus: 'maatwerk' as const, overlap: 30, steellook: true,
     kleur: { select: 'RAL 9005 zwart structuur', custom: '' },
     opties: [
-      { id: 'glas_gat', aantal: 1 }, { id: 'meenemer', aantal: 10 }, { id: 'steellook_2500', aantal: 4 },
+      { id: 'glas_gat', aantal: 1 }, { id: 'meenemer', aantal: 10 },
       { id: 'u_profiel_2500', aantal: 1 },
     ],
   };
@@ -579,10 +582,27 @@ describe('Deponti Fiano — lijst 2026 en de echte orders', () => {
     expect(r2.detail.panelenLijst).toBe('708,708,708,708');    // 707,5 → 708, zoals Deponti
     // 3 × 186,74 + 1 × (186,74 + 79): 708 × 2110 × 125 = 186,735 → €186,74 zoals op de order
     expect(r2.regels.find((x) => /maatwerkglas/.test(x.label))?.bedrag).toBe(746.96);
-    expect(r1.productSubtotal).toBeCloseTo(1372.64 + 160, 2);
-    expect(r2.productSubtotal).toBeCloseTo(1384.96, 2);
-    expect(r1.productSubtotal + r2.productSubtotal).toBeCloseTo(2917.6, 2);
-    expect(r1.aankoop + r2.aankoop).toBeCloseTo(2917.6, 2);   // dealerlijst = inkoop
+    expect(r1.productSubtotal).toBeCloseTo(1180.64 + 160, 2);   // 1372,64 − 4 × €48 steel-look
+    expect(r2.productSubtotal).toBeCloseTo(1192.96, 2);         // 1384,96 − 4 × €48 steel-look
+    // De 8 steel-looksets zitten in aankoop, niet in het subtotaal: ze hebben een vaste klantprijs.
+    expect(r1.aankoop + r2.aankoop).toBeCloseTo(2917.6, 2);     // dealerlijst = inkoop
+    expect(r1.productSubtotal + r2.productSubtotal + 8 * 48).toBeCloseTo(2917.6, 2);
+  });
+
+  it('so96274: steel-look = 8 × €48 inkoop tegenover 8 × €200 klantprijs, plaatsing inbegrepen', () => {
+    const r = dp(wand1);
+    expect(r.vasteRegels).toEqual([
+      { label: 'Steel-look glasroeden (4 × €200, plaatsing inbegrepen)', aankoop: 192, verkoop: 800 },
+    ]);
+    // Zonder steel-look: dezelfde wand, 192 minder inkoop en 800 minder klantprijs.
+    const zonder = dp({ ...wand1, steellook: false, dagmaatBreedte: 2694 });
+    expect(r.aankoop - zonder.aankoop).toBeCloseTo(192, 2);
+    expect(r.uwVerkoop - zonder.uwVerkoop).toBeCloseTo(800, 2);
+  });
+
+  it('so96274: de oude optielijn naast het vinkje waarschuwt voor dubbel tellen', () => {
+    const r = dp({ ...wand1, opties: [...wand1.opties, { id: 'steellook_2500', aantal: 4 }] });
+    expect(r.warnings.join(' ')).toMatch(/staat dubbel/);
   });
 
   it('so87317: standaardpaneel 1040×2300 = €151 (lijst 2026)', () => {

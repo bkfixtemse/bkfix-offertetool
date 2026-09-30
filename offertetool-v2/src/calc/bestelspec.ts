@@ -35,6 +35,18 @@ const SPEC_FIELDS: Record<string, [string, string][]> = {
     ['lamellen', 'Aantal lamellen'],
     ['screens', 'Screens'],
   ],
+  // ES Systems bestelt op model uit de lijst, met een heel ander velddossier dan een Pinela.
+  'Overkapping ES': [
+    ['merk', 'Merk'],
+    ['lijst', 'Prijslijst'],
+    ['montage', 'Montage'],
+    ['palen', 'Aantal palen'],
+    ['paal', 'Paal'],
+    ['vakken', 'Aantal vakken'],
+    ['kleur', 'Kleur'],
+    ['xlLigger', 'Versterkte XL-ligger inbegrepen'],
+    ['standaard', 'Standaarduitvoering'],
+  ],
   'Fiano Louvre': [
     ['merk', 'Merk'],
     ['aantalPanelen', 'Aantal panelen (1040mm)'],
@@ -92,7 +104,9 @@ function show(v: string | number | boolean | undefined): string {
 
 /** Niet-lege bestelspecificaties als [label, waarde]-paren. */
 export function bestelSpecPairs(it: OfferItem): [string, string][] {
-  const fields = SPEC_FIELDS[it.product] ?? [];
+  // Twee merken delen het product 'Overkapping'; `soort` zegt welk velddossier erbij hoort.
+  const sleutel = it.detail?.soort === 'es-overkapping' ? 'Overkapping ES' : it.product;
+  const fields = SPEC_FIELDS[sleutel] ?? [];
   const out: [string, string][] = [];
   for (const [key, label] of fields) {
     const v = show(it.detail[key]);

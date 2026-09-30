@@ -52,6 +52,10 @@ export function ResultCard({ r, kind, input, zonderKnop }: {
           {r.regels.map((p, i) => (
             <div className="pline" key={i}><span>{p.label}</span><b>€{fmt(p.bedrag)}</b></div>
           ))}
+          {/* Vaste klantprijzen (plaatsing inbegrepen): bij de verkoopkant, niet bij de inkooplijnen. */}
+          {(r.vasteRegels ?? []).map((p, i) => (
+            <div className="pline" key={`vast${i}`}><span>{p.label}</span><b>€{fmt(p.verkoop)}</b></div>
+          ))}
           <div className="pline"><span>Plaatsing</span><b>€{fmt(r.plaatsingTotaal)}</b></div>
           {r.bedieningTotaal > 0 && <div className="pline"><span>Bediening</span><b>€{fmt(r.bedieningTotaal)}</b></div>}
           {zonderKnop ? null : editing ? (

@@ -8,8 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "extract-data": "node scripts/extract-data.mjs"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "exceljs": "^4.4.0",

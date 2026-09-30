@@ -38,6 +38,16 @@ export interface PrijsRegel {
   eenmalig?: boolean;
 }
 
+/**
+ * Een stuk dat we aan een afgesproken klantprijs verkopen, plaatsing inbegrepen. Er gaat geen
+ * marge meer op: `verkoop` komt rechtstreeks bij wat de klant betaalt, `aankoop` enkel bij de kost.
+ */
+export interface VasteRegel {
+  label: string;
+  verkoop: number;
+  aankoop: number;
+}
+
 /** Resultaat van elke product-calculator. */
 export interface CalcResult {
   ok: boolean;
@@ -62,6 +72,12 @@ export interface CalcResult {
   regels: PrijsRegel[];
   /** Som van regels × aantal + vrije opties. */
   productSubtotal: number;
+
+  /**
+   * Stukken met een afgesproken klantprijs, plaatsing inbegrepen (bv. steel-look glasroeden):
+   * de verkoopprijs gaat rechtstreeks op de offerte, de inkoop enkel in de aankoop.
+   */
+  vasteRegels?: VasteRegel[];
 
   /** Plaatsingskosten (niet onder Allround korting). */
   plaatsingTotaal: number;

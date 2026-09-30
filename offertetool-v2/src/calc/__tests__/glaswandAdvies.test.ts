@@ -198,7 +198,9 @@ describe('Deponti Fiano — dezelfde voorstellen, met de Deponti-regels', () => 
     expect(a.wandBreedte).toBe(2694);                             // −20mm voor steel-look
     for (const p of a.perAantal) for (const o of p.opties) expect(o.overlap).toBe(30);
     const vier = a.perAantal[3].opties.find((o) => o.panelen.join(',') === '696,696,696,696');
-    expect(vier?.aankoop).toBe(917.64);                           // 4 × €183,66 + rail €183
+    // 4 × €183,66 glas + rail €183 + 4 × €48 steel-look: elk paneel draagt zijn eigen set,
+    // dus een indeling met meer panelen weegt terecht zwaarder in de vergelijking.
+    expect(vier?.aankoop).toBe(1109.64);
   });
 
   it('geen standaardhoogte: enkel maatwerk', () => {

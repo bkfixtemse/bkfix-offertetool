@@ -4,26 +4,15 @@ import {
   type DepontiExtra, type DepontiOptieKeuze, type PinelaMontage,
 } from '../../calc/deponti';
 import {
-  hoogteMeldingen, MAX_ONDERKANT_GOOT, overkappingZijden, wandenMogelijk, wandMaatFout, wandVoorstellen,
-  type WandVoorstel, type WandVoorstellen, type ZijdeId,
+  berekenWanden, hoogteMeldingen, overkappingZijden, wandenMogelijk,
+  GEEN_WAND, MAX_ONDERKANT_GOOT, type WandKeuze, type ZijdeId,
 } from '../../calc/overkapping';
-import type { GlaswandMerk } from '../../calc/glaswand';
 import { DEPONTI, GLASWAND_VOORBEREIDING_TARIEF } from '../../data/constants';
 import { Chk, fmt, Num, Sec, Sel, Txt } from '../../components/fields';
 import { ResultCard } from '../../components/ResultCard';
 import { useOffer } from '../../store/offerStore';
-
-interface WandKeuze {
-  aan: boolean;
-  /** Gemeten/gewenste dagmaat breedte; 0 = de voorgestelde vrije opening gebruiken. */
-  dagmaat: number;
-  /** '' = het goedkoopste merk. */
-  merk: '' | GlaswandMerk;
-  /** Aantal wanden aan deze zijde; 0 = één per overkapping (het aantal identieke overkappingen). */
-  aantal: number;
-}
-
-const GEEN_WAND: WandKeuze = { aan: false, dagmaat: 0, merk: '', aantal: 0 };
+import { GlaswandenEronder } from './GlaswandenEronder';
+import { EsOverkapping, ES_DEFAULT } from './EsOverkappingForm';
 
 const DEFAULT = {
   type: 'Pinela Delight',
@@ -60,7 +49,7 @@ const DEFAULT = {
 };
 type State = typeof DEFAULT;
 
-export function OverkappingForm() {
+function PinelaOverkapping() {
   const [s, set] = useState<State>(() => {
     const et = useOffer.getState().editTarget;
     return et?.kind === 'overkapping' ? { ...DEFAULT, ...(et.input as Partial<State>) } : DEFAULT;
@@ -81,57 +70,26 @@ export function OverkappingForm() {
   });
 
   // ---- Wanden ----
-  const zijden = overkappingZijden(s.type, s.breedte, s.uitval, s.montage);
   // Bij het bewerken van een bestaande overkapping blijven de wanden erbuiten: die staan als eigen
   // glaswand-items op de offerte en worden in de Glaswand-tab aangepast.
-  const actief = bewerken ? [] : zijden.filter((z) => s.wanden[z.id]?.aan);
-  const maatVan = (id: ZijdeId) => {
-    const z = zijden.find((x) => x.id === id);
-    return s.wanden[id]?.dagmaat > 0 ? s.wanden[id].dagmaat : (z?.dagmaat ?? 0);
-  };
+  const zijden = bewerken ? [] : overkappingZijden(s.type, s.breedte, s.uitval, s.montage);
   const gekoppeld = s.opties.some((k) => k.aantal > 0 && PINELA_OPTIES.find((o) => o.id === k.id)?.koppelset);
   /** Het aantal per zijde is enkel zichtbaar (en telt enkel) bij meerdere of gekoppelde overkappingen. */
   const toonAantal = s.aantal > 1 || gekoppeld;
-  const aantalVan = (id: ZijdeId) => (toonAantal && s.wanden[id]?.aantal > 0 ? s.wanden[id].aantal : s.aantal);
-  const sleutel = JSON.stringify(actief.map((z) => [z.id, maatVan(z.id), aantalVan(z.id)]))
-    + `|${s.onderkantGoot}|${s.type}|${s.breedte}x${s.uitval}`;
-  const voorstellen = useMemo(() => {
-    const uit: Partial<Record<ZijdeId, WandVoorstellen>> = {};
-    for (const z of actief) {
-      const b = maatVan(z.id);
-      if (b > 0 && s.onderkantGoot > 0) {
-        uit[z.id] = wandVoorstellen(
-          b, s.onderkantGoot, `Onder ${s.type} ${s.breedte} × ${s.uitval} — ${z.label.toLowerCase()}`, aantalVan(z.id),
-        );
-      }
-    }
-    return uit;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sleutel]);
-  const gekozen = (id: ZijdeId): WandVoorstel | null => {
-    const v = voorstellen[id];
-    if (!v) return null;
-    const merk = s.wanden[id].merk || v.goedkoopste;
-    return merk === 'ES Systems' ? v.es : merk === 'Deponti' ? v.deponti : null;
-  };
   const setWand = (id: ZijdeId, p: Partial<WandKeuze>) =>
     u({ wanden: { ...s.wanden, [id]: { ...s.wanden[id], ...p } } });
 
-  const wandFouten: string[] = [];
-  for (const z of actief) {
-    const b = maatVan(z.id);
-    const maatFout = b > 0 ? wandMaatFout(z, b, s.uitval) : '';
-    if (!(b > 0)) wandFouten.push(`${z.label}: vul de dagmaat in`);
-    else if (maatFout) wandFouten.push(maatFout);
-    else {
-      const g = gekozen(z.id);
-      // Zonder hoogte is er nog geen voorstel: dat meldt hoogteMeldingen al, niet "geen glaswand".
-      if (!g) { if (s.onderkantGoot > 0) wandFouten.push(`${z.label}: geen geschikte glaswand in ${b}mm`); }
-      // Een zelf gekozen merk dat na een maatwijziging niet meer past: nooit stil een onmogelijke wand toevoegen.
-      else if (!g.beste) wandFouten.push(`${z.label} (${g.merk}): ${g.reden}`);
-      else if (!g.r.ok) wandFouten.push(`${z.label}: ${g.r.errors.join(' · ')}`);
-    }
-  }
+  const sleutel = JSON.stringify([
+    zijden.filter((z) => s.wanden[z.id]?.aan).map((z) => [z.id, s.wanden[z.id].dagmaat, s.wanden[z.id].aantal]),
+    s.onderkantGoot, s.type, s.breedte, s.uitval, s.montage, s.aantal, toonAantal,
+  ]);
+  const wanden = useMemo(() => berekenWanden({
+    zijden, wanden: s.wanden, onderkantGoot: s.onderkantGoot, uitval: s.uitval, aantal: s.aantal,
+    titel: `Onder ${s.type} ${s.breedte} × ${s.uitval}`, toonAantal,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [sleutel]);
+  const { actief, gekozen, aantalVan } = wanden;
+  const wandFouten = wanden.fouten;
   const hoogteFout = actief.length > 0 ? hoogteMeldingen(s.onderkantGoot) : [];
   // Onder elke koppeling staat een staander (handleidingen Tilt/Delight): daar, binnen onder het dak,
   // komt geen buitenwand. Gekoppelde systemen hebben dus minder wanden dan aantal × zijden.
@@ -141,7 +99,7 @@ export function OverkappingForm() {
     wanden: Object.fromEntries(Object.entries(s.wanden).map(([id, w]) =>
       [id, actief.some((z) => z.id === id) ? { ...w, aantal: aantalVan(id as ZijdeId) } : w])) as Record<ZijdeId, WandKeuze>,
   });
-  const totaalWanden = actief.reduce((t2, z) => t2 + (gekozen(z.id)?.r.uwVerkoop ?? 0), 0);
+  const totaalWanden = wanden.totaal;
 
   /** Van type wisselen: de maat, kleur en wanden horen bij het type. */
   const wisselType = (type: string) => u({
@@ -256,15 +214,23 @@ export function OverkappingForm() {
         {t && (
           <Sec title="Kleur">
             <div className="grid2">
+              {/* Deponti levert de Pinela enkel in deze structuurkleuren: geen kleur op aanvraag.
+                  'Andere kleur' blijft enkel staan zolang een oude offerte die nog bevat. */}
               <Sel label="Framekleur" value={s.kleurFrame} onChange={(kleurFrame) => u({ kleurFrame })}
-                options={[{ v: '', t: '(kies)' }, ...t.kleuren.map((k) => ({ v: k, t: k })), { v: 'andere', t: 'Andere kleur (op aanvraag)' }]} />
+                options={[{ v: '', t: '(kies)' }, ...t.kleuren.map((k) => ({ v: k, t: k })),
+                  ...(s.kleurFrame === 'andere' ? [{ v: 'andere', t: 'Andere kleur (oude offerte)' }] : [])]}
+                hint="Enkel deze kleuren — Deponti doet de Pinela niet op aanvraag" />
               {s.kleurFrame === 'andere' && (
                 <Txt label="Welke kleur" value={s.kleurFrameCustom} onChange={(kleurFrameCustom) => u({ kleurFrameCustom })} />
               )}
               {t.lamelKleurApart && (
                 <Sel label="Lamelkleur" value={s.kleurLamel} onChange={(kleurLamel) => u({ kleurLamel })}
-                  options={[{ v: '', t: 'zoals het frame' }, ...t.kleuren.map((k) => ({ v: k, t: k }))]}
-                  hint="Combinaties frame/lamel zijn mogelijk (lijst 2026)" />
+                  options={[{ v: '', t: 'zoals het frame' },
+                    ...(t.lamelKleuren ?? []).map((k) => ({ v: k, t: k })),
+                    // Een bewaarde offerte kan nog een combinatie bevatten die nu niet meer kan.
+                    ...(s.kleurLamel && !(t.lamelKleuren ?? []).includes(s.kleurLamel)
+                      ? [{ v: s.kleurLamel, t: `${s.kleurLamel} (oude offerte)` }] : [])]}
+                  hint="Zoals het frame of witte lamellen" />
               )}
             </div>
           </Sec>
@@ -348,92 +314,20 @@ export function OverkappingForm() {
             ) : bewerken ? (
               <div className="hint">Je bewerkt een bestaande overkapping. De glaswanden die erbij horen, pas je aan in de Glaswand-tab.</div>
             ) : (
-              <>
-                <div className="grid2">
-                  <Num label="Hoogte onder de goot (mm) — dagmaat hoogte glaswand" value={s.onderkantGoot} min={0}
-                    onChange={(onderkantGoot) => u({ onderkantGoot })}
-                    hint={`Gemeten van de vloer tot de onderkant van de goot; maximaal ${MAX_ONDERKANT_GOOT}mm doorloophoogte (Deponti). `
-                      + 'Fiano: de tool kiest de standaardhoogte die erin past (compensatietabel Deponti).'} />
-                </div>
-                {hoogteFout.map((m) => <div key={m} className="alert warn" style={{ marginTop: 6 }}>{m}</div>)}
-                {koppelMelding && (
+              <GlaswandenEronder
+                zijden={zijden} wanden={s.wanden} setWand={setWand} status={wanden}
+                onderkantGoot={s.onderkantGoot} setOnderkantGoot={(onderkantGoot) => u({ onderkantGoot })}
+                toonAantal={toonAantal} aantal={s.aantal} hoogteFout={hoogteFout}
+                hoogteHint={`Gemeten van de vloer tot de onderkant van de goot; maximaal ${MAX_ONDERKANT_GOOT}mm doorloophoogte (Deponti). `
+                  + 'Fiano: de tool kiest de standaardhoogte die erin past (compensatietabel Deponti).'}
+                melding={koppelMelding && (
                   <div className="alert warn" style={{ marginTop: 6 }}>
                     Gekoppelde systemen: onder elke koppeling staat een staander, en daar (binnen onder het dak) komt geen
                     buitenwand. Zet per zijde het aantal wanden dat echt nodig is.{' '}
                     <button className="btn ghost sm" type="button" onClick={bevestigAantallen}>De aantallen kloppen</button>
                   </div>
                 )}
-                {zijden.map((z) => {
-                  const w = s.wanden[z.id] ?? GEEN_WAND;
-                  const v = voorstellen[z.id];
-                  const keuze = w.merk || v?.goedkoopste || '';
-                  return (
-                    <div key={z.id} style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
-                      <Chk label={`Glaswand aan de ${z.label.toLowerCase()} (langs de ${z.langs})`} value={w.aan}
-                        onChange={(aan) => setWand(z.id, { aan })} />
-                      {w.aan && (
-                        <>
-                          <div className="grid2" style={{ marginTop: 6 }}>
-                            <Num label="Dagmaat breedte (mm)" value={w.dagmaat > 0 ? w.dagmaat : (z.dagmaat ?? 0)} min={0}
-                              onChange={(dagmaat) => setWand(z.id, { dagmaat })}
-                              hint={z.dagmaat != null ? `Tussen de staanders: ${z.uitleg}` : z.uitleg} />
-                            {toonAantal && (
-                              <Num label="Aantal wanden aan deze zijde" value={aantalVan(z.id)} min={1}
-                                onChange={(a) => setWand(z.id, { aantal: Math.max(1, Math.floor(a || 1)) })}
-                                hint={`Standaard één per overkapping (${s.aantal})`} />
-                            )}
-                          </div>
-                          {v && (
-                            <div style={{ overflowX: 'auto', marginTop: 6 }}>
-                              <table className="det">
-                                <thead>
-                                  <tr>
-                                    <th>Merk</th><th>Beste indeling</th><th className="r">Overlap</th>
-                                    <th className="r">Inkoop</th><th className="r">Klantprijs</th><th />
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {[v.deponti, v.es].map((o) => (
-                                    <tr key={o.merk} style={o.beste && o.r.ok ? undefined : { color: 'var(--tx3)' }}>
-                                      <td>{o.merk === v.goedkoopste ? '★ ' : ''}{o.merk === 'Deponti' ? 'Deponti Fiano' : 'ES75'}</td>
-                                      <td title={o.r.warnings.join(' · ') || undefined}>
-                                        {o.beste ? `${o.beste.titel} (${o.beste.panelen.join(' · ')})` : o.reden || 'niet mogelijk'}
-                                      </td>
-                                      <td className="r">{o.beste && o.beste.panelen.length > 1 ? o.beste.overlap : '—'}</td>
-                                      <td className="r">{o.beste && o.r.ok ? `€${fmt(o.r.aankoop)}` : ''}</td>
-                                      <td className="r">{o.beste && o.r.ok ? `€${fmt(o.r.uwVerkoop)}` : ''}</td>
-                                      <td>
-                                        {o.beste && o.r.ok ? (keuze === o.merk
-                                          ? <span className="badge ok">gekozen</span>
-                                          : <button className="btn ghost sm" type="button" onClick={() => setWand(z.id, { merk: o.merk })}>Kies</button>
-                                        ) : null}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                              {(() => {
-                                const g = gekozen(z.id);
-                                const info = g ? [g.nota, ...g.r.warnings].filter(Boolean) : [];
-                                return info.length > 0 && (
-                                  <div className="alert warn" style={{ marginTop: 6 }}>
-                                    {g!.merk === 'Deponti' ? 'Deponti Fiano' : 'ES75'}: {info.join(' · ')}
-                                  </div>
-                                );
-                              })()}
-                              <div className="hint" style={{ marginTop: 4 }}>
-                                ★ = laagste klantprijs (glasset met €800 plaatsing, zonder opties). Na het toevoegen verfijn je de
-                                wand (meenemers, handgrepen, kleur) in de Glaswand-tab; transport zit al bij de overkapping.
-                                {w.merk && <> <button className="btn ghost sm" type="button" onClick={() => setWand(z.id, { merk: '' })}>Terug naar de goedkoopste</button></>}
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </>
+              />
             )}
           </Sec>
         )}
@@ -460,6 +354,39 @@ export function OverkappingForm() {
           </div>
         </>
       )}
+    </>
+  );
+}
+
+/**
+ * De tab Overkappingen: twee merken naast elkaar. Deponti (Pinela-familie) en ES Systems
+ * (Comfortline Plus en Black) hebben elk hun eigen prijsraster en opties, maar delen het blok
+ * met de glaswanden eronder. Een bewaard item onthoudt zijn merk, zodat het in het juiste
+ * formulier heropent.
+ */
+export function OverkappingForm() {
+  const editTarget = useOffer((s) => s.editTarget);
+  const bewerken = editTarget?.kind === 'overkapping';
+  const [merk, setMerk] = useState<'Deponti' | 'ES Systems'>(
+    () => ((editTarget?.input as { merk?: string } | undefined)?.merk === ES_DEFAULT.merk
+      ? 'ES Systems' : 'Deponti'),
+  );
+  return (
+    <>
+      <div className="panel">
+        <Sec title="Merk">
+          <div className="grid2">
+            <Sel label="Merk *" value={merk} onChange={(v) => setMerk(v as 'Deponti' | 'ES Systems')}
+              options={[
+                { v: 'Deponti', t: 'Deponti — Pinela-familie' },
+                { v: 'ES Systems', t: 'ES Systems — Comfortline Plus & Black' },
+              ]}
+              disabled={bewerken}
+              hint={bewerken ? 'Je bewerkt een bestaand item: het merk ligt vast.' : undefined} />
+          </div>
+        </Sec>
+      </div>
+      {merk === 'Deponti' ? <PinelaOverkapping /> : <EsOverkapping />}
     </>
   );
 }

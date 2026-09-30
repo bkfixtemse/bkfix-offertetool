@@ -1,0 +1,2695 @@
+{
+  "_bron": "ES Systems, prijslijsten januari 2026: \"Prijslijst_Comfortline_Plus_NL_B.pdf\" (blz. 3-9 en 15-18) en \"Prijslijst_BLACK_NL_B.pdf\" (blz. 4-11 en 17-18). De rasters, de oranje zones (versterkte XL-ligger inbegrepen) en de spans van \"Aantal palen\" zijn machinaal uit de PDF gelezen, niet overgetypt. De LED-pagina's zijn in beide lijsten identiek en staan hier één keer.",
+  "_korting": "De ES-dealerlijst is brutoprijs: inkoop = lijstprijs − 40%, net als de ES75-glaswanden die uit diezelfde Comfortline Plus-lijst komen (zaakvoerder, 28-09-2026).",
+  "korting": 0.4,
+  "marge": 0.2,
+  "_plaatsing": "Plaatsing €1.500 per overkapping, Comfortline Plus én Black (zaakvoerder, 28-09-2026).",
+  "plaatsing": 1500,
+  "_montage": "De lijst noemt de montagewijze enkel bij de Black (\"muuraanbouw\" / \"vrijstaand\"). De Comfortline Plus-tabellen geven 2 palen bij 3 tot 5 meter breed; dat kan enkel tegen een muur, dus staan die modellen op muuraanbouw.",
+  "_vrijeOpening": "De breedte in de lijst is de buitenkant van de palen, zoals bij de Pinela. Vrije opening = breedte − 2 × paalbreedte: Comfortline 110mm palen → −220mm, Black 150 x 200mm met de 150mm-zijde in de breedte → −300mm (zaakvoerder, 28-09-2026).",
+  "_standaard": "Het blok \"Standaarduitvoeringen\" staat hier letterlijk zoals in de lijst. Op de Black vrijstaand-pagina's met glas (blz. 9 en 10) noemt ES zelf nog \"Polycarbonaat: opaal of helder\" bij de standaarduitvoering; dat is niet rechtgezet, zodat de bestelbon toont wat de lijst zegt.",
+  "_xlLigger": "Oranje zone in de lijst = versterkte (XL) ligger inbegrepen in de prijs. Bij de Black staat er bovendien: liggerversterking is vereist per ligger voor een diepte > 4001mm (meerprijs zie Black blz. 11).",
+  "modellen": {
+    "Comfortline Plus polycarbonaat": {
+      "lijst": "Comfortline Plus",
+      "blz": 3,
+      "titel": "Comfortline Plus polycarbonaat 16mm opaal/helder",
+      "montage": "muur",
+      "dak": "polycarbonaat",
+      "paal": {
+        "breedte": 110,
+        "diepte": 110,
+        "label": "Vierkant 110 x 110mm"
+      },
+      "vrijeOpeningAftrek": 220,
+      "kleuren": [
+        "RAL 7016 structuur",
+        "RAL 9005 structuur"
+      ],
+      "rijen": [
+        2000,
+        2500,
+        3000,
+        3500,
+        4000,
+        4500,
+        5000
+      ],
+      "kolommen": [
+        3060,
+        4060,
+        5060,
+        6060,
+        7060,
+        8060,
+        9060,
+        10060,
+        11060,
+        12060
+      ],
+      "prijzen": {
+        "2000": {
+          "3060": 1250,
+          "4060": 1417,
+          "5060": 1583,
+          "6060": 1750,
+          "7060": 1917,
+          "8060": 2167,
+          "9060": 2583,
+          "10060": 2750,
+          "11060": 3083,
+          "12060": 3500
+        },
+        "2500": {
+          "3060": 1417,
+          "4060": 1583,
+          "5060": 1750,
+          "6060": 2000,
+          "7060": 2250,
+          "8060": 2417,
+          "9060": 3000,
+          "10060": 3250,
+          "11060": 3667,
+          "12060": 3833
+        },
+        "3000": {
+          "3060": 1500,
+          "4060": 1750,
+          "5060": 2000,
+          "6060": 2250,
+          "7060": 2500,
+          "8060": 2667,
+          "9060": 3333,
+          "10060": 3750,
+          "11060": 4000,
+          "12060": 4333
+        },
+        "3500": {
+          "3060": 1667,
+          "4060": 1917,
+          "5060": 2167,
+          "6060": 2500,
+          "7060": 2667,
+          "8060": 2917,
+          "9060": 3583,
+          "10060": 4083,
+          "11060": 4417,
+          "12060": 4583
+        },
+        "4000": {
+          "3060": 1917,
+          "4060": 2083,
+          "5060": 2417,
+          "6060": 2667,
+          "7060": 2917,
+          "8060": 3083,
+          "9060": 3750,
+          "10060": 4500,
+          "11060": 4917,
+          "12060": 5083
+        },
+        "4500": {
+          "3060": 2250,
+          "4060": 2500,
+          "5060": 2917,
+          "6060": 3167,
+          "7060": 3583,
+          "8060": 4000,
+          "9060": 4333,
+          "10060": 5083,
+          "11060": 5667,
+          "12060": 5833
+        },
+        "5000": {
+          "3060": 2500,
+          "4060": 2750,
+          "5060": 3083,
+          "6060": 3583,
+          "7060": 4000,
+          "8060": 4417,
+          "9060": 4917,
+          "10060": 5833,
+          "11060": 6500,
+          "12060": 6917
+        }
+      },
+      "xlLigger": [],
+      "meldingen": [
+        "Gootversterking of statiek balk is vereist indien er 2 staanders gebruikt wordt voor een overspanning van 6 meter"
+      ],
+      "liggerversterkingVanaf": null,
+      "palen": {
+        "3060": "2",
+        "4060": "2",
+        "5060": "2",
+        "6060": "2 of 3",
+        "7060": "3",
+        "8060": "3",
+        "9060": "3",
+        "10060": "4",
+        "11060": "4",
+        "12060": "4"
+      },
+      "vakken": {
+        "3060": 3,
+        "4060": 4,
+        "5060": 5,
+        "6060": 6,
+        "7060": 7,
+        "8060": 8,
+        "9060": 9,
+        "10060": 10,
+        "11060": 11,
+        "12060": 12
+      },
+      "opties": [
+        {
+          "id": "rechte_gootsierlijst_per_meter",
+          "label": "Rechte gootsierlijst per meter",
+          "eenheid": "stuk",
+          "prijs": 25
+        },
+        {
+          "id": "meerprijs_paal_120_x_130_x_2600mm_2_deli",
+          "label": "Meerprijs: Paal 120 x 130 x 2600mm 2-delig / stuk",
+          "eenheid": "stuk",
+          "prijs": 42
+        },
+        {
+          "id": "gootversterking_6000mm",
+          "label": "Gootversterking 6000mm",
+          "eenheid": "stuk",
+          "prijs": 250
+        },
+        {
+          "id": "meerprijs_m_polycarbonaat_16mm_hitte_wer",
+          "label": "Meerprijs/m²: Polycarbonaat 16mm hitte werend/zonwerend (opaal)",
+          "eenheid": "m²",
+          "prijs": 15
+        },
+        {
+          "id": "meerprijs_m_polycarbonaat_16mm_helder_hi",
+          "label": "Meerprijs/m²: Polycarbonaat 16mm helder-hittewerend",
+          "eenheid": "m²",
+          "prijs": 29
+        },
+        {
+          "id": "meerprijs_m_polycarbonaat_32mm_opaal_of_",
+          "label": "Meerprijs/m²: Polycarbonaat 32mm opaal of helder",
+          "eenheid": "m²",
+          "prijs": 30
+        },
+        {
+          "id": "meerprijs_m_polycarbonaat_32mm_hitte_wer",
+          "label": "Meerprijs/m²: Polycarbonaat 32mm hitte werend/zonwerend (opaal)",
+          "eenheid": "m²",
+          "prijs": 42
+        },
+        {
+          "id": "meerprijs_m_sandwichpaneel_16mm_wit_wit_",
+          "label": "Meerprijs/m²: Sandwichpaneel 16mm wit/wit (min. order 1200 x 2500mm)",
+          "eenheid": "m²",
+          "prijs": 66
+        },
+        {
+          "id": "meerprijs_m_sandwichpaneel_16mm_grijs_gr",
+          "label": "Meerprijs/m²: Sandwichpaneel 16mm grijs/grijs (min. order 1200 x 2500mm)",
+          "eenheid": "m²",
+          "prijs": 100
+        }
+      ],
+      "standaard": {
+        "Maatwerk": "Geen meerprijs",
+        "Kleuren": "RAL 7016 structuur - RAL 9005 structuur",
+        "Palen": "Vierkant 110 x 110 x 2600mm",
+        "Regenafvoer": "Bladvanger pvc-bocht en pvc-buis Ø80mm",
+        "Goot": "Halfrond dubbel bodem",
+        "Polycarbonaat": "Opaal of helder 16mm",
+        "Rubbers": "Voorgetrokken"
+      }
+    },
+    "Comfortline Plus inclusief glas": {
+      "lijst": "Comfortline Plus",
+      "blz": 4,
+      "titel": "Comfortline Plus inclusief 44.2 glas",
+      "montage": "muur",
+      "dak": "glas",
+      "paal": {
+        "breedte": 110,
+        "diepte": 110,
+        "label": "Vierkant 110 x 110mm"
+      },
+      "vrijeOpeningAftrek": 220,
+      "kleuren": [
+        "RAL 7016 structuur",
+        "RAL 9005 structuur"
+      ],
+      "rijen": [
+        2000,
+        2500,
+        3000,
+        3500,
+        4000
+      ],
+      "kolommen": [
+        3060,
+        4060,
+        5060,
+        6060,
+        7060,
+        8060,
+        9060,
+        10060,
+        11060,
+        12060
+      ],
+      "prijzen": {
+        "2000": {
+          "3060": 1447,
+          "4060": 1782,
+          "5060": 2125,
+          "6060": 2585,
+          "7060": 2928,
+          "8060": 3155,
+          "9060": 3682,
+          "10060": 4000,
+          "11060": 4427,
+          "12060": 4762
+        },
+        "2500": {
+          "3060": 1613,
+          "4060": 2000,
+          "5060": 2388,
+          "6060": 2925,
+          "7060": 3179,
+          "8060": 3583,
+          "9060": 4188,
+          "10060": 4592,
+          "11060": 5079,
+          "12060": 5467
+        },
+        "3000": {
+          "3060": 1795,
+          "4060": 2327,
+          "5060": 2775,
+          "6060": 3315,
+          "7060": 3730,
+          "8060": 4003,
+          "9060": 4693,
+          "10060": 5167,
+          "11060": 5632,
+          "12060": 6047
+        },
+        "3500": {
+          "3060": 2128,
+          "4060": 2970,
+          "5060": 3346,
+          "6060": 4013,
+          "7060": 4556,
+          "8060": 5032,
+          "9060": 5724,
+          "10060": 6233,
+          "11060": 6809,
+          "12060": 7460
+        },
+        "4000": {
+          "3060": 2477,
+          "4060": 3230,
+          "5060": 3625,
+          "6060": 4487,
+          "7060": 5098,
+          "8060": 5568,
+          "9060": 6347,
+          "10060": 6942,
+          "11060": 7493,
+          "12060": 8540
+        }
+      },
+      "xlLigger": [
+        3500,
+        4000
+      ],
+      "meldingen": [],
+      "liggerversterkingVanaf": null,
+      "palen": {
+        "3060": "2",
+        "4060": "2",
+        "5060": "2",
+        "6060": "3",
+        "7060": "3",
+        "8060": "3",
+        "9060": "3",
+        "10060": "4",
+        "11060": "4",
+        "12060": "4"
+      },
+      "vakken": {
+        "3060": 4,
+        "4060": 6,
+        "5060": 7,
+        "6060": 8,
+        "7060": 10,
+        "8060": 11,
+        "9060": 12,
+        "10060": 14,
+        "11060": 15,
+        "12060": 16
+      },
+      "opties": [
+        {
+          "id": "rechte_gootsierlijst_per_meter",
+          "label": "Rechte gootsierlijst per meter",
+          "eenheid": "stuk",
+          "prijs": 25
+        },
+        {
+          "id": "meerprijs_paal_120_x_130_x_2600mm_2_deli",
+          "label": "Meerprijs: Paal 120 x 130 x 2600mm 2-delig meerprijs/ stuk",
+          "eenheid": "stuk",
+          "prijs": 42
+        },
+        {
+          "id": "gootversterking_6000mm",
+          "label": "Gootversterking 6000mm",
+          "eenheid": "stuk",
+          "prijs": 250
+        },
+        {
+          "id": "meerprijs_m_mat_opaal_44_2_glas",
+          "label": "Meerprijs/m²: Mat (opaal) 44.2 glas",
+          "eenheid": "m²",
+          "prijs": 59
+        },
+        {
+          "id": "meerprijs_m_getint_44_2_glas_1_zijde",
+          "label": "Meerprijs/m²: Getint 44.2 glas 1-zijde",
+          "eenheid": "m²",
+          "prijs": 95
+        },
+        {
+          "id": "meerprijs_m_stopsol_classic_klaar_44_2_g",
+          "label": "Meerprijs/m²: Stopsol classic klaar 44.2 glas (spiegelend)",
+          "eenheid": "m²",
+          "prijs": 134
+        }
+      ],
+      "standaard": {
+        "Maatwerk": "Geen meerprijs",
+        "Kleuren": "RAL 7016 structuur - RAL 9005 structuur",
+        "Palen": "Vierkant 110 x 110 x 2600mm",
+        "Regenafvoer": "Bladvanger pvc-bocht en pvc-buis Ø80mm",
+        "Goot": "Halfrond dubbel bodem",
+        "Glas": "Helder 44.2 glas ongeslepen randen",
+        "Rubbers": "Voorgetrokken",
+        "Ligger": "Versterkte XL-ligger diepte > 3500mm"
+      }
+    },
+    "Comfortline Plus voorbereid voor glas": {
+      "lijst": "Comfortline Plus",
+      "blz": 5,
+      "titel": "Comfortline Plus voorbereid voor 44.2 glas",
+      "montage": "muur",
+      "dak": "voorbereid",
+      "paal": {
+        "breedte": 110,
+        "diepte": 110,
+        "label": "Vierkant 110 x 110mm"
+      },
+      "vrijeOpeningAftrek": 220,
+      "kleuren": [
+        "RAL 7016 structuur",
+        "RAL 9005 structuur"
+      ],
+      "rijen": [
+        2000,
+        2500,
+        3000,
+        3500,
+        4000
+      ],
+      "kolommen": [
+        3060,
+        4060,
+        5060,
+        6060,
+        7060,
+        8060,
+        9060,
+        10060,
+        11060,
+        12060
+      ],
+      "prijzen": {
+        "2000": {
+          "3060": 1117,
+          "4060": 1342,
+          "5060": 1575,
+          "6060": 1925,
+          "7060": 2158,
+          "8060": 2275,
+          "9060": 2692,
+          "10060": 2900,
+          "11060": 3217,
+          "12060": 3442
+        },
+        "2500": {
+          "3060": 1200,
+          "4060": 1450,
+          "5060": 1700,
+          "6060": 2100,
+          "7060": 2217,
+          "8060": 2483,
+          "9060": 2950,
+          "10060": 3217,
+          "11060": 3567,
+          "12060": 3817
+        },
+        "3000": {
+          "3060": 1300,
+          "4060": 1667,
+          "5060": 1950,
+          "6060": 2325,
+          "7060": 2575,
+          "8060": 2683,
+          "9060": 3208,
+          "10060": 3517,
+          "11060": 3817,
+          "12060": 4067
+        },
+        "3500": {
+          "3060": 1550,
+          "4060": 2200,
+          "5060": 2383,
+          "6060": 2858,
+          "7060": 3208,
+          "8060": 3492,
+          "9060": 3992,
+          "10060": 4308,
+          "11060": 4692,
+          "12060": 5150
+        },
+        "4000": {
+          "3060": 1817,
+          "4060": 2350,
+          "5060": 2525,
+          "6060": 3167,
+          "7060": 3558,
+          "8060": 3808,
+          "9060": 4367,
+          "10060": 4742,
+          "11060": 5073,
+          "12060": 5900
+        }
+      },
+      "xlLigger": [
+        3500,
+        4000
+      ],
+      "meldingen": [],
+      "liggerversterkingVanaf": null,
+      "palen": {
+        "3060": "2",
+        "4060": "2",
+        "5060": "2",
+        "6060": "3",
+        "7060": "3",
+        "8060": "3",
+        "9060": "3",
+        "10060": "4",
+        "11060": "4",
+        "12060": "4"
+      },
+      "vakken": {
+        "3060": 4,
+        "4060": 6,
+        "5060": 7,
+        "6060": 8,
+        "7060": 10,
+        "8060": 11,
+        "9060": 12,
+        "10060": 14,
+        "11060": 15,
+        "12060": 16
+      },
+      "opties": [
+        {
+          "id": "rechte_gootsierlijst_per_meter",
+          "label": "Rechte gootsierlijst per meter",
+          "eenheid": "stuk",
+          "prijs": 25
+        },
+        {
+          "id": "paal_120_x_130_x_2600mm_2_delig_meerprij",
+          "label": "Paal 120 x 130 x 2600mm 2-delig meerprijs / stuk",
+          "eenheid": "stuk",
+          "prijs": 42
+        },
+        {
+          "id": "gootversterking",
+          "label": "Gootversterking",
+          "eenheid": "stuk",
+          "prijs": 250
+        }
+      ],
+      "standaard": {
+        "Maatwerk": "Geen meerprijs",
+        "Kleuren": "RAL 7016 structuur - RAL 9005 structuur",
+        "Palen": "Vierkant 110 x 110 x 2600mm",
+        "Regenafvoer": "Bladvanger pvc-bocht en pvc-buis Ø80mm",
+        "Goot": "Halfrond dubbel bodem",
+        "Glas": "Zonder glas",
+        "Rubbers": "Voorgetrokken",
+        "Ligger": "Versterkte ligger diepte > 3500mm"
+      }
+    },
+    "Oversteek polycarbonaat": {
+      "lijst": "Comfortline Plus",
+      "blz": 6,
+      "titel": "Oversteek polycarbonaat 16mm opaal/helder",
+      "montage": "muur",
+      "dak": "polycarbonaat",
+      "paal": {
+        "breedte": 110,
+        "diepte": 110,
+        "label": "Vierkant 110 x 110mm"
+      },
+      "vrijeOpeningAftrek": 220,
+      "kleuren": [
+        "RAL 7016 structuur",
+        "RAL 9005 structuur"
+      ],
+      "rijen": [
+        1890,
+        2390,
+        2890,
+        3390,
+        3890,
+        4390,
+        4890
+      ],
+      "kolommen": [
+        3060,
+        4060,
+        5060,
+        6060,
+        7060,
+        8060,
+        9060,
+        10060,
+        11060,
+        12060
+      ],
+      "prijzen": {
+        "1890": {
+          "3060": 1417,
+          "4060": 1583,
+          "5060": 1750,
+          "6060": 1917,
+          "7060": 2083,
+          "8060": 2333,
+          "9060": 2750,
+          "10060": 2917,
+          "11060": 3250,
+          "12060": 3667
+        },
+        "2390": {
+          "3060": 1583,
+          "4060": 1750,
+          "5060": 1917,
+          "6060": 2167,
+          "7060": 2417,
+          "8060": 2583,
+          "9060": 3167,
+          "10060": 3417,
+          "11060": 3833,
+          "12060": 4000
+        },
+        "2890": {
+          "3060": 1667,
+          "4060": 1917,
+          "5060": 2167,
+          "6060": 2417,
+          "7060": 2667,
+          "8060": 2833,
+          "9060": 3500,
+          "10060": 3917,
+          "11060": 4167,
+          "12060": 4500
+        },
+        "3390": {
+          "3060": 1833,
+          "4060": 2083,
+          "5060": 2333,
+          "6060": 2667,
+          "7060": 2833,
+          "8060": 3083,
+          "9060": 3750,
+          "10060": 4250,
+          "11060": 4583,
+          "12060": 4750
+        },
+        "3890": {
+          "3060": 2083,
+          "4060": 2250,
+          "5060": 2583,
+          "6060": 2833,
+          "7060": 3083,
+          "8060": 3250,
+          "9060": 3917,
+          "10060": 4667,
+          "11060": 5083,
+          "12060": 5250
+        },
+        "4390": {
+          "3060": 2417,
+          "4060": 2667,
+          "5060": 2750,
+          "6060": 3333,
+          "7060": 3750,
+          "8060": 4167,
+          "9060": 4500,
+          "10060": 5250,
+          "11060": 5833,
+          "12060": 6000
+        },
+        "4890": {
+          "3060": 2667,
+          "4060": 2917,
+          "5060": 3250,
+          "6060": 3750,
+          "7060": 4167,
+          "8060": 4583,
+          "9060": 5083,
+          "10060": 6000,
+          "11060": 6667,
+          "12060": 7083
+        }
+      },
+      "xlLigger": [],
+      "meldingen": [],
+      "liggerversterkingVanaf": null,
+      "palen": {
+        "3060": "2",
+        "4060": "2",
+        "5060": "2",
+        "6060": "3",
+        "7060": "3",
+        "8060": "3",
+        "9060": "3",
+        "10060": "4",
+        "11060": "4",
+        "12060": "4"
+      },
+      "vakken": {
+        "3060": 3,
+        "4060": 4,
+        "5060": 5,
+        "6060": 6,
+        "7060": 7,
+        "8060": 8,
+        "9060": 9,
+        "10060": 10,
+        "11060": 11,
+        "12060": 12
+      },
+      "opties": [
+        {
+          "id": "meerprijs_m_polycarbonaat_16mm_hitte_wer",
+          "label": "Meerprijs/m²: Polycarbonaat 16mm hitte werend/zonwerend (opaal)",
+          "eenheid": "m²",
+          "prijs": 15
+        },
+        {
+          "id": "meerprijs_m_polycarbonaat_16mm_helder_hi",
+          "label": "Meerprijs/m²: Polycarbonaat 16mm helder-hittewerend",
+          "eenheid": "m²",
+          "prijs": 29
+        },
+        {
+          "id": "meerprijs_m_polycarbonaat_32mm_opaal_of_",
+          "label": "Meerprijs/m²: Polycarbonaat 32mm opaal of helder",
+          "eenheid": "m²",
+          "prijs": 30
+        },
+        {
+          "id": "meerprijs_m_polycarbonaat_32mm_hitte_wer",
+          "label": "Meerprijs/m²: Polycarbonaat 32mm hitte werend/zonwerend (opaal)",
+          "eenheid": "m²",
+          "prijs": 42
+        },
+        {
+          "id": "meerprijs_m_sandwichpaneel_16mm_wit_wit_",
+          "label": "Meerprijs/m²: Sandwichpaneel 16mm wit/wit (min. order 1200 x 2500mm)",
+          "eenheid": "m²",
+          "prijs": 66
+        },
+        {
+          "id": "meerprijs_m_sandwichpaneel_16mm_grijs_gr",
+          "label": "Meerprijs/m²: Sandwichpaneel 16mm grijs/grijs (min. order 1200 x 2500mm)",
+          "eenheid": "m²",
+          "prijs": 100
+        }
+      ],
+      "standaard": {
+        "Maatwerk": "Geen meerprijs",
+        "Kleuren": "RAL 7016 structuur - RAL 9005 structuur",
+        "Palen": "Vierkant 110 x 110 x 2600mm",
+        "Regenafvoer": "Zonder",
+        "Goot": "Zonder",
+        "Polycarbonaat": "Opaal of helder",
+        "Rubbers": "Voorgetrokken",
+        "Statiek balk": "120 x 180mm"
+      }
+    },
+    "Oversteek Plus inclusief glas": {
+      "lijst": "Comfortline Plus",
+      "blz": 7,
+      "titel": "Oversteek Plus inclusief 44.2 glas",
+      "montage": "muur",
+      "dak": "glas",
+      "paal": {
+        "breedte": 110,
+        "diepte": 110,
+        "label": "Vierkant 110 x 110mm"
+      },
+      "vrijeOpeningAftrek": 220,
+      "kleuren": [
+        "RAL 7016 structuur",
+        "RAL 9005 structuur"
+      ],
+      "rijen": [
+        1890,
+        2390,
+        2890,
+        3390,
+        3890
+      ],
+      "kolommen": [
+        3060,
+        4060,
+        5060,
+        6060,
+        7060,
+        8060,
+        9060,
+        10060,
+        11060,
+        12060
+      ],
+      "prijzen": {
+        "1890": {
+          "3060": 2233,
+          "4060": 2550,
+          "5060": 2950,
+          "6060": 3317,
+          "7060": 3667,
+          "8060": 4117,
+          "9060": 4767,
+          "10060": 5283,
+          "11060": 5933,
+          "12060": 6433
+        },
+        "2390": {
+          "3060": 2355,
+          "4060": 2783,
+          "5060": 3180,
+          "6060": 3525,
+          "7060": 3922,
+          "8060": 4383,
+          "9060": 5047,
+          "10060": 5575,
+          "11060": 6338,
+          "12060": 7000
+        },
+        "2890": {
+          "3060": 2758,
+          "4060": 3150,
+          "5060": 3642,
+          "6060": 3967,
+          "7060": 4558,
+          "8060": 4900,
+          "9060": 5658,
+          "10060": 6233,
+          "11060": 6958,
+          "12060": 7483
+        },
+        "3390": {
+          "3060": 3422,
+          "4060": 3817,
+          "5060": 4422,
+          "6060": 4992,
+          "7060": 5463,
+          "8060": 6017,
+          "9060": 6922,
+          "10060": 7542,
+          "11060": 8380,
+          "12060": 8800
+        },
+        "3890": {
+          "3060": 3817,
+          "4060": 4450,
+          "5060": 5033,
+          "6060": 5750,
+          "7060": 6367,
+          "8060": 6650,
+          "9060": 7750,
+          "10060": 8583,
+          "11060": 9267,
+          "12060": 10033
+        }
+      },
+      "xlLigger": [
+        3390,
+        3890
+      ],
+      "meldingen": [],
+      "liggerversterkingVanaf": null,
+      "palen": {
+        "3060": "2",
+        "4060": "2",
+        "5060": "2",
+        "6060": "3",
+        "7060": "3",
+        "8060": "3",
+        "9060": "3",
+        "10060": "4",
+        "11060": "4",
+        "12060": "4"
+      },
+      "vakken": {
+        "3060": 4,
+        "4060": 6,
+        "5060": 7,
+        "6060": 8,
+        "7060": 10,
+        "8060": 11,
+        "9060": 12,
+        "10060": 14,
+        "11060": 15,
+        "12060": 16
+      },
+      "opties": [
+        {
+          "id": "meerprijs_m_mat_opaal_44_2_glas",
+          "label": "Meerprijs/m²: Mat (opaal) 44.2 glas",
+          "eenheid": "m²",
+          "prijs": 59
+        },
+        {
+          "id": "meerprijs_m_getint_44_2_glas_1_zijde",
+          "label": "Meerprijs/m²: Getint 44.2 glas 1-zijde",
+          "eenheid": "m²",
+          "prijs": 95
+        },
+        {
+          "id": "meerprijs_m_stopsol_classic_klaar_44_2_g",
+          "label": "Meerprijs/m²: Stopsol classic klaar 44.2 glas (spiegelend)",
+          "eenheid": "m²",
+          "prijs": 134
+        }
+      ],
+      "standaard": {
+        "Maatwerk": "Geen meerprijs",
+        "Kleuren": "RAL 7016 structuur - RAL 9005 structuur",
+        "Palen": "Vierkant 110 x 110 x 2600mm",
+        "Regenafvoer": "Zonder",
+        "Goot": "Zonder",
+        "Glas": "Helder 44.2 glas ongeslepen randen",
+        "Rubbers": "Voorgetrokken",
+        "Statiek balk": "120 x 180mm"
+      }
+    },
+    "Black muuraanbouw polycarbonaat": {
+      "lijst": "Black",
+      "blz": 4,
+      "titel": "Black muuraanbouw polycarbonaat 16mm opaal/helder",
+      "montage": "muur",
+      "dak": "polycarbonaat",
+      "paal": {
+        "breedte": 150,
+        "diepte": 200,
+        "label": "Rechthoekig 150 x 200mm"
+      },
+      "vrijeOpeningAftrek": 300,
+      "kleuren": [
+        "RAL 7016 structuur",
+        "RAL 9005 structuur"
+      ],
+      "rijen": [
+        2500,
+        3000,
+        3500,
+        4000,
+        4500,
+        5000
+      ],
+      "kolommen": [
+        3000,
+        4000,
+        5000,
+        6000,
+        7000,
+        8000,
+        9000,
+        10000,
+        11000,
+        12000
+      ],
+      "prijzen": {
+        "2500": {
+          "3000": 3498,
+          "4000": 4268,
+          "5000": 4855,
+          "6000": 5317,
+          "7000": 6797,
+          "8000": 7199,
+          "9000": 7522,
+          "10000": 7833,
+          "11000": 8213,
+          "12000": 8868
+        },
+        "3000": {
+          "3000": 4108,
+          "4000": 4848,
+          "5000": 5460,
+          "6000": 5949,
+          "7000": 7049,
+          "8000": 7895,
+          "9000": 8133,
+          "10000": 8454,
+          "11000": 8860,
+          "12000": 9473
+        },
+        "3500": {
+          "3000": 4601,
+          "4000": 5518,
+          "5000": 6233,
+          "6000": 6821,
+          "7000": 8101,
+          "8000": 8908,
+          "9000": 9526,
+          "10000": 10167,
+          "11000": 10673,
+          "12000": 11178
+        },
+        "4000": {
+          "3000": 5071,
+          "4000": 6028,
+          "5000": 6977,
+          "6000": 7314,
+          "7000": 9073,
+          "8000": 9743,
+          "9000": 10664,
+          "10000": 11204,
+          "11000": 11598,
+          "12000": 12268
+        },
+        "4500": {
+          "3000": 5572,
+          "4000": 6658,
+          "5000": 7713,
+          "6000": 8853,
+          "7000": 10811,
+          "8000": 11764,
+          "9000": 12636,
+          "10000": 13912,
+          "11000": 14761,
+          "12000": 16193
+        },
+        "5000": {
+          "3000": 6375,
+          "4000": 7667,
+          "5000": 9167,
+          "6000": 11000,
+          "7000": 12833,
+          "8000": 14667,
+          "9000": 16500,
+          "10000": 18333,
+          "11000": 20167,
+          "12000": 22000
+        }
+      },
+      "xlLigger": [],
+      "meldingen": [],
+      "liggerversterkingVanaf": null,
+      "palen": {
+        "3000": "2",
+        "4000": "2",
+        "5000": "2",
+        "6000": "2",
+        "7000": "2x Hoekpaal 1x Tussenpaal",
+        "8000": "2x Hoekpaal 1x Tussenpaal",
+        "9000": "2x Hoekpaal 1x Tussenpaal",
+        "10000": "2x Hoekpaal 1x Tussenpaal",
+        "11000": "2x Hoekpaal 1x Tussenpaal",
+        "12000": "2x Hoekpaal 1x Tussenpaal"
+      },
+      "vakken": {
+        "3000": 3,
+        "4000": 4,
+        "5000": 5,
+        "6000": 6,
+        "7000": 7,
+        "8000": 8,
+        "9000": 9,
+        "10000": 10,
+        "11000": 11,
+        "12000": 12
+      },
+      "opties": [
+        {
+          "id": "gootversterking_6000mm",
+          "label": "Gootversterking 6000mm",
+          "eenheid": "stuk",
+          "prijs": 250
+        },
+        {
+          "id": "meerprijs_m_polycarbonaat_16mm_hitte_wer",
+          "label": "Meerprijs/m²: Polycarbonaat 16mm hitte werend/zonwerend (opaal)",
+          "eenheid": "m²",
+          "prijs": 15
+        },
+        {
+          "id": "meerprijs_m_polycarbonaat_16mm_helder_hi",
+          "label": "Meerprijs/m²: Polycarbonaat 16mm helder-hittewerend",
+          "eenheid": "m²",
+          "prijs": 29
+        },
+        {
+          "id": "meerprijs_m_sandwichpaneel_16mm_wit_wit_",
+          "label": "Meerprijs/m²: Sandwichpaneel 16mm wit/wit (min. order 1200 x 2500mm)",
+          "eenheid": "m²",
+          "prijs": 67
+        },
+        {
+          "id": "meerprijs_m_sandwichpaneel_16mm_grijs_gr",
+          "label": "Meerprijs/m²: Sandwichpaneel 16mm grijs/grijs (min. order 1200 x 2500mm)",
+          "eenheid": "m²",
+          "prijs": 100
+        },
+        {
+          "id": "verlengde_stelanker_type_d_450mm",
+          "label": "Verlengde stelanker type D 450mm",
+          "eenheid": "stuk",
+          "prijs": 75
+        }
+      ],
+      "standaard": {
+        "Maatwerk": "Geen meerprijs",
+        "Kleuren": "RAL 7016 structuur - RAL 9005 structuur",
+        "Palen": "Max. hoogte bovenkant paal 3500mm",
+        "Regenafvoer": "Bladvanger pvc-bocht en pvc-buis Ø80mm",
+        "Polycarbonaat": "Opaal of helder 16mm",
+        "Rubbers": "Voorgetrokken"
+      }
+    },
+    "Black muuraanbouw inclusief glas": {
+      "lijst": "Black",
+      "blz": 5,
+      "titel": "Black muuraanbouw inclusief 44.2 glas",
+      "montage": "muur",
+      "dak": "glas",
+      "paal": {
+        "breedte": 150,
+        "diepte": 200,
+        "label": "Rechthoekig 150 x 200mm"
+      },
+      "vrijeOpeningAftrek": 300,
+      "kleuren": [
+        "RAL 7016 structuur",
+        "RAL 9005 structuur"
+      ],
+      "rijen": [
+        2500,
+        3000,
+        3500,
+        4000,
+        4500,
+        5000
+      ],
+      "kolommen": [
+        3000,
+        4000,
+        5000,
+        6000,
+        7000,
+        8000,
+        9000,
+        10000,
+        11000,
+        12000
+      ],
+      "prijzen": {
+        "2500": {
+          "3000": 3915,
+          "4000": 4824,
+          "5000": 5550,
+          "6000": 6150,
+          "7000": 7769,
+          "8000": 8310,
+          "9000": 8772,
+          "10000": 9223,
+          "11000": 9740,
+          "12000": 10535
+        },
+        "3000": {
+          "3000": 4608,
+          "4000": 5514,
+          "5000": 6293,
+          "6000": 6949,
+          "7000": 8216,
+          "8000": 9228,
+          "9000": 9633,
+          "10000": 10121,
+          "11000": 10693,
+          "12000": 11473
+        },
+        "3500": {
+          "3000": 5184,
+          "4000": 6296,
+          "5000": 7205,
+          "6000": 7988,
+          "7000": 9463,
+          "8000": 10464,
+          "9000": 11276,
+          "10000": 12112,
+          "11000": 12813,
+          "12000": 13512
+        },
+        "4000": {
+          "3000": 5738,
+          "4000": 6917,
+          "5000": 8088,
+          "6000": 8648,
+          "7000": 10628,
+          "8000": 11521,
+          "9000": 12664,
+          "10000": 13427,
+          "11000": 14042,
+          "12000": 14935
+        },
+        "4500": {
+          "3000": 6322,
+          "4000": 7658,
+          "5000": 8963,
+          "6000": 10353,
+          "7000": 12561,
+          "8000": 13764,
+          "9000": 14886,
+          "10000": 16412,
+          "11000": 17511,
+          "12000": 19193
+        },
+        "5000": {
+          "3000": 7075,
+          "4000": 8767,
+          "5000": 9917,
+          "6000": 11900,
+          "7000": 13883,
+          "8000": 15867,
+          "9000": 17850,
+          "10000": 19833,
+          "11000": 21817,
+          "12000": 23800
+        }
+      },
+      "xlLigger": [
+        3500,
+        4000,
+        4500,
+        5000
+      ],
+      "meldingen": [
+        "Liggerversterking is vereist per ligger voor een diepte > 4001mm (meerprijs zie pagina 11)"
+      ],
+      "liggerversterkingVanaf": 4001,
+      "palen": {
+        "3000": "2",
+        "4000": "2",
+        "5000": "2",
+        "6000": "2",
+        "7000": "2x Hoekpaal 1x Tussenpaal",
+        "8000": "2x Hoekpaal 1x Tussenpaal",
+        "9000": "2x Hoekpaal 1x Tussenpaal",
+        "10000": "2x Hoekpaal 1x Tussenpaal",
+        "11000": "2x Hoekpaal 1x Tussenpaal",
+        "12000": "2x Hoekpaal 1x Tussenpaal"
+      },
+      "vakken": {
+        "3000": 4,
+        "4000": 5,
+        "5000": 7,
+        "6000": 8,
+        "7000": 9,
+        "8000": 11,
+        "9000": 12,
+        "10000": 14,
+        "11000": 15,
+        "12000": 16
+      },
+      "opties": [
+        {
+          "id": "gootversterking_6000mm",
+          "label": "Gootversterking 6000mm",
+          "eenheid": "stuk",
+          "prijs": 250
+        },
+        {
+          "id": "meerprijs_m_mat_opaal_44_2_glas",
+          "label": "Meerprijs/m²: Mat (opaal) 44.2 glas",
+          "eenheid": "m²",
+          "prijs": 59
+        },
+        {
+          "id": "meerprijs_m_getint_44_2_glas_1_zijde",
+          "label": "Meerprijs/m²: Getint 44.2 glas 1-zijde",
+          "eenheid": "m²",
+          "prijs": 95
+        },
+        {
+          "id": "meerprijs_m_stopsol_classic_klaar_44_2_g",
+          "label": "Meerprijs/m²: Stopsol classic klaar 44.2 glas (spiegelend)",
+          "eenheid": "m²",
+          "prijs": 134
+        },
+        {
+          "id": "verlengde_stelanker_type_d_450mm",
+          "label": "Verlengde stelanker type D 450mm",
+          "eenheid": "stuk",
+          "prijs": 75
+        }
+      ],
+      "standaard": {
+        "Maatwerk": "Geen meerprijs",
+        "Kleuren": "RAL 7016 structuur - RAL 9005 structuur",
+        "Palen": "Max. hoogte bovenkant paal 3500mm",
+        "Regenafvoer": "Bladvanger pvc-bocht en pvc-buis Ø80mm",
+        "Glas": "Helder 44.2 glas ongeslepen randen",
+        "Rubbers": "Voorgetrokken",
+        "Ligger": "Versterkte XL-ligger diepte > 3500mm"
+      }
+    },
+    "Black muuraanbouw voorbereid voor glas": {
+      "lijst": "Black",
+      "blz": 6,
+      "titel": "Black muuraanbouw voorbereid voor 44.2 glas (exclusief glas)",
+      "montage": "muur",
+      "dak": "voorbereid",
+      "paal": {
+        "breedte": 150,
+        "diepte": 200,
+        "label": "Rechthoekig 150 x 200mm"
+      },
+      "vrijeOpeningAftrek": 300,
+      "kleuren": [
+        "RAL 7016 structuur",
+        "RAL 9005 structuur"
+      ],
+      "rijen": [
+        2500,
+        3000,
+        3500,
+        4000,
+        4500,
+        5000
+      ],
+      "kolommen": [
+        3000,
+        4000,
+        5000,
+        6000,
+        7000,
+        8000,
+        9000,
+        10000,
+        11000,
+        12000
+      ],
+      "prijzen": {
+        "2500": {
+          "3000": 3503,
+          "4000": 4275,
+          "5000": 4863,
+          "6000": 5325,
+          "7000": 6807,
+          "8000": 7210,
+          "9000": 7535,
+          "10000": 7848,
+          "11000": 8228,
+          "12000": 8885
+        },
+        "3000": {
+          "3000": 4113,
+          "4000": 4855,
+          "5000": 5468,
+          "6000": 5960,
+          "7000": 7062,
+          "8000": 7908,
+          "9000": 8148,
+          "10000": 8472,
+          "11000": 8878,
+          "12000": 9493
+        },
+        "3500": {
+          "3000": 4607,
+          "4000": 5527,
+          "5000": 6243,
+          "6000": 6833,
+          "7000": 8115,
+          "8000": 8925,
+          "9000": 9543,
+          "10000": 10187,
+          "11000": 10695,
+          "12000": 11202
+        },
+        "4000": {
+          "3000": 5078,
+          "4000": 6037,
+          "5000": 6988,
+          "6000": 7328,
+          "7000": 9088,
+          "8000": 9762,
+          "9000": 10685,
+          "10000": 11227,
+          "11000": 11622,
+          "12000": 12295
+        },
+        "4500": {
+          "3000": 5580,
+          "4000": 6668,
+          "5000": 7727,
+          "6000": 8868,
+          "7000": 10828,
+          "8000": 11785,
+          "9000": 12658,
+          "10000": 13937,
+          "11000": 14788,
+          "12000": 16223
+        },
+        "5000": {
+          "3000": 6250,
+          "4000": 7667,
+          "5000": 8542,
+          "6000": 10250,
+          "7000": 11958,
+          "8000": 13667,
+          "9000": 15375,
+          "10000": 17083,
+          "11000": 18792,
+          "12000": 20500
+        }
+      },
+      "xlLigger": [
+        3500,
+        4000,
+        4500,
+        5000
+      ],
+      "meldingen": [
+        "Liggerversterking is vereist per ligger voor een diepte > 4001mm (meerprijs zie pagina 11)"
+      ],
+      "liggerversterkingVanaf": 4001,
+      "palen": {
+        "3000": "2",
+        "4000": "2",
+        "5000": "2",
+        "6000": "2",
+        "7000": "2x Hoekpaal 1x Tussenpaal",
+        "8000": "2x Hoekpaal 1x Tussenpaal",
+        "9000": "2x Hoekpaal 1x Tussenpaal",
+        "10000": "2x Hoekpaal 1x Tussenpaal",
+        "11000": "2x Hoekpaal 1x Tussenpaal",
+        "12000": "2x Hoekpaal 1x Tussenpaal"
+      },
+      "vakken": {
+        "3000": 4,
+        "4000": 5,
+        "5000": 7,
+        "6000": 8,
+        "7000": 9,
+        "8000": 11,
+        "9000": 12,
+        "10000": 14,
+        "11000": 15,
+        "12000": 16
+      },
+      "opties": [
+        {
+          "id": "gootversterking",
+          "label": "Gootversterking",
+          "eenheid": "stuk",
+          "prijs": 250
+        },
+        {
+          "id": "verlengde_stelanker_type_d_450mm",
+          "label": "Verlengde stelanker type D 450mm",
+          "eenheid": "stuk",
+          "prijs": 75
+        }
+      ],
+      "standaard": {
+        "Maatwerk": "Geen meerprijs",
+        "Kleuren": "RAL 7016 structuur - RAL 9005 structuur",
+        "Palen": "Max. hoogte bovenkant paal 3500mm",
+        "Regenafvoer": "Bladvanger pvc-bocht en pvc-buis Ø80mm",
+        "Glas": "Zonder glas",
+        "Rubbers": "Voorgetrokken",
+        "Ligger": "Versterkte ligger diepte > 3500mm"
+      }
+    },
+    "Black vrijstaand polycarbonaat": {
+      "lijst": "Black",
+      "blz": 8,
+      "titel": "Black vrijstaand polycarbonaat 16mm opaal/helder",
+      "montage": "vrij",
+      "dak": "polycarbonaat",
+      "paal": {
+        "breedte": 150,
+        "diepte": 200,
+        "label": "Rechthoekig 150 x 200mm"
+      },
+      "vrijeOpeningAftrek": 300,
+      "kleuren": [
+        "RAL 7016 structuur",
+        "RAL 9005 structuur"
+      ],
+      "rijen": [
+        2500,
+        3000,
+        3500,
+        4000,
+        4500,
+        5000
+      ],
+      "kolommen": [
+        3000,
+        4000,
+        5000,
+        6000
+      ],
+      "prijzen": {
+        "2500": {
+          "3000": 4679,
+          "4000": 5449,
+          "5000": 6036,
+          "6000": 6983
+        },
+        "3000": {
+          "3000": 5289,
+          "4000": 6028,
+          "5000": 6641,
+          "6000": 7616
+        },
+        "3500": {
+          "3000": 5782,
+          "4000": 6699,
+          "5000": 7413,
+          "6000": 8488
+        },
+        "4000": {
+          "3000": 6252,
+          "4000": 7208,
+          "5000": 8158,
+          "6000": 8981
+        },
+        "4500": {
+          "3000": 6753,
+          "4000": 7838,
+          "5000": 8894,
+          "6000": 10520
+        },
+        "5000": {
+          "3000": 7500,
+          "4000": 8833,
+          "5000": 10000,
+          "6000": 11750
+        }
+      },
+      "xlLigger": [],
+      "meldingen": [],
+      "liggerversterkingVanaf": null,
+      "palen": {
+        "3000": "4",
+        "4000": "4",
+        "5000": "4",
+        "6000": "4"
+      },
+      "vakken": {
+        "3000": 3,
+        "4000": 4,
+        "5000": 5,
+        "6000": 6
+      },
+      "opties": [
+        {
+          "id": "meerprijs_m_polycarbonaat_16mm_hitte_wer",
+          "label": "Meerprijs/m²: Polycarbonaat 16mm hitte werend/zonwerend (opaal)",
+          "eenheid": "m²",
+          "prijs": 15
+        },
+        {
+          "id": "meerprijs_m_polycarbonaat_16mm_helder_hi",
+          "label": "Meerprijs/m²: Polycarbonaat 16mm helder-hittewerend",
+          "eenheid": "m²",
+          "prijs": 29
+        },
+        {
+          "id": "meerprijs_m_sandwichpaneel_16mm_wit_wit_",
+          "label": "Meerprijs/m²: Sandwichpaneel 16mm wit/wit (min. order 1200 x 2500mm)",
+          "eenheid": "m²",
+          "prijs": 67
+        },
+        {
+          "id": "meerprijs_m_sandwichpaneel_16mm_grijs_gr",
+          "label": "Meerprijs/m²: Sandwichpaneel 16mm grijs/grijs (min. order 1200 x 2500mm)",
+          "eenheid": "m²",
+          "prijs": 100
+        },
+        {
+          "id": "gootversterking_6000mm",
+          "label": "Gootversterking 6000mm",
+          "eenheid": "stuk",
+          "prijs": 250
+        },
+        {
+          "id": "verlengde_stelanker_type_d_450mm",
+          "label": "Verlengde stelanker type D 450mm",
+          "eenheid": "stuk",
+          "prijs": 75
+        }
+      ],
+      "standaard": {
+        "Maatwerk": "Geen meerprijs",
+        "Kleuren": "RAL 7016 structuur - RAL 9005 structuur",
+        "Palen": "Max. hoogte bovenkant paal 3500mm",
+        "Regenafvoer": "Bladvanger pvc-bocht en pvc-buis Ø80mm",
+        "Polycarbonaat": "Opaal of helder (minimum hellingsgraad valt niet onder garantie)",
+        "Rubbers": "Voorgetrokken"
+      }
+    },
+    "Black vrijstaand inclusief glas": {
+      "lijst": "Black",
+      "blz": 9,
+      "titel": "Black vrijstaand inclusief 44.2 glas",
+      "montage": "vrij",
+      "dak": "glas",
+      "paal": {
+        "breedte": 150,
+        "diepte": 200,
+        "label": "Rechthoekig 150 x 200mm"
+      },
+      "vrijeOpeningAftrek": 300,
+      "kleuren": [
+        "RAL 7016 structuur",
+        "RAL 9005 structuur"
+      ],
+      "rijen": [
+        2500,
+        3000,
+        3500,
+        4000,
+        4500,
+        5000
+      ],
+      "kolommen": [
+        3000,
+        4000,
+        5000,
+        6000
+      ],
+      "prijzen": {
+        "2500": {
+          "3000": 5096,
+          "4000": 6004,
+          "5000": 6730,
+          "6000": 7817
+        },
+        "3000": {
+          "3000": 5789,
+          "4000": 6695,
+          "5000": 7474,
+          "6000": 8616
+        },
+        "3500": {
+          "3000": 6365,
+          "4000": 7477,
+          "5000": 8386,
+          "6000": 9654
+        },
+        "4000": {
+          "3000": 6918,
+          "4000": 8098,
+          "5000": 9268,
+          "6000": 10314
+        },
+        "4500": {
+          "3000": 7503,
+          "4000": 8838,
+          "5000": 10144,
+          "6000": 12020
+        },
+        "5000": {
+          "3000": 8450,
+          "4000": 10100,
+          "5000": 11583,
+          "6000": 13650
+        }
+      },
+      "xlLigger": [
+        3500,
+        4000,
+        4500,
+        5000
+      ],
+      "meldingen": [
+        "Liggerversterking is vereist per ligger voor een diepte > 4001mm (meerprijs zie pagina 11)"
+      ],
+      "liggerversterkingVanaf": 4001,
+      "palen": {
+        "3000": "4",
+        "4000": "4",
+        "5000": "4",
+        "6000": "4"
+      },
+      "vakken": {
+        "3000": 4,
+        "4000": 5,
+        "5000": 7,
+        "6000": 8
+      },
+      "opties": [
+        {
+          "id": "meerprijs_m_mat_opaal_44_2_glas",
+          "label": "Meerprijs/m²: Mat (opaal) 44.2 glas",
+          "eenheid": "m²",
+          "prijs": 59
+        },
+        {
+          "id": "meerprijs_m_getint_44_2_glas_1_zijde",
+          "label": "Meerprijs/m²: Getint 44.2 glas 1-zijde",
+          "eenheid": "m²",
+          "prijs": 95
+        },
+        {
+          "id": "meerprijs_m_stopsol_classic_klaar_44_2_g",
+          "label": "Meerprijs/m²: Stopsol classic klaar 44.2 glas (spiegelend)",
+          "eenheid": "m²",
+          "prijs": 134
+        },
+        {
+          "id": "gootversterking",
+          "label": "Gootversterking",
+          "eenheid": "stuk",
+          "prijs": 250
+        },
+        {
+          "id": "verlengde_stelanker_type_d_450mm",
+          "label": "Verlengde stelanker type D 450mm",
+          "eenheid": "stuk",
+          "prijs": 75
+        }
+      ],
+      "standaard": {
+        "Maatwerk": "Geen meerprijs",
+        "Kleuren": "RAL 7016 structuur - RAL 9005 structuur",
+        "Palen": "Max. hoogte bovenkant paal 3500mm",
+        "Regenafvoer": "Bladvanger pvc-bocht en pvc-buis Ø80mm",
+        "Polycarbonaat": "Opaal of helder (minimum hellingsgraad valt niet onder garantie)",
+        "Rubbers": "Voorgetrokken"
+      }
+    },
+    "Black vrijstaand voorbereid voor glas": {
+      "lijst": "Black",
+      "blz": 10,
+      "titel": "Black vrijstaand voorbereid voor 44.2 glas (exclusief glas)",
+      "montage": "vrij",
+      "dak": "voorbereid",
+      "paal": {
+        "breedte": 150,
+        "diepte": 200,
+        "label": "Rechthoekig 150 x 200mm"
+      },
+      "vrijeOpeningAftrek": 300,
+      "kleuren": [
+        "RAL 7016 structuur",
+        "RAL 9005 structuur"
+      ],
+      "rijen": [
+        2500,
+        3000,
+        3500,
+        4000,
+        4500,
+        5000
+      ],
+      "kolommen": [
+        3000,
+        4000,
+        5000,
+        6000
+      ],
+      "prijzen": {
+        "2500": {
+          "3000": 4418,
+          "4000": 5102,
+          "5000": 5602,
+          "6000": 6463
+        },
+        "3000": {
+          "3000": 4977,
+          "4000": 5612,
+          "5000": 6120,
+          "6000": 6991
+        },
+        "3500": {
+          "3000": 5417,
+          "4000": 6213,
+          "5000": 6806,
+          "6000": 7758
+        },
+        "4000": {
+          "3000": 5835,
+          "4000": 6653,
+          "5000": 7463,
+          "6000": 8148
+        },
+        "4500": {
+          "3000": 6283,
+          "4000": 7213,
+          "5000": 8113,
+          "6000": 9583
+        },
+        "5000": {
+          "3000": 7625,
+          "4000": 9000,
+          "5000": 10208,
+          "6000": 12000
+        }
+      },
+      "xlLigger": [
+        3500,
+        4000,
+        4500,
+        5000
+      ],
+      "meldingen": [
+        "Liggerversterking is vereist per ligger voor een diepte > 4001mm (meerprijs zie pagina 11)"
+      ],
+      "liggerversterkingVanaf": 4001,
+      "palen": {
+        "3000": "4",
+        "4000": "4",
+        "5000": "4",
+        "6000": "4"
+      },
+      "vakken": {
+        "3000": 4,
+        "4000": 5,
+        "5000": 7,
+        "6000": 8
+      },
+      "opties": [
+        {
+          "id": "gootversterking",
+          "label": "Gootversterking",
+          "eenheid": "stuk",
+          "prijs": 250
+        },
+        {
+          "id": "verlengde_stelanker_type_d_450mm",
+          "label": "Verlengde stelanker type D 450mm",
+          "eenheid": "stuk",
+          "prijs": 75
+        }
+      ],
+      "standaard": {
+        "Maatwerk": "Geen meerprijs",
+        "Kleuren": "RAL 7016 structuur - RAL 9005 structuur",
+        "Palen": "Max. hoogte bovenkant paal 3500mm",
+        "Regenafvoer": "Bladvanger pvc-bocht en pvc-buis Ø80mm",
+        "Polycarbonaat": "Opaal of helder (minimum hellingsgraad valt niet onder garantie)",
+        "Rubbers": "Voorgetrokken"
+      }
+    }
+  },
+  "onderdelen": [
+    {
+      "groep": "Profielen (Comfortline Plus)",
+      "lijst": "Comfortline Plus",
+      "blz": 8,
+      "artikelen": [
+        {
+          "id": "clp_gootprofiel_comfortline_plus_p_m",
+          "label": "Gootprofiel Comfortline Plus",
+          "eenheid": "p/m",
+          "prijs": 117
+        },
+        {
+          "id": "clp_muurprofiel_inclusief_rubber_p_m",
+          "label": "Muurprofiel inclusief rubber",
+          "eenheid": "p/m",
+          "prijs": 50
+        },
+        {
+          "id": "clp_ligger_2890mm_stuk",
+          "label": "Ligger 2890mm",
+          "eenheid": "stuk",
+          "prijs": 95
+        },
+        {
+          "id": "clp_ligger_3390mm_stuk",
+          "label": "Ligger 3390mm",
+          "eenheid": "stuk",
+          "prijs": 111
+        },
+        {
+          "id": "clp_ligger_3890mm_stuk",
+          "label": "Ligger 3890mm",
+          "eenheid": "stuk",
+          "prijs": 127
+        },
+        {
+          "id": "clp_ligger_4890mm_stuk",
+          "label": "Ligger 4890mm",
+          "eenheid": "stuk",
+          "prijs": 159
+        },
+        {
+          "id": "clp_xl_ligger_3390mm_stuk",
+          "label": "XL-ligger 3390mm",
+          "eenheid": "stuk",
+          "prijs": 222
+        },
+        {
+          "id": "clp_xl_ligger_3890mm_stuk",
+          "label": "XL-ligger 3890mm",
+          "eenheid": "stuk",
+          "prijs": 254
+        },
+        {
+          "id": "clp_xl_ligger_4890mm_stuk",
+          "label": "XL-ligger 4890mm",
+          "eenheid": "stuk",
+          "prijs": 317
+        },
+        {
+          "id": "clp_kliklijst_p_m",
+          "label": "Kliklijst",
+          "eenheid": "p/m",
+          "prijs": 15
+        },
+        {
+          "id": "clp_klikhoek_p_m",
+          "label": "Klikhoek",
+          "eenheid": "p/m",
+          "prijs": 15
+        },
+        {
+          "id": "clp_afwerkingsprofiel_binnenzijde_goot_en_mu_p_m",
+          "label": "Afwerkingsprofiel binnenzijde goot en muurprofiel",
+          "eenheid": "p/m",
+          "prijs": 15
+        },
+        {
+          "id": "clp_condens_profiel_16mm_p_m",
+          "label": "Condens profiel 16mm",
+          "eenheid": "p/m",
+          "prijs": 6
+        },
+        {
+          "id": "clp_condens_profiel_32mm_pvc_p_m",
+          "label": "Condens profiel 32mm PVC",
+          "eenheid": "p/m",
+          "prijs": 17
+        },
+        {
+          "id": "clp_stopplaat_stuk",
+          "label": "Stopplaat",
+          "eenheid": "stuk",
+          "prijs": 5
+        },
+        {
+          "id": "clp_zij_afdekplaat_muurprofiel_stuk",
+          "label": "Zij afdekplaat muurprofiel",
+          "eenheid": "stuk",
+          "prijs": 9
+        },
+        {
+          "id": "clp_zij_afdekplaat_goot_stuk",
+          "label": "Zij afdekplaat goot",
+          "eenheid": "stuk",
+          "prijs": 9
+        }
+      ]
+    },
+    {
+      "groep": "Accessoires (Comfortline Plus)",
+      "lijst": "Comfortline Plus",
+      "blz": 8,
+      "artikelen": [
+        {
+          "id": "cla_anti_dust_condens_tape_16mm_rol",
+          "label": "Anti-dust condens tape 16mm",
+          "eenheid": "rol",
+          "prijs": 59
+        },
+        {
+          "id": "cla_lakstift_ral7016_ral9005_stuk",
+          "label": "Lakstift RAL7016 – RAL9005",
+          "eenheid": "stuk",
+          "prijs": 25
+        },
+        {
+          "id": "cla_silicone_neutral_stuk",
+          "label": "Silicone Neutral",
+          "eenheid": "stuk",
+          "prijs": 9.2
+        },
+        {
+          "id": "cla_silicone_ral7016_ral9005_stuk",
+          "label": "Silicone RAL7016 – RAL9005",
+          "eenheid": "stuk",
+          "prijs": 12.5
+        },
+        {
+          "id": "cla_gootversterking_platstrip_staal_6000",
+          "label": "Gootversterking platstrip staal",
+          "eenheid": "6000",
+          "prijs": 250
+        },
+        {
+          "id": "cla_liggerversterking_xl_ligger_80x40mm_stuk",
+          "label": "Liggerversterking XL-ligger 80x40mm",
+          "eenheid": "stuk",
+          "prijs": 259
+        },
+        {
+          "id": "cla_liggerversterking_xl_ligger_60x40mm_stuk",
+          "label": "Liggerversterking XL-ligger 60x40mm",
+          "eenheid": "Stuk",
+          "prijs": 209
+        },
+        {
+          "id": "cla_hwa_set_pvc_80mm_set",
+          "label": "HWA-set pvc Ø80mm",
+          "eenheid": "set",
+          "prijs": 42
+        },
+        {
+          "id": "cla_inox_schroeven_4_2x19mm_ral7016_9005_200_st",
+          "label": "Inox schroeven 4,2x19mm RAL7016/9005",
+          "eenheid": "200 st",
+          "prijs": 50
+        }
+      ]
+    },
+    {
+      "groep": "Palen, kokers & toebehoren",
+      "lijst": "Comfortline Plus",
+      "blz": 9,
+      "artikelen": [
+        {
+          "id": "clk_koker_60_x_60mm_3000",
+          "label": "Koker 60 x 60mm",
+          "eenheid": "3000",
+          "prijs": 70
+        },
+        {
+          "id": "clk_koker_60_x_60mm_6000",
+          "label": "Koker 60 x 60mm",
+          "eenheid": "6000",
+          "prijs": 140
+        },
+        {
+          "id": "clk_paal_110_x_110mm_2600",
+          "label": "Paal 110 x 110mm",
+          "eenheid": "2600",
+          "prijs": 110
+        },
+        {
+          "id": "clk_paal_110_x_110mm_3000",
+          "label": "Paal 110 x 110mm",
+          "eenheid": "3000",
+          "prijs": 142
+        },
+        {
+          "id": "clk_paal_110_x_110mm_3500",
+          "label": "Paal 110 x 110mm",
+          "eenheid": "3500",
+          "prijs": 184
+        },
+        {
+          "id": "clk_paal_110_x_110mm_6000",
+          "label": "Paal 110 x 110mm",
+          "eenheid": "6000",
+          "prijs": 284
+        },
+        {
+          "id": "clk_bijpassende_paal_anker_u_stuk",
+          "label": "➢ Bijpassende paal anker (U)",
+          "eenheid": "stuk",
+          "prijs": 17
+        },
+        {
+          "id": "clk_bijpassende_afdekplaat_stuk",
+          "label": "➢ Bijpassende afdekplaat",
+          "eenheid": "stuk",
+          "prijs": 9
+        },
+        {
+          "id": "clk_paal_120_x_130mm_2_delig_2600",
+          "label": "Paal 120 x 130mm 2-delig",
+          "eenheid": "2600",
+          "prijs": 150
+        },
+        {
+          "id": "clk_paal_120_x_130mm_2_delig_3000",
+          "label": "Paal 120 x 130mm 2-delig",
+          "eenheid": "3000",
+          "prijs": 175
+        },
+        {
+          "id": "clk_bijpassende_paal_anker_l_stuk",
+          "label": "➢ Bijpassende paal anker (L)",
+          "eenheid": "stuk",
+          "prijs": 17
+        },
+        {
+          "id": "clko_bijpassende_zij_afdekplaat_stuk",
+          "label": "Bijpassende zij afdekplaat",
+          "eenheid": "stuk",
+          "prijs": 17
+        },
+        {
+          "id": "clko_bijpassende_afwerkingsdeksel_onderzijde_6060",
+          "label": "Bijpassende afwerkingsdeksel onderzijde",
+          "eenheid": "6060",
+          "prijs": 109
+        },
+        {
+          "id": "clko_bijpassende_afwerkingsdeksel_onderzijde_7060",
+          "label": "Bijpassende afwerkingsdeksel onderzijde",
+          "eenheid": "7060",
+          "prijs": 134
+        }
+      ]
+    },
+    {
+      "groep": "Statiek balk 120 x 180mm",
+      "lijst": "Comfortline Plus",
+      "blz": 9,
+      "artikelen": [
+        {
+          "id": "cl_statiek_6060",
+          "label": "Statiek balk 120 x 180mm 6060mm",
+          "eenheid": "stuk",
+          "prijs": 534
+        },
+        {
+          "id": "cl_statiek_7060",
+          "label": "Statiek balk 120 x 180mm 7060mm",
+          "eenheid": "stuk",
+          "prijs": 617
+        }
+      ]
+    },
+    {
+      "groep": "Zijspie polycarbonaat (zelfbouw)",
+      "lijst": "Comfortline Plus",
+      "blz": 15,
+      "info": "F-profiel en polycarbonaat, RAL 7016st - RAL 9005st",
+      "artikelen": [
+        {
+          "id": "cl_zijspie_2500",
+          "label": "Zijspie polycarbonaat 2500mm",
+          "eenheid": "stuk",
+          "prijs": 167
+        },
+        {
+          "id": "cl_zijspie_3000",
+          "label": "Zijspie polycarbonaat 3000mm",
+          "eenheid": "stuk",
+          "prijs": 192
+        },
+        {
+          "id": "cl_zijspie_3500",
+          "label": "Zijspie polycarbonaat 3500mm",
+          "eenheid": "stuk",
+          "prijs": 225
+        },
+        {
+          "id": "cl_zijspie_4000",
+          "label": "Zijspie polycarbonaat 4000mm",
+          "eenheid": "stuk",
+          "prijs": 242
+        },
+        {
+          "id": "cl_zijspie_5000",
+          "label": "Zijspie polycarbonaat 5000mm",
+          "eenheid": "stuk",
+          "prijs": 292
+        }
+      ]
+    },
+    {
+      "groep": "Zijwand polycarbonaat (zelfbouw)",
+      "lijst": "Comfortline Plus",
+      "blz": 15,
+      "info": "F-profiel en H-profiel, polycarbonaat, RAL 7016st - RAL 9005st",
+      "artikelen": [
+        {
+          "id": "cl_zijwand_2500",
+          "label": "Zijwand polycarbonaat 2500mm",
+          "eenheid": "stuk",
+          "prijs": 492
+        },
+        {
+          "id": "cl_zijwand_3000",
+          "label": "Zijwand polycarbonaat 3000mm",
+          "eenheid": "stuk",
+          "prijs": 492
+        },
+        {
+          "id": "cl_zijwand_3500",
+          "label": "Zijwand polycarbonaat 3500mm",
+          "eenheid": "stuk",
+          "prijs": 659
+        },
+        {
+          "id": "cl_zijwand_4000",
+          "label": "Zijwand polycarbonaat 4000mm",
+          "eenheid": "stuk",
+          "prijs": 659
+        },
+        {
+          "id": "cl_zijwand_5000",
+          "label": "Zijwand polycarbonaat 5000mm",
+          "eenheid": "stuk",
+          "prijs": 825
+        }
+      ]
+    },
+    {
+      "groep": "Losse onderdelen zijspie / zijwand",
+      "lijst": "Comfortline Plus",
+      "blz": 15,
+      "artikelen": [
+        {
+          "id": "clz_f_profiel_3000",
+          "label": "F-Profiel",
+          "eenheid": "3000",
+          "prijs": 30
+        },
+        {
+          "id": "clz_f_profiel_4000",
+          "label": "F-Profiel",
+          "eenheid": "4000",
+          "prijs": 40
+        },
+        {
+          "id": "clz_f_profiel_5000",
+          "label": "F-Profiel",
+          "eenheid": "5000",
+          "prijs": 50
+        },
+        {
+          "id": "clz_h_profiel_3000",
+          "label": "H-Profiel",
+          "eenheid": "3000",
+          "prijs": 45
+        },
+        {
+          "id": "clz_polycarbonaat_opaal_16mm_2450",
+          "label": "Polycarbonaat opaal 16mm",
+          "eenheid": "2450",
+          "prijs": 84
+        },
+        {
+          "id": "clz_polycarbonaat_opaal_16mm_2950",
+          "label": "Polycarbonaat opaal 16mm",
+          "eenheid": "2950",
+          "prijs": 100
+        },
+        {
+          "id": "clz_l_profiel_30_x_30mm_3000",
+          "label": "L-profiel 30 x 30mm",
+          "eenheid": "3000",
+          "prijs": 30
+        },
+        {
+          "id": "clz_l_profiel_30_x_30mm_6000",
+          "label": "L-profiel 30 x 30mm",
+          "eenheid": "6000",
+          "prijs": 60
+        },
+        {
+          "id": "clz_l_profiel_50_x_50mm_3000",
+          "label": "L-profiel 50 x 50mm",
+          "eenheid": "3000",
+          "prijs": 45
+        },
+        {
+          "id": "clz_l_profiel_50_x_50mm_6000",
+          "label": "L-profiel 50 x 50mm",
+          "eenheid": "6000",
+          "prijs": 90
+        }
+      ]
+    },
+    {
+      "groep": "Vast zijwand / zijspie voorbereid voor 44.2 glas",
+      "lijst": "Comfortline Plus",
+      "blz": 16,
+      "artikelen": [
+        {
+          "id": "clg_hoekprofiel_f_2_delig_7000",
+          "label": "Hoekprofiel (F) 2-delig",
+          "eenheid": "7000",
+          "prijs": 175
+        },
+        {
+          "id": "clg_tussenprofiel_h_2_delig_7000",
+          "label": "Tussenprofiel (H) 2-delig",
+          "eenheid": "7000",
+          "prijs": 175
+        },
+        {
+          "id": "clg_l_haak_stuk",
+          "label": "L-Haak",
+          "eenheid": "stuk",
+          "prijs": 2
+        }
+      ]
+    },
+    {
+      "groep": "Aluminium planchetten",
+      "lijst": "Comfortline Plus",
+      "blz": 16,
+      "info": "Hoogte 160mm, breedte 16mm, RAL 7016st - RAL 9005st",
+      "artikelen": [
+        {
+          "id": "cl_planchet_2500",
+          "label": "Aluminium planchet 2500mm",
+          "eenheid": "stuk",
+          "prijs": 55
+        },
+        {
+          "id": "cl_planchet_3000",
+          "label": "Aluminium planchet 3000mm",
+          "eenheid": "stuk",
+          "prijs": 65
+        },
+        {
+          "id": "cl_planchet_3500",
+          "label": "Aluminium planchet 3500mm",
+          "eenheid": "stuk",
+          "prijs": 76
+        },
+        {
+          "id": "cl_planchet_4000",
+          "label": "Aluminium planchet 4000mm",
+          "eenheid": "stuk",
+          "prijs": 87
+        },
+        {
+          "id": "cl_planchet_5000",
+          "label": "Aluminium planchet 5000mm",
+          "eenheid": "stuk",
+          "prijs": 109
+        }
+      ]
+    },
+    {
+      "groep": "Losse onderdelen aluminium planchetten",
+      "lijst": "Comfortline Plus",
+      "blz": 16,
+      "artikelen": [
+        {
+          "id": "clpl_f_profiel_3000",
+          "label": "F-Profiel",
+          "eenheid": "3000",
+          "prijs": 30
+        },
+        {
+          "id": "clpl_f_profiel_4000",
+          "label": "F-Profiel",
+          "eenheid": "4000",
+          "prijs": 40
+        },
+        {
+          "id": "clpl_f_profiel_5000",
+          "label": "F-Profiel",
+          "eenheid": "5000",
+          "prijs": 50
+        },
+        {
+          "id": "clpl_h_profiel_3000",
+          "label": "H-Profiel",
+          "eenheid": "3000",
+          "prijs": 45
+        }
+      ]
+    },
+    {
+      "groep": "Profielen (Black)",
+      "lijst": "Black",
+      "blz": 11,
+      "artikelen": [
+        {
+          "id": "blp_ligger_2890mm_stuk",
+          "label": "Ligger 2890mm",
+          "eenheid": "stuk",
+          "prijs": 95
+        },
+        {
+          "id": "blp_ligger_3390mm_stuk",
+          "label": "Ligger 3390mm",
+          "eenheid": "stuk",
+          "prijs": 111
+        },
+        {
+          "id": "blp_ligger_3890mm_stuk",
+          "label": "Ligger 3890mm",
+          "eenheid": "stuk",
+          "prijs": 127
+        },
+        {
+          "id": "blp_ligger_4890mm_stuk",
+          "label": "Ligger 4890mm",
+          "eenheid": "stuk",
+          "prijs": 159
+        },
+        {
+          "id": "blp_xl_ligger_3390mm_stuk",
+          "label": "XL-ligger 3390mm",
+          "eenheid": "stuk",
+          "prijs": 222
+        },
+        {
+          "id": "blp_xl_ligger_3890mm_stuk",
+          "label": "XL-ligger 3890mm",
+          "eenheid": "stuk",
+          "prijs": 254
+        },
+        {
+          "id": "blp_xl_ligger_4890mm_stuk",
+          "label": "XL-ligger 4890mm",
+          "eenheid": "stuk",
+          "prijs": 317
+        },
+        {
+          "id": "blp_kliklijst_p_m",
+          "label": "Kliklijst",
+          "eenheid": "p/m",
+          "prijs": 15
+        },
+        {
+          "id": "blp_klikhoek_p_m",
+          "label": "Klikhoek",
+          "eenheid": "p/m",
+          "prijs": 15
+        },
+        {
+          "id": "blp_afwerkingsprofiel_binnenzijde_goot_en_mu_p_m",
+          "label": "Afwerkingsprofiel binnenzijde goot en muurprofiel",
+          "eenheid": "p/m",
+          "prijs": 15
+        },
+        {
+          "id": "blp_condens_profiel_16mm_p_m",
+          "label": "Condens profiel 16mm",
+          "eenheid": "p/m",
+          "prijs": 6
+        },
+        {
+          "id": "blp_stopplaat_stuk",
+          "label": "Stopplaat",
+          "eenheid": "stuk",
+          "prijs": 5
+        }
+      ]
+    },
+    {
+      "groep": "Accessoires (Black)",
+      "lijst": "Black",
+      "blz": 11,
+      "artikelen": [
+        {
+          "id": "bla_anti_dust_condens_tape_16mm_rol",
+          "label": "Anti-dust condens tape 16mm",
+          "eenheid": "rol",
+          "prijs": 59
+        },
+        {
+          "id": "bla_lakstift_ral7016_ral9005_stuk",
+          "label": "Lakstift RAL7016 – RAL9005",
+          "eenheid": "stuk",
+          "prijs": 25
+        },
+        {
+          "id": "bla_silicone_neutral_stuk",
+          "label": "Silicone Neutral",
+          "eenheid": "stuk",
+          "prijs": 9.2
+        },
+        {
+          "id": "bla_silicone_ral7016_ral9005_stuk",
+          "label": "Silicone RAL7016 – RAL9005",
+          "eenheid": "stuk",
+          "prijs": 12.5
+        },
+        {
+          "id": "bla_gootversterking_platstrip_staal_6000",
+          "label": "Gootversterking platstrip staal",
+          "eenheid": "6000",
+          "prijs": 250
+        },
+        {
+          "id": "bla_standaarduitvoering_stuk",
+          "label": "(standaarduitvoering)",
+          "eenheid": "stuk",
+          "prijs": 259
+        },
+        {
+          "id": "bla_uitvoering_met_led_strip_stuk",
+          "label": "(uitvoering met LED-strip)",
+          "eenheid": "stuk",
+          "prijs": 209
+        },
+        {
+          "id": "bla_hwa_set_pvc_80mm_set",
+          "label": "HWA-set pvc Ø80mm",
+          "eenheid": "set",
+          "prijs": 42
+        },
+        {
+          "id": "bla_inox_schroeven_4_2x19mm_ral7016_9005_200_st",
+          "label": "Inox schroeven 4,2x19mm RAL7016/9005",
+          "eenheid": "200 st",
+          "prijs": 50
+        }
+      ]
+    },
+    {
+      "groep": "LED-verlichting (set) dimbaar",
+      "lijst": "beide",
+      "blz": 17,
+      "info": "Spot IP65 | Trafo IP44, dimbaar 3W per LED (4000K), incl. 5m bekabeling per LED",
+      "artikelen": [
+        {
+          "id": "led_set_6",
+          "label": "LED-set dimbaar 6 spots",
+          "eenheid": "set",
+          "prijs": 167
+        },
+        {
+          "id": "led_set_8",
+          "label": "LED-set dimbaar 8 spots",
+          "eenheid": "set",
+          "prijs": 200
+        },
+        {
+          "id": "led_set_10",
+          "label": "LED-set dimbaar 10 spots",
+          "eenheid": "set",
+          "prijs": 234
+        },
+        {
+          "id": "led_set_12",
+          "label": "LED-set dimbaar 12 spots",
+          "eenheid": "set",
+          "prijs": 267
+        },
+        {
+          "id": "led_verlengsnoer_2000mm_stuk",
+          "label": "Verlengsnoer 2000mm",
+          "eenheid": "stuk",
+          "prijs": 5
+        },
+        {
+          "id": "led_verlengsnoer_4000mm_stuk",
+          "label": "Verlengsnoer 4000mm",
+          "eenheid": "stuk",
+          "prijs": 10
+        },
+        {
+          "id": "led_transfo_afstandsbediening_set",
+          "label": "Transfo & afstandsbediening",
+          "eenheid": "set",
+          "prijs": 67
+        },
+        {
+          "id": "led_voorgetrokken_kabels_stuk",
+          "label": "Voorgetrokken kabels",
+          "eenheid": "stuk",
+          "prijs": 17
+        },
+        {
+          "id": "leds_led_inbouwspot_3w_stuk",
+          "label": "LED-inbouwspot 3w",
+          "eenheid": "stuk",
+          "prijs": 17
+        },
+        {
+          "id": "leds_voorgetrokken_kabels_stuk",
+          "label": "Voorgetrokken kabels",
+          "eenheid": "stuk",
+          "prijs": 17
+        },
+        {
+          "id": "leds_kabel_100_meter_stuk",
+          "label": "Kabel 100 meter",
+          "eenheid": "stuk",
+          "prijs": 92
+        },
+        {
+          "id": "leds_lasklem_2_polig_100_suks",
+          "label": "Lasklem 2-polig",
+          "eenheid": "100 suks",
+          "prijs": 34
+        }
+      ]
+    },
+    {
+      "groep": "LED-strip",
+      "lijst": "beide",
+      "blz": 18,
+      "artikelen": [
+        {
+          "id": "strip_2500mm_3000k_of_4000k_stuk",
+          "label": "2500mm (3000K of 4000K)",
+          "eenheid": "stuk",
+          "prijs": 100
+        },
+        {
+          "id": "strip_3000mm_3000k_of_4000k_stuk",
+          "label": "3000mm (3000K of 4000K)",
+          "eenheid": "stuk",
+          "prijs": 120
+        },
+        {
+          "id": "strip_3500mm_3000k_of_4000k_stuk",
+          "label": "3500mm (3000K of 4000K)",
+          "eenheid": "stuk",
+          "prijs": 140
+        },
+        {
+          "id": "strip_4000mm_3000k_of_4000k_stuk",
+          "label": "4000mm (3000K of 4000K)",
+          "eenheid": "stuk",
+          "prijs": 160
+        },
+        {
+          "id": "strip_4500mm_3000k_of_4000k_stuk",
+          "label": "4500mm (3000K of 4000K)",
+          "eenheid": "stuk",
+          "prijs": 180
+        },
+        {
+          "id": "strip_5000mm_3000k_of_4000k_stuk",
+          "label": "5000mm (3000K of 4000K)",
+          "eenheid": "stuk",
+          "prijs": 200
+        },
+        {
+          "id": "strip_led_voeding_200w_stuk",
+          "label": "LED-voeding 200w",
+          "eenheid": "stuk",
+          "prijs": 107
+        },
+        {
+          "id": "strip_led_voeding_250w_stuk",
+          "label": "LED-voeding 250w",
+          "eenheid": "stuk",
+          "prijs": 115
+        },
+        {
+          "id": "strip_led_voeding_300w_stuk",
+          "label": "LED-voeding 300w",
+          "eenheid": "stuk",
+          "prijs": 140
+        },
+        {
+          "id": "strip_led_voeding_350w_stuk",
+          "label": "LED-voeding 350w",
+          "eenheid": "stuk",
+          "prijs": 164
+        },
+        {
+          "id": "strip_led_voeding_500w_stuk",
+          "label": "LED-voeding 500w",
+          "eenheid": "stuk",
+          "prijs": 250
+        },
+        {
+          "id": "strip_afstandsbediening_ontvanger_2_4ghz_stuk",
+          "label": "Afstandsbediening & ontvanger + 2.4GHz",
+          "eenheid": "stuk",
+          "prijs": 75
+        },
+        {
+          "id": "strip_afstandsbediening_ontvanger_met_wifi_2_4_stuk",
+          "label": "Afstandsbediening & ontvanger met wifi + 2.4G",
+          "eenheid": "stuk",
+          "prijs": 109
+        },
+        {
+          "id": "strip_3000mm_4000k_stuk",
+          "label": "3000mm (4000K)",
+          "eenheid": "stuk",
+          "prijs": 40
+        },
+        {
+          "id": "strip_3000mm_3000k_stuk",
+          "label": "3000mm (3000K)",
+          "eenheid": "stuk",
+          "prijs": 40
+        },
+        {
+          "id": "strip_4000mm_4000k_stuk",
+          "label": "4000mm (4000K)",
+          "eenheid": "stuk",
+          "prijs": 54
+        },
+        {
+          "id": "strip_4000mm_3000k_stuk",
+          "label": "4000mm (3000K)",
+          "eenheid": "stuk",
+          "prijs": 54
+        },
+        {
+          "id": "strip_5000mm_4000k_stuk",
+          "label": "5000mm (4000K)",
+          "eenheid": "stuk",
+          "prijs": 67
+        },
+        {
+          "id": "strip_5000mm_3000k_stuk",
+          "label": "5000mm (3000K)",
+          "eenheid": "stuk",
+          "prijs": 67
+        }
+      ]
+    }
+  ]
+}
