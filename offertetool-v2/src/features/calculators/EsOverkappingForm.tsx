@@ -160,15 +160,16 @@ export function EsOverkapping() {
                       {m.rijen.map((uitval) => {
                         const prijs = m.prijzen[String(uitval)]?.[String(breedte)];
                         const isGekozen = s.breedte === breedte && s.uitval === uitval;
+                        // Past deze maat in de opgegeven ruimte? Dan krijgt de knop de groene stijl.
                         const past = (!s.ruimteBreedte || breedte <= s.ruimteBreedte)
                           && (!s.ruimteUitval || uitval <= s.ruimteUitval);
+                        const markeer = (s.ruimteBreedte > 0 || s.ruimteUitval > 0) && past;
                         if (typeof prijs !== 'number') return <td key={uitval} className="r" style={{ color: 'var(--tx3)' }}>—</td>;
                         return (
                           <td key={uitval} className="r">
-                            <button type="button" className={`btn sm ${isGekozen ? '' : 'ghost'}`}
-                              style={!isGekozen && (s.ruimteBreedte || s.ruimteUitval) && past
-                                ? { borderColor: 'var(--green)', color: 'var(--green)' } : undefined}
-                              title={`Lijstprijs €${fmt(prijs, 0)}${m.xlLigger.includes(uitval) ? ' — versterkte XL-ligger inbegrepen' : ''}`}
+                            <button type="button" className={`btn sm${markeer ? ' past' : ''}${isGekozen ? ' gekozen' : ''}`}
+                              title={`Lijstprijs €${fmt(prijs, 0)}${m.xlLigger.includes(uitval) ? ' — versterkte XL-ligger inbegrepen' : ''}`
+                                + `${markeer ? ' (past in de ruimte)' : ''}`}
                               onClick={() => u({
                                 breedte, uitval,
                                 // Een ingetikte dagmaat hoort bij de vorige maat: opnieuw de vrije opening volgen.

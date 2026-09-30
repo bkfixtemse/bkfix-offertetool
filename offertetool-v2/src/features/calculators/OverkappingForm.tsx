@@ -179,14 +179,14 @@ function PinelaOverkapping() {
                       {t.kolommen.map((k) => {
                         const prijs = t.prijzen[String(rij)]?.[String(k)];
                         const isGekozen = s.breedte === rij && s.uitval === k;
+                        // Past deze maat in de opgegeven ruimte? Dan krijgt de knop de groene stijl.
                         const past = (!s.ruimteBreedte || rij <= s.ruimteBreedte) && (!s.ruimteUitval || k <= s.ruimteUitval);
+                        const markeer = (s.ruimteBreedte > 0 || s.ruimteUitval > 0) && past;
                         if (typeof prijs !== 'number') return <td key={k} className="r" style={{ color: 'var(--tx3)' }}>—</td>;
                         return (
                           <td key={k} className="r">
-                            <button type="button" className={`btn sm ${isGekozen ? '' : 'ghost'}`}
-                              style={!isGekozen && (s.ruimteBreedte || s.ruimteUitval) && past
-                                ? { borderColor: 'var(--green)', color: 'var(--green)' } : undefined}
-                              title={`Inkoop €${fmt(prijs, 0)} — klik om te kiezen`}
+                            <button type="button" className={`btn sm${markeer ? ' past' : ''}${isGekozen ? ' gekozen' : ''}`}
+                              title={`Inkoop €${fmt(prijs, 0)} — klik om te kiezen${markeer ? ' (past in de ruimte)' : ''}`}
                               onClick={() => u({
                                 breedte: rij, uitval: k,
                                 // Een ingetikte dagmaat hoort bij de vorige maat: opnieuw de vrije opening volgen.
