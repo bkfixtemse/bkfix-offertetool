@@ -115,6 +115,10 @@ export const ES_BREEDTES: number[] = es.standaardBreedtes;
 export const DEPONTI_BREEDTES: number[] = dp.standaardBreedtes;
 export const DEPONTI_HOOGTES: number[] = dp.standaardHoogtes;
 export const DEPONTI_GLASSOORTEN: string[] = Object.keys(dp.maatwerkPerM2);
+/** Een Fiano-glaspaneel is zoveel kleiner dan de inbouwhoogte (lijst 2025 blz. 94). */
+export const DEPONTI_GLASAFTREK: number = dp.glasAftrek;
+/** Een ES-glaspaneel is zoveel kleiner dan de dagmaat hoogte. */
+export const ES_GLASAFTREK: number = es.glasAftrek;
 
 /** Fiano-compensatietabel (handleiding Fiano blz. 12): welke dagmaat hoogte een standaardhoogte afdekt. */
 export const FIANO_COMPENSATIE: {
@@ -226,6 +230,26 @@ export function depontiOptieMeldingen(
  * Deponti: de breedtes die op deze inbouwhoogte een standaardpaneel zijn. Enkel helder glas bestaat
  * als standaardpaneel, en niet elke breedte bestaat op elke hoogte (640 niet in 2350).
  */
+/** 'standaard' of 'maatwerk' per paneel, in dezelfde volgorde als detail.panelenLijst. */
+function paneelSoorten(
+  maten: { breedte: number; aantal: number }[], isStandaard: (m: { breedte: number }) => boolean,
+): string {
+  return maten
+    .flatMap((m) => Array.from({ length: m.aantal }, () => (isStandaard(m) ? 'standaard' : 'maatwerk')))
+    .join(',');
+}
+
+export function isStandaardBreedte(
+  merk: GlaswandMerk, breedte: number, inbouwhoogte = 0, glassoort = 'standaard',
+): boolean {
+  // ES kijkt enkel naar de glasbreedte uit de lijst; de hoogte speelt daar geen rol.
+  if (merk !== 'Deponti') return (es.standaardBreedtes as number[]).includes(breedte);
+  // Deponti heeft per inbouwhoogte een eigen rij, en standaardpanelen bestaan enkel in helder glas
+  // (640 bestaat bijvoorbeeld niet op 2350).
+  const rij = dp.panelen[String(inbouwhoogte)] as Record<string, number> | undefined;
+  return glassoort === 'standaard' && typeof rij?.[String(breedte)] === 'number';
+}
+
 export function depontiStandaardBreedtes(inbouwhoogte: number, glassoort: string): number[] {
   const rij = dp.panelen[String(inbouwhoogte)] as Record<string, number> | undefined;
   if (!rij || (glassoort && glassoort !== 'standaard')) return [];
@@ -446,10 +470,11 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
     // De HOOGTE heeft geen invloed op het tarief: ES rekent één prijs tot dagmaat 2700mm
     // (zaakvoerder, 2026-09-17). Alleen de GLASBREEDTE bepaalt of een paneel standaard- of
     // maatwerkglas is; in een gemengde wand betaalt elk paneel zijn eigen deel.
-    const isStandaardPaneel = (m: { breedte: number }) => es.standaardBreedtes.includes(m.breedte);
+    const isStandaardPaneel = (m: { breedte: number }) => isStandaardBreedte(merk, m.breedte);
     const standaardAantal = maten.filter(isStandaardPaneel).reduce((t, m) => t + m.aantal, 0);
     const maatwerkAantal = n - standaardAantal;
     const standaardMaat = maten.length > 0 && maatwerkAantal === 0;
+    detail.panelenSoort = paneelSoorten(maten, isStandaardPaneel);
     uitvoering = standaardMaat ? 'standaard' : 'maatwerk';
 
     // Boven 2700mm kan ES nog leveren, maar dan is de prijs op aanvraag — de berekening klopt daar niet meer.
@@ -534,8 +559,9 @@ export function calcGlaswand(inp: GlaswandInput): CalcResult {
     // Standaardpanelen bestaan enkel in helder glas: grijs, brons en gesatineerd zijn altijd maatwerk.
     const standaardMogelijk = glassoort === 'standaard' && !!rij;
     const isStandaardPaneel = (m: { breedte: number }) =>
-      standaardMogelijk && typeof rij?.[String(m.breedte)] === 'number';
+      standaardMogelijk && isStandaardBreedte(merk, m.breedte, H, glassoort);
     const standaardAantal = maten.filter(isStandaardPaneel).reduce((t, m) => t + m.aantal, 0);
+    detail.panelenSoort = paneelSoorten(maten, isStandaardPaneel);
     const maatwerkAantal = n - standaardAantal;
     const nettoGlasHoogte = H > 0 ? H - dp.glasAftrek : 0;
     if (H > 0 && nettoGlasHoogte <= 0) errors.push(`Inbouwhoogte ${H}mm is te klein: er blijft geen glashoogte over`);

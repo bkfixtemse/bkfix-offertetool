@@ -7,6 +7,7 @@
  * prijslijsten intussen veranderd zijn.
  */
 import { bestelSpecPairs } from './bestelspec';
+import { isStandaardBreedte, DEPONTI_GLASAFTREK, type GlaswandMerk } from './glaswand';
 import { kleurLabel } from './shared';
 import type { OfferItem } from './types';
 
@@ -35,6 +36,52 @@ export function itemTitel(it: OfferItem): string {
   return [`${it.aantal}× ${it.product}`, it.type, m].filter(Boolean).join(' · ');
 }
 
+export interface Paneel {
+  /** Volgnummer in de wand, van links naar rechts zoals de rekenkern ze bestelt. */
+  nr: number;
+  breedte: number;
+  standaard: boolean;
+  /**
+   * De maat zoals ze besteld wordt. Bij Deponti is een standaardpaneel een artikel op de
+   * inbouwhoogte (980×2500) en maatwerkglas de nettomaat (85mm kleiner); bij ES is alle glas
+   * 100mm kleiner dan de dagmaat. 0 = niet te bepalen uit wat er bewaard is.
+   */
+  hoogte: number;
+  /** 'standaardpaneel' (artikel) of 'maatwerkglas' (nettomaat). */
+  maatLabel: string;
+}
+
+/**
+ * De panelen van een glaswand, stuk per stuk: welke breedte en of het een standaardmaat of
+ * maatwerkglas is. Items die sinds 10-2026 bewaard zijn, dragen die soort zelf mee
+ * (`detail.panelenSoort`); bij oudere items leiden we ze af met dezelfde regel als de rekenkern.
+ */
+export function itemPanelen(it: OfferItem): Paneel[] {
+  const lijst = String(it.detail?.panelenLijst || '').split(',').map(Number).filter((b) => b > 0);
+  if (lijst.length === 0) return [];
+  const soorten = String(it.detail?.panelenSoort || '').split(',').filter(Boolean);
+  const merk: GlaswandMerk = String(it.detail?.merk || '') === 'Deponti' ? 'Deponti' : 'ES Systems';
+  const inbouwhoogte = Number(it.detail?.inbouwhoogte || 0);
+  const glassoort = String(it.detail?.glastype || 'standaard');
+  const glasHoogte = Number(it.detail?.glasHoogte || 0);
+  return lijst.map((breedte, i) => {
+    const standaard = soorten[i]
+      ? soorten[i] === 'standaard'
+      : isStandaardBreedte(merk, breedte, inbouwhoogte, glassoort);
+    // Bij Deponti verschilt de besteldmaat per soort; detail.glasHoogte draagt er maar één.
+    const hoogte = merk !== 'Deponti' ? glasHoogte
+      : standaard ? inbouwhoogte
+        : (inbouwhoogte > 0 ? inbouwhoogte - DEPONTI_GLASAFTREK : 0);
+    return {
+      nr: i + 1,
+      breedte,
+      standaard,
+      hoogte,
+      maatLabel: standaard && merk === 'Deponti' ? 'standaardpaneel' : 'glas',
+    };
+  });
+}
+
 /** Niet-lege secties, in weergavevolgorde. */
 export function itemSecties(it: OfferItem): OverzichtSectie[] {
   const secties: OverzichtSectie[] = [];
@@ -56,6 +103,24 @@ export function itemSecties(it: OfferItem): OverzichtSectie[] {
   const opties = (it.options ?? []).filter(Boolean);
   if (uitvoering.length > 0 || opties.length > 0) {
     secties.push({ titel: 'Uitvoering & opties', rijen: uitvoering, punten: opties });
+  }
+
+  // Glaswand: paneel per paneel, want "hoeveel panelen en welke waren maatwerk?" is net wat je
+  // achteraf wil terugvinden. Eén samenvattende regel, dan elk paneel apart.
+  const panelen = itemPanelen(it);
+  if (panelen.length > 0) {
+    const nStandaard = panelen.filter((p) => p.standaard).length;
+    const nMaatwerk = panelen.length - nStandaard;
+    const verdeling = nMaatwerk === 0 ? 'allemaal standaardmaten'
+      : nStandaard === 0 ? 'allemaal maatwerkglas'
+        : `${nStandaard} standaard, ${nMaatwerk} maatwerk`;
+    const rijen: [string, string][] = [['Aantal panelen', `${panelen.length} (${verdeling})`]];
+    for (const p of panelen) {
+      const maat = p.hoogte > 0 ? ` · ${p.maatLabel} ${p.breedte}×${p.hoogte}mm` : '';
+      rijen.push([`Paneel ${p.nr}`, `${p.breedte}mm · ${p.standaard ? 'standaardmaat' : 'maatwerk'}${maat}`]);
+    }
+    if (it.detail?.overlap) rijen.push(['Overlap', `${it.detail.overlap}mm`]);
+    secties.push({ titel: 'Panelen', rijen });
   }
 
   const spec = bestelSpecPairs(it);
