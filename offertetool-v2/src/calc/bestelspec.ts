@@ -62,6 +62,7 @@ const SPEC_FIELDS: Record<string, [string, string][]> = {
     ['artikelen', 'Artikelen'],
   ],
   Rolluik: [
+    ['kastmaat', 'Kastmaat'],
     ['bedieningskant', 'Bedieningskant'],
     ['handBediening', 'Handmatige bediening'],
     ['motorkabelUitvoering', 'Motorkabel'],
@@ -70,6 +71,7 @@ const SPEC_FIELDS: Record<string, [string, string][]> = {
     ['voorborenZijde', 'Voorboren zijde'],
   ],
   Screen: [
+    ['kastmaat', 'Kastmaat'],
     ['standaardZip', 'Uitvoering'],
     ['motorkabelUitvoering', 'Motorkabel'],
     ['kabeluitvoer', 'Kabeluitvoer'],

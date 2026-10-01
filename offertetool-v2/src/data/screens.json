@@ -1,4 +1,12 @@
 {
+ "_kast": "Allround catalogus 2026 (versie mei): doorsnede van de omkasting in mm (breedte x hoogte). Nova 83 blz. 6.15, Nova 103 blz. 6.17, Nova 123 blz. 6.19, Nova solar blz. 6.21. De solar bestaat enkel met rechte omkasting; de 116 x 109 is inclusief het solarpaneel (kastlichaam 103 x 103).",
+ "kast": {
+  "Nova 83": { "recht": [83, 83], "afgerond": [88, 83] },
+  "Nova 103": { "recht": [103, 103], "afgerond": [109, 103] },
+  "Nova 123": { "recht": [123, 123], "afgerond": [131, 123] },
+  "Nova solar 103": { "recht": [116, 109] }
+ },
+
  "prices": {
   "Nova 83": {
    "N83_H_1000": {
