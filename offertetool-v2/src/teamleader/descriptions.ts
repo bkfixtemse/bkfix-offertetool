@@ -27,7 +27,10 @@ function rolluikDesc(it: OfferItem): string {
   if (isSolar) h += `<li>${motorLabel}${UL2}<li>max afmetingen: 3500×2800mm</li><li>minimum kastmaat: 180mm</li></ul></li>`;
   else h += `<li>${motorLabel}</li>`;
   h += '</ul></li>';
-  h += `<li>Kast:${UL2}<li>${d.kasttype || 'Standaard: afgeschuind 45°'}</li><li>Kleur omkasting: <strong>${frameKleur}</strong></li></ul></li>`;
+  // De kasthoogte hangt af van serie en hoogte; ze staat in detail.kastmaat (catalogus blz. 7.4).
+  const kastmaat = String(d.kastmaat || '');
+  h += `<li>Kast:${UL2}<li>${d.kasttype || 'Standaard: afgeschuind 45°'}${kastmaat ? ` — <strong>${kastmaat}</strong>` : ''}</li>`
+    + `<li>Kleur omkasting: <strong>${frameKleur}</strong></li></ul></li>`;
   h += `<li>Onderlat:${UL2}<li>${onderlat}</li><li>Kleur: <strong>${frameKleur}</strong></li></ul></li>`;
   if (it.opmerkingen) h += `<li>Opmerkingen: ${it.opmerkingen}</li>`;
   return h + '</ul>';
@@ -41,10 +44,11 @@ function screenDesc(it: OfferItem): string {
   let h = `<p><strong>${title}</strong></p>${UL}`;
   h += `<li>Dagmaten:${UL2}<li>Breedte: <strong>${it.breedte}mm</strong></li><li>Hoogte: <strong>${it.hoogte}mm</strong></li></ul></li>`;
   h += `<li>Plaatsing: <strong>${d.plaatsing === 'odd' ? 'op de dag (ODD)' : 'in de dag (IDD)'}</strong></li>`;
-  const omk = d.omkasting === 'afgerond'
-    ? 'Afgeronde geëxtrudeerde omkasting (109×103mm)'
-    : isSolar ? 'Rechte omkasting 103×103mm' : 'Rechte geëxtrudeerde omkasting (103×103mm)';
-  h += `<li>Omkasting: <strong>${omk}</strong></li>`;
+  // De kastmaat verschilt per type (Nova 83/103/123/solar) en per omkasting: ze komt uit de
+  // berekening, niet uit een vaste tekst — anders staat er 103×103 op elke offerte.
+  const kastmaat = String(d.kastmaat || '');
+  const vorm = d.omkasting === 'afgerond' ? 'Afgeronde geëxtrudeerde omkasting' : 'Rechte geëxtrudeerde omkasting';
+  h += `<li>Omkasting: <strong>${vorm}${kastmaat ? ` (${kastmaat})` : ''}</strong></li>`;
   if (d.borenJa) h += '<li>Geleiders geboord</li>';
   if (d.zonnepaneelJa) h += '<li>Extern zonnepaneel</li>';
   h += `<li>Kleur:${UL2}<li>193 standaard RAL-kleuren en 14 structuurlakkleuren</li><li>RAL: <strong>${kleur || '—'}</strong></li></ul></li>`;

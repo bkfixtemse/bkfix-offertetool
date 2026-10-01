@@ -85,6 +85,18 @@ export function calcScreen(inp: ScreenInput): CalcResult {
   // ---- Prijscomponenten per stuk ----
   const regels = [{ label: 'Basisprijs', bedrag: basePrice }];
 
+  // Kastmaat uit de catalogus (zie screens.json `_kast`): die hoort op de offerte, want ze bepaalt
+  // hoeveel plaats de kast inneemt. De solar bestaat enkel met een rechte omkasting.
+  const kastRij = ((screensData as any).kast ?? {})[type] as Record<string, [number, number]> | undefined;
+  const kastMaten = kastRij?.[inp.omkasting] ?? kastRij?.recht;
+  if (kastRij && !kastRij[inp.omkasting]) {
+    warnings.push(
+      `${type} staat in de catalogus enkel met ${Object.keys(kastRij).join(' / ')}e omkasting; `
+      + `de maat hieronder is die van de ${Object.keys(kastRij)[0]}e omkasting`,
+    );
+  }
+  const kastmaat = kastMaten ? `${kastMaten[0]} × ${kastMaten[1]}mm` : '';
+
   const gelRaw = inp.geleider ? ex.geleiders[inp.geleider] : 0;
   const gelTarief = typeof gelRaw === 'number' ? gelRaw : 0;
   const geleiderPrice = gelTarief > 0 ? (Math.max(0, bestelH) / 1000) * 2 * gelTarief : 0;
@@ -134,7 +146,7 @@ export function calcScreen(inp: ScreenInput): CalcResult {
     uwVerkoop: tot.uwVerkoop,
     options: [
       `Plaatsing: ${inp.plaatsing.toUpperCase()}`,
-      `Omkasting: ${inp.omkasting}`,
+      `Omkasting: ${inp.omkasting}${kastmaat ? ` (kast ${kastmaat})` : ''}`,
       inp.geleider && `Geleider: ${inp.geleider}`,
       inp.onderlatHoog && 'Hoge verzwaarde onderlat',
       inp.borenJa && 'Geleiders boren',
@@ -154,6 +166,9 @@ export function calcScreen(inp: ScreenInput): CalcResult {
       plaatsing: inp.plaatsing,
       geleider: inp.geleider,
       omkasting: inp.omkasting,
+      kastmaat,
+      kastBreedte: kastMaten ? kastMaten[0] : 0,
+      kastHoogte: kastMaten ? kastMaten[1] : 0,
       onderlatHoog: inp.onderlatHoog,
       borenJa: inp.borenJa,
       zonnepaneelJa: isSolar && inp.zonnepaneelJa,

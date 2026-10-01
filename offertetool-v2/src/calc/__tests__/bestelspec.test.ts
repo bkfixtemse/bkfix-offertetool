@@ -23,9 +23,10 @@ describe('bestelspecificaties', () => {
     expect(bestelSpecString(asItem(r))).toContain('Handmatige bediening: Band binnen');
   });
 
-  it('lege spec-velden verschijnen niet', () => {
+  it('lege spec-velden verschijnen niet — enkel de kastmaat, die altijd gekend is', () => {
     const r = calcRolluik(BASE);
-    expect(bestelSpecPairs(asItem(r))).toHaveLength(0);
+    // 2000×1500 Ecoroll-L → kast 165mm (catalogus blz. 7.4); de rest van de velden is leeg.
+    expect(bestelSpecPairs(asItem(r))).toEqual([['Kastmaat', '165mm']]);
   });
 
   it('spec-velden hebben GEEN prijsimpact', () => {

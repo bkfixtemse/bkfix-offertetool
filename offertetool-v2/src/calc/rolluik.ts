@@ -169,7 +169,8 @@ export function calcRolluik(inp: RolluikInput): CalcResult {
     options: [
       `Plaatsing: ${inp.plaatsing.toUpperCase()}`,
       inp.geleider && `Geleider: ${inp.geleider}`,
-      inp.kasttype && `Kast: ${inp.kasttype}`,
+      // De kasthoogte volgt uit serie + hoogte (catalogus blz. 7.4) en hoort mee op de offerte.
+      inp.kasttype && `Kast: ${inp.kasttype} (${kasthoogte}mm)`,
       inp.motor && `Motor: ${inp.motor}`,
       inp.mkabel === 'ja' && 'Afwijkende motorkabel',
       inp.lamel === 'hardschuim' && 'Lamel: hardschuim',
@@ -196,6 +197,7 @@ export function calcRolluik(inp: RolluikInput): CalcResult {
       onderlat: inp.onderlat,
       kleurOmkasting: inp.kleurOmkasting,
       kasthoogte,
+      kastmaat: `${kasthoogte}mm`,
       isSolar,
       bedieningskant: inp.bedieningskant ?? '',
       handBediening: inp.handBediening ?? '',
