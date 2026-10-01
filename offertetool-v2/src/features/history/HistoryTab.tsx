@@ -1,11 +1,38 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { deleteOffer, watchOffers, type SavedOffer } from '../../firebase/offers';
 import { useOffer } from '../../store/offerStore';
 import { fmt } from '../../components/fields';
+import { itemSecties, itemTitel } from '../../calc/itemOverzicht';
+import type { OfferItem } from '../../calc/types';
+
+/** Alles van één item, zoals het bewaard is. Enkel lezen: niets hiervan raakt de lopende offerte. */
+function ItemDetail({ it }: { it: OfferItem }) {
+  return (
+    <div style={{ background: 'var(--bg)', borderRadius: 8, padding: '10px 12px', margin: '2px 0 8px' }}>
+      <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>{itemTitel(it)}</div>
+      <div className="itemdetail">
+        {itemSecties(it).map((sec) => (
+          <div key={sec.titel}>
+            <div className="l">{sec.titel}</div>
+            {(sec.rijen ?? []).map(([label, waarde]) => (
+              <div className="pline" key={label}><span>{label}</span><b>{waarde}</b></div>
+            ))}
+            {(sec.punten ?? []).length > 0 && (
+              <ul style={{ margin: '4px 0 0', paddingLeft: 18, fontSize: 12, color: 'var(--tx2)' }}>
+                {(sec.punten ?? []).map((p, i) => <li key={i}>{p}</li>)}
+              </ul>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function HistoryTab({ goToOffer }: { goToOffer: () => void }) {
   const [offers, setOffers] = useState<SavedOffer[]>([]);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [open, setOpen] = useState<Set<number>>(new Set());
   const [zoek, setZoek] = useState('');
   const [err, setErr] = useState('');
   const load = useOffer((s) => s.load);
@@ -26,11 +53,21 @@ export function HistoryTab({ goToOffer }: { goToOffer: () => void }) {
   if (detail) {
     const d = detail;
     let totV = 0, totA = 0, totP = 0;
+    const toggle = (n: number) => setOpen((vorig) => {
+      const uit = new Set(vorig);
+      if (uit.has(n)) uit.delete(n); else uit.add(n);
+      return uit;
+    });
+    const allesOpen = open.size === d.items.length && d.items.length > 0;
     return (
       <div className="panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-          <button className="btn sec2 sm" onClick={() => setDetailId(null)}>‹ Terug</button>
+          <button className="btn sec2 sm" onClick={() => { setDetailId(null); setOpen(new Set()); }}>‹ Terug</button>
           <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn sec2 sm"
+              onClick={() => setOpen(allesOpen ? new Set() : new Set(d.items.map((_, n) => n)))}>
+              {allesOpen ? '⌃ Alles dichtklappen' : '⌄ Alle details tonen'}
+            </button>
             <button className="btn sm" onClick={() => { load(d); goToOffer(); }}>✏ Laden & bewerken</button>
             <button className="btn danger sm" onClick={() => {
               if (confirm('Offerte verwijderen?')) { deleteOffer(d.id); setDetailId(null); }
@@ -41,6 +78,10 @@ export function HistoryTab({ goToOffer }: { goToOffer: () => void }) {
         <div style={{ color: 'var(--tx3)', fontSize: 13, marginBottom: 12 }}>
           {dt(d.date)} · door {d.opsteller}{d.tlQuotationId ? ` · TL: ${d.tlQuotationId}` : ''}
         </div>
+        <div className="hint" style={{ marginBottom: 6 }}>
+          Klik een regel open om alles van dat item terug te zien — maten, opties, bestelspecificaties en de
+          prijsopbouw zoals ze toen berekend zijn. Bekijken verandert niets: de offerte blijft ongemoeid.
+        </div>
         <table className="det">
           <thead><tr><th>#</th><th>Product</th><th>Maat</th><th>Aant.</th>
             <th className="r">Aankoop</th><th className="r">Plaatsing</th><th className="r">Verkoop</th><th className="r">Marge</th></tr></thead>
@@ -48,8 +89,10 @@ export function HistoryTab({ goToOffer }: { goToOffer: () => void }) {
             {d.items.map((i, n) => {
               totV += i.uwVerkoop; totA += i.aankoop; totP += i.plaatsingTotaal;
               return (
-                <tr key={n}>
-                  <td>{n + 1}</td>
+                <Fragment key={n}>
+                <tr onClick={() => toggle(n)} style={{ cursor: 'pointer' }}
+                  title={open.has(n) ? 'Dichtklappen' : 'Alles van dit item tonen'}>
+                  <td>{open.has(n) ? '⌄' : '›'} {n + 1}</td>
                   <td><b>{i.product}</b><br /><span style={{ color: 'var(--tx3)', fontSize: 11 }}>{i.type}</span></td>
                   <td>{i.breedte}×{i.hoogte ?? i.uitval}</td>
                   <td>{i.aantal}</td>
@@ -59,6 +102,8 @@ export function HistoryTab({ goToOffer }: { goToOffer: () => void }) {
                   <td className="r">€{fmt(i.uwVerkoop - i.aankoop - i.plaatsingTotaal)}
                     <span style={{ color: 'var(--tx3)', fontSize: 11 }}> ({i.uwVerkoop > 0 ? fmt((i.uwVerkoop - i.aankoop - i.plaatsingTotaal) / i.uwVerkoop * 100, 1) : 0}%)</span></td>
                 </tr>
+                {open.has(n) && <tr><td colSpan={8} style={{ padding: 0 }}><ItemDetail it={i} /></td></tr>}
+                </Fragment>
               );
             })}
           </tbody>

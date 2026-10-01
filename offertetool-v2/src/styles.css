@@ -52,6 +52,13 @@ input:disabled,select:disabled{background:#f8fafc;color:var(--tx3)}
 .btn.past:hover{background:var(--green3)}
 /* De maat die nu gekozen is: een donkere rand, zodat ze opvalt tussen de andere knoppen. */
 .btn.gekozen{box-shadow:0 0 0 2px var(--tx)}
+
+/* Historie: alles van één offerte-item, uitgeklapt onder de regel. */
+.itemdetail{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:10px 20px;align-items:start}
+.itemdetail .l{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--tx3);font-weight:700;
+  border-bottom:1px solid var(--line2);padding-bottom:3px;margin-bottom:3px}
+.itemdetail .pline{font-size:12px;padding:2px 0;gap:14px}
+.itemdetail .pline b{text-align:right;white-space:nowrap}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 
 .alert{border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:10px}
